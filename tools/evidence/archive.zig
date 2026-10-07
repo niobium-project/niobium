@@ -3,6 +3,7 @@ const std = @import("std");
 const model = @import("model.zig");
 const process = @import("process.zig");
 const store = @import("store.zig");
+const contracts = @import("contracts");
 pub const aws_version = "2.27.49";
 
 pub const Client = struct {
@@ -19,15 +20,13 @@ pub const Client = struct {
         const env = context.environ_map;
         const endpoint = env.get("R2_ENDPOINT") orelse return error.MissingR2Endpoint;
         const bucket = env.get("R2_BUCKET") orelse return error.MissingR2Bucket;
-        const account = std.mem.cutPrefix(u8, endpoint, "https://") orelse
-            return error.InvalidR2Endpoint;
-        const id = std.mem.cutSuffix(u8, account, ".r2.cloudflarestorage.com") orelse
-            return error.InvalidR2Endpoint;
-        if (id.len != 32 or !model.segment(bucket)) return error.InvalidR2Configuration;
-        for (id) |c| if (!std.ascii.isHex(c)) return error.InvalidR2Endpoint;
+        try validateEndpoint(endpoint);
+        if (!model.segment(bucket)) return error.InvalidR2Configuration;
         if (env.get("AWS_ACCESS_KEY_ID") == null or env.get("AWS_SECRET_ACCESS_KEY") == null)
             return error.MissingR2Credentials;
-        try env.put("AWS_MAX_ATTEMPTS", "1");
+        // Native SDK transport retries are bounded by both attempts and the process deadline.
+        try env.put("AWS_MAX_ATTEMPTS", "3");
+        try env.put("AWS_RETRY_MODE", "standard");
         try env.put("AWS_EC2_METADATA_DISABLED", "true");
         try env.put("AWS_REQUEST_CHECKSUM_CALCULATION", "WHEN_REQUIRED");
         try env.put("AWS_RESPONSE_CHECKSUM_VALIDATION", "WHEN_REQUIRED");
@@ -94,8 +93,10 @@ pub const Client = struct {
             u8,
             result.stderr,
             "PreconditionFailed",
-        ) == null and std.mem.find(u8, result.stderr, "ConditionalRequestConflict") == null)
+        ) == null and std.mem.find(u8, result.stderr, "ConditionalRequestConflict") == null) {
+            transportFailure("put", key, result);
             return error.ArchiveUploadFailed;
+        }
         // Always read back: neither success nor an ETag proves the intended bytes were stored.
         const stored = try c.get(key, bytes.len);
         defer c.a.free(stored);
@@ -111,13 +112,27 @@ pub const Client = struct {
             "--key",
             key,
             "--query",
-            "ContentLength",
+            "[ContentLength,Expiration]",
             "--output",
-            "text",
+            "json",
         });
-        if (head.code != 0) return error.ArchiveReadbackFailed;
-        const length = try std.fmt.parseInt(u64, std.mem.trim(u8, head.stdout, "\r\n "), 10);
+        if (head.code != 0) {
+            transportFailure("head", key, head);
+            return error.ArchiveReadbackFailed;
+        }
+        const info = try contracts.json.decodeValue(c.a, head.stdout, .{
+            .max_bytes = model.limits.test_report_bytes,
+        });
+        if (info != .array or info.array.items.len != 2 or info.array.items[0] != .integer)
+            return error.ArchiveReadbackFailed;
+        const length = std.math.cast(u64, info.array.items[0].integer) orelse
+            return error.ArchiveReadbackFailed;
         if (length != size) return error.ArchiveConflict;
+        const expiration = info.array.items[1];
+        if (expiration != .null and (expiration != .string or expiration.string.len == 0))
+            return error.ArchiveReadbackFailed;
+        const ordinary = std.mem.find(u8, key, "/evidence/v1/") != null;
+        if ((expiration != .null) != ordinary) return error.ArchiveRetentionMismatch;
         const range = try std.fmt.allocPrint(c.a, "bytes=0-{d}", .{size});
         const args = try std.mem.concat(c.a, []const u8, &.{
             &.{ "get-object", "--bucket", c.bucket, "--key", key },
@@ -125,7 +140,10 @@ pub const Client = struct {
             &.{target},
         });
         const result = try c.invoke(args);
-        if (result.code != 0) return error.ArchiveReadbackFailed;
+        if (result.code != 0) {
+            transportFailure("get", key, result);
+            return error.ArchiveReadbackFailed;
+        }
         return std.Io.Dir.cwd().readFileAlloc(
             c.io,
             target,
@@ -134,6 +152,29 @@ pub const Client = struct {
         );
     }
 };
+
+fn transportFailure(operation: []const u8, key: []const u8, result: process.Result) void {
+    // Operation/key/status are sufficient for recovery; never print SDK errors or credentials.
+    std.debug.print("archive {s} failed: {s}; exit={d}; reason={s}\n", .{
+        operation, key, result.code, result.reason,
+    });
+}
+
+fn validateEndpoint(endpoint: []const u8) !void {
+    const host = std.mem.cutPrefix(u8, endpoint, "https://") orelse
+        return error.InvalidR2Endpoint;
+    const account = std.mem.cutSuffix(u8, host, ".r2.cloudflarestorage.com") orelse
+        return error.InvalidR2Endpoint;
+    var parts = std.mem.splitScalar(u8, account, '.');
+    const id = parts.next() orelse return error.InvalidR2Endpoint;
+    if (id.len != 32) return error.InvalidR2Endpoint;
+    for (id) |c| if (!std.ascii.isHex(c)) return error.InvalidR2Endpoint;
+    if (parts.next()) |jurisdiction| {
+        if (!std.mem.eql(u8, jurisdiction, "us") and !std.mem.eql(u8, jurisdiction, "eu") and
+            !std.mem.eql(u8, jurisdiction, "fedramp")) return error.InvalidR2Endpoint;
+    }
+    if (parts.next() != null) return error.InvalidR2Endpoint;
+}
 
 pub fn identical(expected: []const u8, actual: []const u8) error{ArchiveConflict}!void {
     if (expected.len != actual.len or !std.mem.eql(
@@ -148,28 +189,81 @@ pub fn publish(c: Client, path: []const u8) !void {
     if (!report.complete) {
         try store.collect(c.a, c.io, path, &report);
         try model.validate(report);
-        try store.save(c.a, c.io, path, report);
     }
+    try store.rekey(c.a, &report);
+    try store.save(c.a, c.io, path, report);
     var dir = try std.Io.Dir.cwd().openDir(c.io, path, .{});
     defer dir.close(c.io);
-    for (report.attachments) |attachment| {
-        var arena: std.heap.ArenaAllocator = .init(c.gpa);
-        defer arena.deinit();
-        var transfer = c;
-        transfer.a = arena.allocator();
-        const bytes = try store.read(
-            transfer.a,
-            c.io,
-            dir,
-            attachment.file,
-            model.limits.test_attachment_bytes,
-        );
-        try transfer.put(attachment.key, bytes);
-    }
-    const key = try std.fmt.allocPrint(c.a, "reports/v1/{s}/report.json", .{
-        try model.identity(c.a, report),
+    try uploadAttachments(c, dir, report.attachments);
+    const key = try std.fmt.allocPrint(c.a, "{s}/reports/v1/{s}/report.json", .{
+        try model.reportPrefix(c.a, report), try model.identity(c.a, report),
     });
     try c.put(key, try store.read(c.a, c.io, dir, "report.json", model.limits.test_report_bytes));
+    std.debug.print(
+        "published {t}/{s}: {t}\n",
+        .{ report.suite, report.execution, report.verdict },
+    );
+}
+
+fn upload(c: Client, dir: std.Io.Dir, attachment: model.Attachment, index: usize) !void {
+    var arena: std.heap.ArenaAllocator = .init(c.gpa);
+    defer arena.deinit();
+    var transfer = c;
+    transfer.a = arena.allocator();
+    transfer.scratch = try std.fmt.allocPrint(transfer.a, "{s}/transfers/{d}", .{
+        c.scratch, index,
+    });
+    try std.Io.Dir.cwd().createDirPath(c.io, transfer.scratch);
+    const bytes = try store.read(
+        transfer.a,
+        c.io,
+        dir,
+        attachment.file,
+        model.limits.test_attachment_bytes,
+    );
+    try transfer.put(attachment.key, bytes);
+}
+
+fn uploadAttachments(c: Client, dir: std.Io.Dir, attachments: []const model.Attachment) !void {
+    const Result = @typeInfo(@TypeOf(upload)).@"fn".return_type.?;
+    var active: [model.limits.test_archive_workers]?std.Io.Future(Result) = @splat(null);
+    defer for (&active) |*slot| {
+        if (slot.*) |*future| future.cancel(c.io) catch |err|
+            std.debug.print("attachment cancellation: {t}\n", .{err});
+    };
+    for (attachments, 0..) |attachment, index| {
+        const slot = &active[index % active.len];
+        if (slot.*) |*future| {
+            const result = future.await(c.io);
+            slot.* = null;
+            try result;
+        }
+        slot.* = try std.Io.concurrent(c.io, upload, .{ c, dir, attachment, index });
+    }
+    for (&active) |*slot| if (slot.*) |*future| {
+        const result = future.await(c.io);
+        slot.* = null;
+        try result;
+    };
+}
+
+test "N1-AC-20 R2 endpoint accepts only account and documented jurisdiction hosts" {
+    const account = "0123456789abcdef0123456789abcdef";
+    for ([_][]const u8{ "", ".us", ".eu", ".fedramp" }) |suffix| {
+        var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+        defer arena.deinit();
+        try validateEndpoint(try std.fmt.allocPrint(
+            arena.allocator(),
+            "https://{s}{s}.r2.cloudflarestorage.com",
+            .{ account, suffix },
+        ));
+    }
+    for ([_][]const u8{
+        "http://" ++ account ++ ".r2.cloudflarestorage.com",
+        "https://" ++ account ++ ".unknown.r2.cloudflarestorage.com",
+        "https://" ++ account ++ ".us.extra.r2.cloudflarestorage.com",
+        "https://" ++ account ++ ".r2.cloudflarestorage.com/bucket",
+    }) |endpoint| try std.testing.expectError(error.InvalidR2Endpoint, validateEndpoint(endpoint));
 }
 
 test "N1-AC-20 duplicate publication accepts only identical bytes" {

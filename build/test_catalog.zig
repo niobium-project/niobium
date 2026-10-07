@@ -68,6 +68,11 @@ pub fn lane(suite: Suite) []const u8 {
     };
 }
 
+pub fn validSeedRange(count: u32, start: u64) bool {
+    return count > 0 and count <= 100_000 and
+        start <= std.math.maxInt(u64) - (@as(u64, count) - 1);
+}
+
 test "N1-AC-20 selection fails closed and preserves the fast default" {
     const fast = try Selection.parse(null, null);
     try std.testing.expect(fast.suites.contains(.unit));

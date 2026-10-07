@@ -16,7 +16,7 @@ pub const Provenance = struct {
     artifact_id: u64,
     job_id: u64,
     job_conclusion: []const u8,
-    publisher_revision: []const u8,
+    run_started_ms: i64,
 };
 pub const Attachment = struct {
     file: []const u8,
@@ -94,6 +94,21 @@ pub fn identity(a: std.mem.Allocator, report: Report) ![]const u8 {
     });
 }
 
+pub const max_timestamp_ms = 253402300799999;
+
+pub fn archivePrefix(a: std.mem.Allocator, started_ms: i64) ![]const u8 {
+    if (started_ms < 0 or started_ms > max_timestamp_ms) return error.InvalidReport;
+    var buffer: [32]u8 = undefined; // SAFETY: formatUtc writes before reading.
+    var writer: std.Io.Writer = .fixed(&buffer);
+    try contracts.time.formatUtc(&writer, @divTrunc(started_ms, 1000));
+    return std.fmt.allocPrint(a, "ci-evidence/{s}", .{writer.buffered()[0..7]});
+}
+
+pub fn reportPrefix(a: std.mem.Allocator, report: Report) ![]const u8 {
+    const started = if (report.provenance) |p| p.run_started_ms else report.started_ms;
+    return archivePrefix(a, started);
+}
+
 pub fn objectKey(a: std.mem.Allocator, report: Report, file: []const u8) ![]const u8 {
     return evidenceKey(a, report, file, .ordinary);
 }
@@ -104,13 +119,29 @@ pub fn evidenceKey(
     file: []const u8,
     retention: Retention,
 ) ![]const u8 {
+    return std.fmt.allocPrint(a, "{s}/{s}", .{
+        try reportPrefix(a, report), try legacyEvidenceKey(a, report, file, retention),
+    });
+}
+
+pub fn legacyEvidenceKey(
+    a: std.mem.Allocator,
+    report: Report,
+    file: []const u8,
+    retention: Retention,
+) ![]const u8 {
     const prefix = if (retention == .release) "release-evidence/v1" else "evidence/v1";
     return std.fmt.allocPrint(a, "{s}/{s}/{s}", .{ prefix, try identity(a, report), file });
 }
 
 pub fn validate(r: Report) !void {
-    if (r.schema != 1 or r.started_ms < 0 or r.finished_ms < r.started_ms)
+    if (r.schema != 1 or r.started_ms < 0 or r.finished_ms < r.started_ms or
+        r.finished_ms > max_timestamp_ms)
         return error.InvalidReport;
+    if (r.provenance) |p| {
+        if (p.run_started_ms < 0 or p.run_started_ms > max_timestamp_ms)
+            return error.InvalidReport;
+    }
     for ([_][]const u8{ r.execution, r.run, r.attempt, r.job }) |part| {
         if (!segment(part)) return error.InvalidReport;
     }
@@ -146,8 +177,7 @@ fn validateReplay(parameters: []const []const u8) !void {
     }
     const count = std.fmt.parseInt(u32, seeds, 10) catch return error.InvalidReport;
     const first = std.fmt.parseInt(u64, start, 10) catch return error.InvalidReport;
-    if (count == 0 or count > 100_000 or first > std.math.maxInt(u64) - @as(u64, count))
-        return error.InvalidReport;
+    if (!catalog.validSeedRange(count, first)) return error.InvalidReport;
     if (!std.mem.eql(u8, parameters[3], "tsan=true") and
         !std.mem.eql(u8, parameters[3], "tsan=false")) return error.InvalidReport;
     if (!std.mem.eql(u8, parameters[4], "coverage=true") and

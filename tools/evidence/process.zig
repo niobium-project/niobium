@@ -22,12 +22,14 @@ pub fn run(a: std.mem.Allocator, io: std.Io, options: Options) !Result {
         .stdout = .pipe,
         .stderr = .pipe,
     });
-    defer child.kill(io);
     // SAFETY: MultiReader.init initializes both structures before they are read.
     var buffer: std.Io.File.MultiReader.Buffer(2) = undefined;
     var reader: std.Io.File.MultiReader = undefined; // SAFETY: init fills it below.
     reader.init(a, io, buffer.toStreams(), &.{ child.stdout.?, child.stderr.? });
-    defer reader.deinit();
+    defer {
+        child.kill(io);
+        reader.deinit();
+    }
     var context: Capture = .{ .io = io, .child = &child, .reader = &reader, .options = options };
     const Event = union(enum) { done: void, deadline: std.Io.Cancelable!void };
     var events: [2]Event = undefined; // SAFETY: Select owns and initializes queue entries.
@@ -64,6 +66,12 @@ const Capture = struct {
     result: Result = .{},
 
     fn collect(c: *Capture) void {
+        // Windows read completions belong to this submitting thread. Join pending reads here
+        // before it returns and the caller transfers the buffers.
+        defer {
+            c.child.kill(c.io);
+            c.reader.batch.cancel(c.io);
+        }
         c.capture() catch |err| {
             c.result.reason = @errorName(err);
         };
@@ -96,19 +104,35 @@ const Capture = struct {
 };
 
 test "N1-AC-20 capture preserves partial streams on deadline and output overflow" {
-    if (@import("builtin").os.tag == .windows) return error.SkipZigTest;
+    const windows = @import("builtin").os.tag == .windows;
     const a = std.testing.allocator;
+    const timed_argv: []const []const u8 = if (windows) &.{
+        "powershell.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "[Console]::Out.Write('out'); [Console]::Error.Write('err'); Start-Sleep -Seconds 10",
+    } else &.{ "/bin/sh", "-c", "printf out; printf err >&2; exec sleep 10" };
+    const started = std.Io.Clock.awake.now(std.testing.io).toMilliseconds();
     const timed = try run(a, std.testing.io, .{
-        .argv = &.{ "/bin/sh", "-c", "printf out; printf err >&2; exec sleep 10" },
-        .timeout_ms = 100,
+        .argv = timed_argv,
+        .timeout_ms = if (windows) 5000 else 100,
     });
     defer a.free(timed.stdout);
     defer a.free(timed.stderr);
+    const elapsed = std.Io.Clock.awake.now(std.testing.io).toMilliseconds() - started;
+    try std.testing.expect(elapsed < if (windows) @as(i64, 8000) else 3000);
     try std.testing.expectEqualStrings("Timeout", timed.reason);
     try std.testing.expectEqualStrings("out", timed.stdout);
     try std.testing.expectEqualStrings("err", timed.stderr);
     const large = try run(a, std.testing.io, .{
-        .argv = &.{"/usr/bin/yes"},
+        .argv = if (windows) &.{
+            "powershell.exe",
+            "-NoProfile",
+            "-NonInteractive",
+            "-Command",
+            "[Console]::Out.Write('x' * 8192)",
+        } else &.{"/usr/bin/yes"},
         .output_bytes = 100,
     });
     defer a.free(large.stdout);

@@ -1,6 +1,7 @@
 //! One temp directory per test: a publisher (keys, builds, repository) and a user whose HOME,
 //! app-data and XDG directories all live inside it, so the real binaries never touch the
-//! developer's home. Every command and its exit code goes to `<evidence_dir>/<UTC>/<name>.txt`,
+//! developer's home files. Windows also needs a disposable OS account for HKCU registration.
+//! Every command and its exit code goes to `<evidence_dir>/<UTC>/<name>.txt`,
 //! one `<UTC>` per test process.
 
 const std = @import("std");

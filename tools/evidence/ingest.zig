@@ -6,6 +6,26 @@ const archive = @import("archive.zig");
 const contracts = @import("contracts");
 const Value = std.json.Value;
 
+const Budget = struct {
+    compressed: u64 = 0,
+    unpacked: u64 = 0,
+    files: u32 = 0,
+
+    fn zip(b: *Budget, size: u64) !void {
+        if (size > model.limits.test_workflow_zip_bytes - b.compressed)
+            return error.WorkflowArchiveTooLarge;
+        b.compressed += size;
+    }
+
+    fn entry(b: *Budget, size: u64) !void {
+        if (size > model.limits.test_workflow_unpacked_bytes - b.unpacked)
+            return error.WorkflowArchiveTooLarge;
+        if (b.files >= model.limits.test_workflow_files) return error.WorkflowTooManyFiles;
+        b.unpacked += size;
+        b.files += 1;
+    }
+};
+
 pub fn publish(c: archive.Client, input: []const u8) !void {
     const run = try json(c, input, "run.json");
     const expected_run = c.env.get("ARCHIVE_RUN_ID") orelse return error.MissingRunIdentity;
@@ -22,21 +42,14 @@ pub fn publish(c: archive.Client, input: []const u8) !void {
     if (pages != .array or pages.array.items.len > model.limits.test_github_pages)
         return error.InvalidArtifacts;
     // The GitHub run and jobs remain an authoritative record even when tests never started.
-    const key = try std.fmt.allocPrint(c.a, "reports/v1/{s}/{s}/{s}/github", .{
-        repository, expected_run, expected_attempt,
+    const started_ms = (try contracts.time.parseUtc(try string(run, "run_started_at"))) * 1000;
+    const key = try std.fmt.allocPrint(c.a, "{s}/reports/v1/{s}/{s}/{s}/github", .{
+        try model.archivePrefix(c.a, started_ms), repository, expected_run, expected_attempt,
     });
-    for ([_][]const u8{ "run.json", "jobs.json", "artifacts.json" }) |file| {
-        var dir = try std.Io.Dir.cwd().openDir(c.io, input, .{});
-        defer dir.close(c.io);
-        try snapshot(
-            c,
-            key,
-            file,
-            try store.read(c.a, c.io, dir, file, model.limits.test_report_bytes),
-        );
-    }
+    try recordSnapshots(c, input, key);
     try publishJobEvidence(c, input, key, pages, expected_attempt);
     var count: usize = 0;
+    var budget: Budget = .{};
     for (pages.array.items) |page| {
         const artifacts = try field(page, "artifacts");
         if (artifacts != .array) return error.InvalidArtifacts;
@@ -49,10 +62,7 @@ pub fn publish(c: archive.Client, input: []const u8) !void {
             if (!model.segment(job)) return error.InvalidJob;
             const github_job = try findJob(c, input, job);
             const id = try number(artifact, "id");
-            const destination = try std.fmt.allocPrint(c.a, "{s}/{d}", .{ c.scratch, id });
-            const zip = try std.fmt.allocPrint(c.a, "{s}/{d}.zip", .{ input, id });
-            try extract(c.gpa, c.io, zip, destination);
-            try publishTree(c, destination, .{
+            try publishArtifact(c, input, .{
                 .run = run,
                 .repository = repository,
                 .run_id = expected_run,
@@ -60,9 +70,40 @@ pub fn publish(c: archive.Client, input: []const u8) !void {
                 .job = job,
                 .artifact_id = id,
                 .github_job = github_job,
-            });
+                .run_started_ms = started_ms,
+            }, &budget);
         }
     }
+}
+
+fn publishArtifact(c: archive.Client, input: []const u8, source: Source, budget: *Budget) !void {
+    const target = try std.fmt.allocPrint(c.a, "{s}/{d}", .{ c.scratch, source.artifact_id });
+    const zip = try std.fmt.allocPrint(c.a, "{s}/{d}.zip", .{ input, source.artifact_id });
+    errdefer std.Io.Dir.cwd().deleteTree(c.io, target) catch |err|
+        std.debug.print("extraction cleanup: {t}\n", .{err});
+    try extractBounded(c.gpa, c.io, zip, target, budget);
+    try publishTree(c, target, source);
+    try std.Io.Dir.cwd().deleteTree(c.io, target);
+}
+
+fn recordSnapshots(c: archive.Client, input: []const u8, key: []const u8) !void {
+    var dir = try std.Io.Dir.cwd().openDir(c.io, input, .{});
+    defer dir.close(c.io);
+    for ([_][]const u8{ "run.json", "jobs.json", "artifacts.json" }) |file| {
+        try snapshot(c, key, file, try store.read(
+            c.a,
+            c.io,
+            dir,
+            file,
+            model.limits.test_report_bytes,
+        ));
+    }
+    // Publisher versions are separate immutable snapshots so redeploying cannot conflict with
+    // identical source evidence during recovery of a partially published run.
+    try snapshot(c, key, "publisher.json", try std.json.Stringify.valueAlloc(c.a, .{
+        .schema = @as(u32, 1),
+        .revision = c.env.get("GITHUB_SHA") orelse return error.MissingPublisherRevision,
+    }, .{}));
 }
 
 fn publishJobEvidence(
@@ -123,6 +164,7 @@ const Source = struct {
     job: []const u8,
     artifact_id: u64,
     github_job: Value,
+    run_started_ms: i64,
 };
 
 fn findJob(c: archive.Client, input: []const u8, name: []const u8) !Value {
@@ -179,9 +221,9 @@ fn publishTree(c: archive.Client, root: []const u8, source: Source) !void {
             .artifact_id = source.artifact_id,
             .job_id = try number(source.github_job, "id"),
             .job_conclusion = try string(source.github_job, "conclusion"),
-            .publisher_revision = c.env.get("GITHUB_SHA") orelse
-                return error.MissingPublisherRevision,
+            .run_started_ms = source.run_started_ms,
         };
+        try store.rekey(scoped.a, &report);
         try store.save(scoped.a, c.io, path, report);
         try archive.publish(scoped, path);
     }
@@ -215,9 +257,22 @@ fn number(value: Value, name: []const u8) !u64 {
 }
 
 pub fn extract(a: std.mem.Allocator, io: std.Io, source: []const u8, target: []const u8) !void {
+    var budget: Budget = .{};
+    return extractBounded(a, io, source, target, &budget);
+}
+
+fn extractBounded(
+    a: std.mem.Allocator,
+    io: std.Io,
+    source: []const u8,
+    target: []const u8,
+    budget: *Budget,
+) !void {
     const file = try std.Io.Dir.cwd().openFile(io, source, .{});
     defer file.close(io);
-    if ((try file.stat(io)).size > model.limits.test_zip_bytes) return error.ArtifactTooLarge;
+    const zip_size = (try file.stat(io)).size;
+    if (zip_size > model.limits.test_zip_bytes) return error.ArtifactTooLarge;
+    try budget.zip(zip_size);
     var buffer: [4096]u8 = undefined; // SAFETY: reader initializes its buffer.
     var reader = file.reader(io, &buffer);
     var iterator = try std.zip.Iterator.init(&reader);
@@ -229,6 +284,7 @@ pub fn extract(a: std.mem.Allocator, io: std.Io, source: []const u8, target: []c
     while (try iterator.next()) |entry| {
         if (entry.uncompressed_size > model.limits.test_attachment_bytes)
             return error.AttachmentTooLarge;
+        try budget.entry(entry.uncompressed_size);
         total += entry.uncompressed_size;
         if (total > model.limits.test_bundle_bytes) return error.ArtifactTooLarge;
         var name_buffer: [1024]u8 = undefined; // SAFETY: getFilename fills before returning.
@@ -255,6 +311,16 @@ pub fn extract(a: std.mem.Allocator, io: std.Io, source: []const u8, target: []c
         defer output.close(io);
         try output.writeStreamingAll(io, bytes);
     }
+}
+
+test "N1-AC-20 artifact budgets apply across the complete workflow" {
+    var budget: Budget = .{};
+    try budget.zip(model.limits.test_workflow_zip_bytes - 1);
+    try std.testing.expectError(error.WorkflowArchiveTooLarge, budget.zip(2));
+    try budget.entry(model.limits.test_workflow_unpacked_bytes - 1);
+    try std.testing.expectError(error.WorkflowArchiveTooLarge, budget.entry(2));
+    budget.files = model.limits.test_workflow_files;
+    try std.testing.expectError(error.WorkflowTooManyFiles, budget.entry(0));
 }
 
 fn safePath(path: []const u8) !void {

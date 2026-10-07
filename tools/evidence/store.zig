@@ -36,7 +36,15 @@ pub fn load(a: std.mem.Allocator, io: std.Io, path: []const u8) !model.Report {
         if (!std.mem.eql(u8, &model.digest(bytes), attachment.sha256))
             return error.EvidenceDigestMismatch;
         const expected = try model.evidenceKey(a, report, attachment.file, attachment.retention);
-        if (!std.mem.eql(u8, expected, attachment.key)) return error.EvidenceKeyMismatch;
+        if (!std.mem.eql(u8, expected, attachment.key)) {
+            const legacy = try model.legacyEvidenceKey(
+                a,
+                report,
+                attachment.file,
+                attachment.retention,
+            );
+            if (!std.mem.eql(u8, legacy, attachment.key)) return error.EvidenceKeyMismatch;
+        }
     }
     for (report.cases) |case| {
         const file = try std.fmt.allocPrint(a, "{s}.{s}.case.json", .{ case.id, case.contract });
@@ -66,15 +74,27 @@ pub fn load(a: std.mem.Allocator, io: std.Io, path: []const u8) !model.Report {
     return report;
 }
 
+/// Rebase validated saved evidence onto the source month before publishing it.
+pub fn rekey(a: std.mem.Allocator, report: *model.Report) !void {
+    const attachments = try a.dupe(model.Attachment, report.attachments);
+    for (attachments) |*attachment| attachment.key = try model.evidenceKey(
+        a,
+        report.*,
+        attachment.file,
+        attachment.retention,
+    );
+    report.attachments = attachments;
+}
+
 pub fn collect(a: std.mem.Allocator, io: std.Io, path: []const u8, r: *model.Report) !void {
     var dir = try std.Io.Dir.cwd().openDir(io, path, .{ .iterate = true });
     defer dir.close(io);
     var names: std.ArrayList([]const u8) = .empty;
     var iterator = dir.iterate();
     while (try iterator.next(io)) |entry| {
-        if (names.items.len >= model.limits.test_attachments) return error.TooManyAttachments;
         if (std.mem.eql(u8, entry.name, "report.json")) continue;
         if (std.mem.endsWith(u8, entry.name, ".tmp") and !r.complete) continue;
+        if (names.items.len >= model.limits.test_attachments) return error.TooManyAttachments;
         if (entry.kind != .file) return error.InvalidAttachment;
         try names.append(a, try a.dupe(u8, entry.name));
     }
