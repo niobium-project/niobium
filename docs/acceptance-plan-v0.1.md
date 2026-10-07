@@ -81,7 +81,7 @@ implementation was applied in bounded patches. No new lint suppressions were int
 | CI aggregate and path selection | PASS | Local shell checks: seven job-status combinations and five changed-path cases; workflow YAML parsed |
 | Windows evidence-tool cross compilation | PASS | `zig build-exe -target x86_64-windows` with contracts/catalog module inputs; compilation only |
 | `zig build test -Dsuite=fuzz -Dcontinuous-fuzz --fuzz=1000 --summary failures` | BLOCKED | Native fuzzer rebuild fails with unresolved `___sanitizer_cov_trace_*` symbols from zstd on this macOS toolchain; corpus replay is separate |
-| R2 upload/readback, duplicate/conflict/interruption, pagination and deployed lifecycle | BLOCKED | GitHub environment and endpoint/bucket variables configured; R2 activation requires approval of its metered subscription before bucket creation and scoped credentials |
+| R2 upload/readback, duplicate/conflict/interruption, pagination and deployed lifecycle | PASS | Real US-jurisdiction private Standard bucket; scoped keys stored in the main-only GitHub environment; monthly ordinary-evidence rules read back and live Zig verification passed (deployment record below) |
 | Selected Ubuntu/Windows/macOS CI jobs | PASS | [Run 37597325869](https://github.com/niobium-project/niobium/actions/runs/37597325869) at `576dd55`: all three native unit/conformance/e2e jobs and required `linux` aggregate passed; macOS also ran ThreadSanitizer |
 | Trusted fork publisher workflow | NOT_RUN | Trusted default-branch deployment and R2 credentials remain prerequisites |
 | Reference-OS elevation, desktop, signed release bytes and viewer | NOT_RUN | Separate roadmap prerequisites; hosted contracts do not satisfy L5 |
@@ -112,3 +112,24 @@ regression checks every generated Windows integration target against platform va
 The earlier [failed run](https://github.com/niobium-project/niobium/actions/runs/37593700618)
 retains partial case evidence; offline validation of its Windows report succeeded with verdict FAIL.
 Hosted evidence remains downloadable from the linked runs while R2 activation is blocked.
+
+
+## R2 deployment validation 2026-10-08
+
+The deployment uses `org-niobium-project-dev-assets` and `ci-evidence/YYYY-MM/`. The source
+attempt's UTC start chooses the month, so retries retain their keys. Cloudflare configuration
+readback verified private access, Standard storage, twelve 90-day ordinary-evidence prefixes
+(October 2026–September 2027), and preservation of the existing seven-day multipart-abort rule.
+The object read/write credential is scoped to this bucket and stored in the `test-evidence`
+GitHub environment, whose deployment policy remains restricted to `main`.
+
+| Validation | Verdict | Evidence / limits |
+|---|---|---|
+| `zig build test -Dsuite=unit -Dr2-live=true` | PASS | Real conditional writes, digest readback, identical/conflicting publication, report-last recovery, paginated listing and incomplete multipart upload/abort. Concurrent distinct payloads passed: `.evidence/unit/1791391304729-tool-evidence-5e27ce8a69c8b6b0/report.json` (working tree based on `f2171a1`, dirty). Its report and logs are persisted under `ci-evidence/2026-10/` |
+| `zig build verify --cache-poison=disallowed --summary failures` | PASS | Clean `28ca68ff6d83b43ed3deb186fb5e8f6db9607990`; conformance `.evidence/conformance/1791391945046-suite-conformance-e56190e63d678af9/report.json`, e2e `.evidence/e2e/1791391862260-suite-e2e-e5b4b3756f79759b/report.json`, sim `.evidence/sim/1791391853685-suite-sim-eec93205f8356e5b/report.json` |
+| Native Ubuntu/Windows/macOS and aggregate | PASS | [Replacement CI run](https://github.com/niobium-project/niobium/actions/runs/37658039579) on `28ca68f`; all selected jobs and `linux` passed. The [original PR run](https://github.com/niobium-project/niobium/actions/runs/37655224913) hit a GitHub internal error after native jobs passed, before its aggregate started; its records remain intact |
+| Trusted default-branch and fork publication | NOT_RUN | Requires deployment after a fresh protected PR aggregate; the verification fork is prepared and receives no R2 secrets |
+
+Provider verification does not substitute for the trusted CI publication check. The configured
+retention horizon must be renewed before September 2027 ends; a missing ordinary-object expiry
+fails publication. Advisory Codecov upload authentication remains separate from test verdicts.
