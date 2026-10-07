@@ -35,6 +35,7 @@ list_files() {
     git ls-files
 }
 
+files=$(list_files)
 while IFS= read -r file; do
     if [ -z "$file" ]; then
         continue
@@ -56,7 +57,7 @@ while IFS= read -r file; do
         ;;
     esac
 done <<EOF
-$(list_files)
+$files
 EOF
 
 {
