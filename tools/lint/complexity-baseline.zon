@@ -216,7 +216,7 @@
         .{ .path = "tools/evidence/live_test.zig", .tokens = 1610, .nodes = 812 },
         .{ .path = "tools/evidence/main.zig", .tokens = 392, .nodes = 203 },
         .{ .path = "tools/evidence/model.zig", .tokens = 2648, .nodes = 1338 },
-        .{ .path = "tools/evidence/process.zig", .tokens = 1151, .nodes = 546 },
+        .{ .path = "tools/evidence/process.zig", .tokens = 1386, .nodes = 662 },
         .{ .path = "tools/evidence/records.zig", .tokens = 793, .nodes = 373 },
         .{ .path = "tools/evidence/report_test.zig", .tokens = 2028, .nodes = 964 },
         .{ .path = "tools/evidence/store.zig", .tokens = 1389, .nodes = 671 },
