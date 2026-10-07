@@ -1,0 +1,11 @@
+{
+  "Rules": [
+    {
+      "ID": "ordinary-evidence-90-days",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "evidence/v1/" },
+      "Expiration": { "Days": 90 },
+      "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 1 }
+    }
+  ]
+}
