@@ -29,4 +29,5 @@ test {
     std.testing.refAllDecls(archive);
     std.testing.refAllDecls(ingest);
     std.testing.refAllDecls(@import("report_test.zig"));
+    std.testing.refAllDecls(@import("live_test.zig"));
 }

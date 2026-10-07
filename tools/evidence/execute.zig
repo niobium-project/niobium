@@ -80,10 +80,11 @@ fn metadata(
         .driver = "native-subprocess",
         .os = @tagName(builtin.os.tag),
         .cpu = @tagName(builtin.cpu.arch),
-        .environment = try std.fmt.allocPrint(a, "{s} {s} {s}", .{
+        .environment = try std.fmt.allocPrint(a, "{s} {s} {s} r2-live={s}", .{
             env.get("RUNNER_ENVIRONMENT") orelse "local",
             env.get("ImageOS") orelse @tagName(builtin.os.tag),
             env.get("ImageVersion") orelse try osVersion(a, io),
+            env.get("NIOBIUM_R2_LIVE_VERIFY") orelse "0",
         }),
         .revision = revision,
         .dirty = dirty.len != 0,

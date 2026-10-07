@@ -7,6 +7,7 @@ pub const Config = struct {
     seed_start: u64 = 0,
     tsan: bool = false,
     coverage: bool = false,
+    r2_live: bool = false,
 };
 
 pub fn addRun(
@@ -36,6 +37,10 @@ pub fn addRun(
         run.addArgs(&.{ "kcov", "--include-pattern=libs/|apps/|tools/|build/", dir });
     }
     run.addArtifactArg(exe);
+    run.setEnvironmentVariable(
+        "NIOBIUM_R2_LIVE_VERIFY",
+        if (config.r2_live and std.mem.eql(u8, exe.name, "tool-evidence")) "1" else "0",
+    );
     run.has_side_effects = true;
     run.setCwd(b.path("."));
     return run;
@@ -71,6 +76,16 @@ pub fn options(b: *std.Build, initial: Config) error{InvalidSelection}!Selection
         b.invalid_user_input = true;
         return error.InvalidSelection;
     };
+    const r2_live = b.option(
+        bool,
+        "r2-live",
+        "Explicit live R2 protocol verification",
+    ) orelse false;
+    if (r2_live and (!selection.suites.contains(.unit) or case != null)) {
+        std.debug.print("Live R2 verification requires the unfiltered unit suite\n", .{});
+        b.invalid_user_input = true;
+        return error.InvalidSelection;
+    }
     if (initial.seeds == 0 or initial.seeds > 100_000 or
         initial.seed_start > std.math.maxInt(u64) - @as(u64, initial.seeds))
     {
@@ -88,6 +103,7 @@ pub fn options(b: *std.Build, initial: Config) error{InvalidSelection}!Selection
     b.step("evidence", "Validate or publish saved results").dependOn(&run.step);
     var config = initial;
     config.filter = case;
+    config.r2_live = r2_live;
     return .{ .config = config, .selection = selection, .narrowed = suite != null or case != null };
 }
 

@@ -78,18 +78,23 @@ GitHub Actions on the public repository. The required check is `CI / linux`. A n
 
 ## R2 deployment and recovery
 
-Create a **private Standard** bucket (suggested name `niobium-test-evidence`); leave public access
-and custom domains disabled. Use a separate administrator identity to apply
-[the lifecycle configuration](../../.github/ci/r2-lifecycle.json). Its only expiry prefix is
-`evidence/v1/`; `reports/v1/` and `release-evidence/v1/` must not match an expiry rule.
-Do not apply it blindly over a shared bucket's rules.
+The deployment uses the existing **private Standard** bucket `org-niobium-project-dev-assets`
+in the US jurisdiction. Public access and custom domains remain disabled. Every archived run is
+under `ci-evidence/YYYY-MM/`, using the source attempt's UTC month rather than the upload month.
+Use a separate administrator identity to apply
+[the lifecycle configuration](../../.github/ci/r2-lifecycle.json). Its only expiry prefixes are
+`ci-evidence/YYYY-MM/evidence/v1/`; monthly `reports/v1/` and `release-evidence/v1/` paths must
+not match an expiry rule. Merge these rules with existing bucket rules; never replace a shared
+bucket's unrelated configuration. The checked-in horizon is October 2026–September 2027.
+Renew that horizon annually before September ends. Publication fails when an ordinary object
+lacks an expiry or a permanent object has one.
 
 Configure the GitHub environment `test-evidence`, restricted to the default branch:
 
 | Kind | Name | Value |
 |---|---|---|
-| Variable | `R2_ENDPOINT` | The account's HTTPS S3 endpoint from the R2 dashboard |
-| Variable | `R2_BUCKET` | The private Standard bucket |
+| Variable | `R2_ENDPOINT` | The bucket's jurisdiction-specific HTTPS S3 endpoint (`<account>.us.r2.cloudflarestorage.com` here) |
+| Variable | `R2_BUCKET` | `org-niobium-project-dev-assets` |
 | Secret | `R2_ACCESS_KEY_ID` | Bucket-scoped object read/write access key |
 | Secret | `R2_SECRET_ACCESS_KEY` | Its secret; never put it in a report or repository file |
 
@@ -100,23 +105,39 @@ producer assertions remain test data and do not become trusted release certifica
 The environment credentials map to AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY only for publication.
 The approved transport exception is [ADR-0021](../adr/0021-ci-evidence-transport.md).
 
-With administrator credentials in the deployment environment, use the pinned transport to apply
-and read back the reviewed rules:
+With administrator credentials in the deployment environment, use the pinned transport to merge
+the reviewed rules into the existing lifecycle configuration, apply the merged file, and read it
+back. The example expects that reviewed merged file in `lifecycle-merged.json`:
 
 ```sh
 aws --endpoint-url "$R2_ENDPOINT" --region auto s3api put-bucket-lifecycle-configuration \
-  --bucket "$R2_BUCKET" --lifecycle-configuration file://.github/ci/r2-lifecycle.json
+  --bucket "$R2_BUCKET" --lifecycle-configuration file://lifecycle-merged.json
 aws --endpoint-url "$R2_ENDPOINT" --region auto s3api get-bucket-lifecycle-configuration \
   --bucket "$R2_BUCKET"
 ```
 
 Before marking the archive supported, publish a saved test run, publish it again unchanged, then
 check that a conflicting same-key body is refused and the original bytes remain. Interrupt one
-publication after an attachment and replay it. List `reports/v1/` with `list-objects-v2 --max-keys 1
---no-paginate`; pass the returned continuation token until the listing is exhausted. Read objects
+publication after an attachment and replay it. List `ci-evidence/YYYY-MM/reports/v1/` with
+`list-objects-v2 --max-keys 1 --no-paginate`; pass the returned continuation token until the listing is exhausted. Read objects
 back and compare the saved sizes/digests. Confirm bucket privacy, Standard storage and lifecycle
 readback separately with the administrator identity. Retain these results as deployment evidence.
 The local protocol tests are not a substitute for these real service checks.
+
+With bucket-scoped object credentials in the environment and AWS CLI 2.27.49 in PATH, explicitly
+run the live Zig checks:
+
+```sh
+zig build test -Dsuite=unit -Dr2-live=true
+```
+
+This flag enables only the evidence-tool live test; ordinary runs stay offline. It creates isolated
+`fixture/archive` objects, verifies duplicate/conflicting writes and digest readback, resumes a
+partial report-last publication, paginates object listings, and uploads then aborts an incomplete
+multipart object. Protocol fixture reports have verdict NOT_RUN and do not certify conformance.
+The actual unit outcome is saved normally; `environment` records `r2-live=1` for replay. The live
+option requires unfiltered unit selection. Publication has at most four attachment transfers in
+flight, each with separate scratch files; its report is uploaded after all transfers succeed.
 
 GitHub retains producer artifacts for 90 days. If publication fails, rerun `Evidence` with the
 source `run_id` and `attempt` before those artifacts expire. It reuses saved evidence and leaves the
