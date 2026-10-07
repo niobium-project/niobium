@@ -108,11 +108,12 @@ test "N1-AC-20 capture preserves partial streams on deadline and output overflow
     const windows = @import("builtin").os.tag == .windows;
     const a = std.testing.allocator;
     const timed_argv: []const []const u8 = if (windows) &.{
-        "powershell.exe",
-        "-NoProfile",
-        "-NonInteractive",
-        "-Command",
-        "[Console]::Out.Write('out'); [Console]::Error.Write('err'); Start-Sleep -Seconds 10",
+        "cmd.exe",
+        "/d",
+        "/q",
+        "/c",
+        // Emit before a bounded loop, without cold PowerShell startup or child processes.
+        "echo out&(echo err)1>&2&for /l %i in (1,1,100000000) do @rem bounded",
     } else &.{ "/bin/sh", "-c", "printf out; printf err >&2; exec sleep 10" };
     const started = std.Io.Clock.awake.now(std.testing.io).toMilliseconds();
     const timed = try run(a, std.testing.io, .{
@@ -124,15 +125,11 @@ test "N1-AC-20 capture preserves partial streams on deadline and output overflow
     const elapsed = std.Io.Clock.awake.now(std.testing.io).toMilliseconds() - started;
     try std.testing.expect(elapsed < if (windows) @as(i64, 8000) else 3000);
     try std.testing.expectEqualStrings("Timeout", timed.reason);
-    try std.testing.expectEqualStrings("out", timed.stdout);
-    try std.testing.expectEqualStrings("err", timed.stderr);
+    try std.testing.expectEqualStrings(if (windows) "out\r\n" else "out", timed.stdout);
+    try std.testing.expectEqualStrings(if (windows) "err\r\n" else "err", timed.stderr);
     const large = try run(a, std.testing.io, .{
         .argv = if (windows) &.{
-            "powershell.exe",
-            "-NoProfile",
-            "-NonInteractive",
-            "-Command",
-            "[Console]::Out.Write('x' * 8192)",
+            "cmd.exe", "/d", "/q", "/c", "for /l %i in (1,1,8192) do @echo x",
         } else &.{"/usr/bin/yes"},
         .output_bytes = 100,
     });
