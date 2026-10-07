@@ -29,7 +29,7 @@ jobs:
       # workflow_run uses trusted default-branch code. Never check out the triggering SHA.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.repository.default_branch }}
+          ref: ${{ github.sha }}
           persist-credentials: false
       - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
         with:
@@ -37,7 +37,7 @@ jobs:
           use-cache: false
       - name: Install pinned transport
         run: |
-          set -eu
+          set -euo pipefail
           cd "$RUNNER_TEMP"
           curl --fail --silent --show-error --location --max-time 180 \
             https://awscli.amazonaws.com/awscli-exe-linux-x86_64-2.27.49.zip -o awscli.zip
@@ -49,23 +49,27 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          set -eu
+          set -euo pipefail
           case "$ARCHIVE_RUN_ID:$ARCHIVE_RUN_ATTEMPT" in
             *[!0-9:]*|:*|*:) exit 1 ;;
           esac
           mkdir -p "$RUNNER_TEMP/source-evidence"
           cd "$RUNNER_TEMP/source-evidence"
           base="repos/$GITHUB_REPOSITORY/actions/runs/$ARCHIVE_RUN_ID"
-          gh api "$base/attempts/$ARCHIVE_RUN_ATTEMPT" > run.json
+          gh api "$base/attempts/$ARCHIVE_RUN_ATTEMPT" | head -c 1048577 > run.json
+          test "$(wc -c < run.json)" -le 1048576
           jq -e '.status == "completed" and (.path == ".github/workflows/ci.yml" or .path == ".github/workflows/hosts.yml" or .path == ".github/workflows/nightly.yml")' run.json
-          gh api --paginate --slurp "$base/attempts/$ARCHIVE_RUN_ATTEMPT/jobs?per_page=100" > jobs.json
-          gh api --paginate --slurp "$base/artifacts?per_page=100" > artifacts.json
+          gh api --paginate "$base/attempts/$ARCHIVE_RUN_ATTEMPT/jobs?per_page=100" | head -c 1048577 | jq -s . > jobs.json
+          gh api --paginate "$base/artifacts?per_page=100" | head -c 1048577 | jq -s . > artifacts.json
+          test "$(wc -c < jobs.json)" -le 1048576
+          test "$(wc -c < artifacts.json)" -le 1048576
           jq -r --arg prefix "evidence-$ARCHIVE_RUN_ATTEMPT-" \
-            '[.[].artifacts[] | select(.name | startswith($prefix))] | if length > 100 then error("too many artifacts") else .[] end | if .size_in_bytes > 134217728 then error("artifact too large") else .id end' \
+            '[.[].artifacts[] | select(.name | startswith($prefix))] | if length > 100 then error("too many artifacts") elif (map(.size_in_bytes) | add // 0) > 268435456 then error("workflow artifacts too large") else .[] end | if .size_in_bytes > 134217728 then error("artifact too large") else .id end' \
             artifacts.json > ids.txt
           while IFS= read -r id; do
             case "$id" in ''|*[!0-9]*) exit 1 ;; esac
-            gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$id/zip" > "$id.zip"
+            gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$id/zip" | head -c 134217729 > "$id.zip"
+            test "$(wc -c < "$id.zip")" -le 134217728
           done < ids.txt
       - name: Validate and publish saved evidence
         env:
