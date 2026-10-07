@@ -35,6 +35,8 @@ selections fail. Quote comma-separated suite arguments in PowerShell. Case selec
 `-Dtarget` changes compilation; native execution evidence still names the machine that ran it.
 `-Dcoverage` retains kcov and `-Dtsan` retains the concurrency lane. The old `sim`, `e2e`, `golden`,
 `fuzz` and `c-smoke` steps are aliases of the same execution nodes. VM execution stays explicit.
+Run Windows e2e (including `verify`) in a disposable OS account: temporary home variables do not
+redirect HKCU, and these CLI cases exercise the sample product's native uninstall registration.
 
 Continuous fuzzing uses Zig's native protocol: `zig build fuzz -Dcontinuous-fuzz --fuzz` (or
 `zig build test -Dsuite=fuzz -Dcontinuous-fuzz --fuzz=1000` for a bounded investigation). This

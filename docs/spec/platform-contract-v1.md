@@ -45,6 +45,10 @@ The interface is `Platform` (a vtable) in `libs/platform/api.zig`. There are thr
 | service | `CapabilityUnsupported` | SCM `<product>.<id>` |
 | registration | `HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\<product>` | `HKLM\…` |
 
+Predefined registry handles retain the signed `LONG` conversion from the
+[Windows SDK](https://github.com/microsoft/win32metadata/blob/main/generation/WinSDK/RecompiledIdlHeaders/um/winreg.h),
+including sign extension to the native pointer width.
+
 `current` is a directory junction (no symlink privilege needed). The switch takes two renames: first `current.next` is created, then `current` is renamed to `current.old`, then `current.next` is renamed to `current`, and finally `current.old` is deleted. A crash between the two renames leaves no `current`: for a crash before commit, rollback redoes the swap; for one after commit, roll-forward redoes it. `setPointer` handles both a missing link and leftover `.next` and `.old`. Windows path separators are normalized before adding Win32/NT namespace prefixes; already-prefixed and UNC paths retain their namespace meaning. Removing a stale directory link must not follow it or delete its target.
 
 ### Linux

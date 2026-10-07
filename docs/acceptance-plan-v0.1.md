@@ -81,8 +81,9 @@ implementation was applied in bounded patches. No new lint suppressions were int
 | CI aggregate and path selection | PASS | Local shell checks: seven job-status combinations and five changed-path cases; workflow YAML parsed |
 | Windows evidence-tool cross compilation | PASS | `zig build-exe -target x86_64-windows` with contracts/catalog module inputs; compilation only |
 | `zig build test -Dsuite=fuzz -Dcontinuous-fuzz --fuzz=1000 --summary failures` | BLOCKED | Native fuzzer rebuild fails with unresolved `___sanitizer_cov_trace_*` symbols from zstd on this macOS toolchain; corpus replay is separate |
-| R2 upload/readback, duplicate/conflict/interruption, pagination and deployed lifecycle | NOT_RUN | Account, bucket and scoped credentials are deployment inputs; no live service evidence |
-| Current selected Ubuntu/Windows/macOS CI jobs and fork publisher workflow | NOT_RUN | Workflows are prepared locally; no current hosted run dispatched |
+| R2 upload/readback, duplicate/conflict/interruption, pagination and deployed lifecycle | BLOCKED | GitHub environment and endpoint/bucket variables configured; R2 activation requires approval of its metered subscription before bucket creation and scoped credentials |
+| Selected Ubuntu/Windows/macOS CI jobs | FAIL | [Run 37590719646](https://github.com/niobium-project/niobium/actions/runs/37590719646) at `b38746c`: Ubuntu/macOS passed, Windows exposed native path failures; required aggregate correctly failed. Fixes require a new native run |
+| Trusted fork publisher workflow | NOT_RUN | Trusted default-branch deployment and R2 credentials remain prerequisites |
 | Reference-OS elevation, desktop, signed release bytes and viewer | NOT_RUN | Separate roadmap prerequisites; hosted contracts do not satisfy L5 |
 
 The earlier sandbox `manifest_create PermissionDenied` was resolved for validation by running
@@ -90,3 +91,12 @@ approved Zig build commands outside that filesystem sandbox. It was not bypassed
 repository check. Saved reports and their attachments remain local under `.evidence/` until an
 explicit publication succeeds; the links above are working-copy evidence, not committed fixtures.
 R2 remains `working` in the construction roadmap.
+
+The subsequent platform fixes in `ea45cce` passed
+`zig build verify -Dseeds=2000 --cache-poison=disallowed --summary failures` on native macOS
+aarch64 (working tree based on `b38746c`, `dirty=true`). Evidence includes
+`.evidence/conformance/1791361295064-suite-conformance-62a571380a8399fe/report.json`,
+`.evidence/e2e/1791361397430-suite-e2e-72949fdfbf2c260f/report.json`, and
+`.evidence/sim/1791361322875-suite-sim-5ddad716e49b34d7/report.json` (2,000 seeds).
+The Windows path-normalization regression failed before the fix. Hosted runs also exposed an
+unrelated advisory Codecov upload failure requiring service authentication; coverage tests passed.

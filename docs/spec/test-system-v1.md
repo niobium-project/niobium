@@ -30,6 +30,9 @@ selection, seeds and fixture digests. Dirty results identify a working tree, not
 ## Isolation, probes and failure
 
 Each lifecycle case owns a temporary home, managed root, repository and app-owned data directory.
+Windows CLI lifecycle runs require a disposable OS account (as on the hosted runner): environment
+variables redirect files, but cannot redirect HKCU. The sample product's native registration is
+exercised in that account. Redirected host conformance leaves system managers disabled.
 System location redirection is not evidence of native elevation or service-manager behavior.
 CLI JSON assertions and independent filesystem assertions are separate. Probes inspect the active
 generation, installation metadata and payload hashes, and launch a fresh sample app that reports
