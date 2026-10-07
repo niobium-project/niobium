@@ -58,3 +58,35 @@ Basis for status: `zig build verify` passes on a macOS aarch64 host (covering al
 | N1-AC-20 | check / lint / check-docs all pass | build | PASS |
 | N1-AC-21 | Parsers return an error instead of crashing under every allocation failure | zig test | PASS |
 | N1-AC-22 | A dependent package (`examples/hello`) produces an installable offline bundle through the public build API only | build | PASS |
+
+
+## Test-system validation 2026-10-07
+
+These results cover the automation foundation working tree based on
+`99448d398f097213b72f1976252c244d9190e650`, with `dirty=true`, Zig 0.17.0 and a native macOS
+aarch64 host. They do not certify an unchanged HEAD or any later revision. The full change exceeds
+300 net lines because the approved delivery spans the report contract, build graph, probes and CI;
+implementation was applied in bounded patches. No new lint suppressions were introduced (66 total).
+
+| Validation | Verdict | Evidence / limits |
+|---|---|---|
+| `zig build verify --cache-poison=disallowed --summary failures` | PASS | Final local gate after ZIP extraction checks, including native cases, golden, sim, C smoke, ThreadSanitizer, cross compilation, binary and size gates |
+| `zig build test c-smoke --summary failures` | PASS | Default selection and compatibility alias; host contracts: `.evidence/conformance/1791357834297-suite-conformance-68270b21b47d2901/report.json` |
+| `zig build test -Dsuite=e2e -Dcase=online-lifecycle --summary failures` | PASS | Filtered lifecycle: `.evidence/e2e/1791357448923-suite-e2e-483751b500cdc93f/report.json` |
+| `zig build test -Dsuite=sim,fuzz -Dseeds=2000 -Dseed-start=42 --summary failures` | PASS | Simulation: `.evidence/sim/1791357464115-suite-sim-d2a1eeb2eb130399/report.json`, corpus replay: `.evidence/fuzz/1791357496605-suite-fuzz-e9d02acc9d9fd155/report.json` |
+| Unknown suite/case, zero seeds, narrowing verify | PASS | CLI invocations rejected with exit 1; narrowing verify ran no test nodes |
+| Saved lifecycle validation through `zig build evidence -Daction=validate` | PASS | Saved report: `.evidence/e2e/1791358963767-suite-e2e-599ea13fb6dff571/report.json` |
+| Partial reports, unsupported contracts, missing/changed evidence, deadlines and output limits | PASS | Evidence-tool and conformance regression tests, including link/traversal ZIP rejection; `.evidence/unit/1791358961538-tool-evidence-0bd0862ca45049a9/report.json` |
+| Wrong generation, corrupt payload and lost application data | PASS | Independent negative controls and lifecycle cases: `.evidence/e2e/1791358963767-suite-e2e-599ea13fb6dff571/report.json` |
+| CI aggregate and path selection | PASS | Local shell checks: seven job-status combinations and five changed-path cases; workflow YAML parsed |
+| Windows evidence-tool cross compilation | PASS | `zig build-exe -target x86_64-windows` with contracts/catalog module inputs; compilation only |
+| `zig build test -Dsuite=fuzz -Dcontinuous-fuzz --fuzz=1000 --summary failures` | BLOCKED | Native fuzzer rebuild fails with unresolved `___sanitizer_cov_trace_*` symbols from zstd on this macOS toolchain; corpus replay is separate |
+| R2 upload/readback, duplicate/conflict/interruption, pagination and deployed lifecycle | NOT_RUN | Account, bucket and scoped credentials are deployment inputs; no live service evidence |
+| Current selected Ubuntu/Windows/macOS CI jobs and fork publisher workflow | NOT_RUN | Workflows are prepared locally; no current hosted run dispatched |
+| Reference-OS elevation, desktop, signed release bytes and viewer | NOT_RUN | Separate roadmap prerequisites; hosted contracts do not satisfy L5 |
+
+The earlier sandbox `manifest_create PermissionDenied` was resolved for validation by running
+approved Zig build commands outside that filesystem sandbox. It was not bypassed by weakening any
+repository check. Saved reports and their attachments remain local under `.evidence/` until an
+explicit publication succeeds; the links above are working-copy evidence, not committed fixtures.
+R2 remains `working` in the construction roadmap.
