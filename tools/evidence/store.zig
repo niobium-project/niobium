@@ -36,7 +36,15 @@ pub fn load(a: std.mem.Allocator, io: std.Io, path: []const u8) !model.Report {
         if (!std.mem.eql(u8, &model.digest(bytes), attachment.sha256))
             return error.EvidenceDigestMismatch;
         const expected = try model.evidenceKey(a, report, attachment.file, attachment.retention);
-        if (!std.mem.eql(u8, expected, attachment.key)) return error.EvidenceKeyMismatch;
+        if (!std.mem.eql(u8, expected, attachment.key)) {
+            const legacy = try model.legacyEvidenceKey(
+                a,
+                report,
+                attachment.file,
+                attachment.retention,
+            );
+            if (!std.mem.eql(u8, legacy, attachment.key)) return error.EvidenceKeyMismatch;
+        }
     }
     for (report.cases) |case| {
         const file = try std.fmt.allocPrint(a, "{s}.{s}.case.json", .{ case.id, case.contract });
@@ -64,6 +72,18 @@ pub fn load(a: std.mem.Allocator, io: std.Io, path: []const u8) !model.Report {
         }
     }
     return report;
+}
+
+/// Rebase validated saved evidence onto the source month before publishing it.
+pub fn rekey(a: std.mem.Allocator, report: *model.Report) !void {
+    const attachments = try a.dupe(model.Attachment, report.attachments);
+    for (attachments) |*attachment| attachment.key = try model.evidenceKey(
+        a,
+        report.*,
+        attachment.file,
+        attachment.retention,
+    );
+    report.attachments = attachments;
 }
 
 pub fn collect(a: std.mem.Allocator, io: std.Io, path: []const u8, r: *model.Report) !void {

@@ -2,8 +2,9 @@ const std = @import("std");
 const model = @import("model.zig");
 const store = @import("store.zig");
 const records = @import("records.zig");
+const contracts = @import("contracts");
 
-fn report() model.Report {
+pub fn fixtureReport() model.Report {
     return .{
         .schema = 1,
         .provenance = null,
@@ -33,6 +34,75 @@ fn report() model.Report {
     };
 }
 
+test "N1-AC-20 archive keys retain the source UTC month across publication retries" {
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+    var value = fixtureReport();
+    value.started_ms = (try contracts.time.parseUtc("2026-10-31T23:59:59Z")) * 1000;
+    try std.testing.expectEqualStrings(
+        "ci-evidence/2026-10/evidence/v1/example/project/1/1/linux/unit/fixture/stdout.txt",
+        try model.objectKey(arena.allocator(), value, "stdout.txt"),
+    );
+    value.started_ms += 1000;
+    try std.testing.expectEqualStrings(
+        "ci-evidence/2026-11/evidence/v1/example/project/1/1/linux/unit/fixture/stdout.txt",
+        try model.objectKey(arena.allocator(), value, "stdout.txt"),
+    );
+    value.provenance = .{
+        .event = "pull_request",
+        .workflow = ".github/workflows/ci.yml",
+        .head_sha = value.revision,
+        .head_repository = "fork/project",
+        .head_branch = "test",
+        .fork = true,
+        .conclusion = "success",
+        .artifact_id = 1,
+        .job_id = 2,
+        .job_conclusion = "success",
+        .run_started_ms = value.started_ms - 1000,
+    };
+    try std.testing.expectEqualStrings(
+        "ci-evidence/2026-10/evidence/v1/example/project/1/1/linux/unit/fixture/stdout.txt",
+        try model.objectKey(arena.allocator(), value, "stdout.txt"),
+    );
+    try std.testing.expectError(
+        error.InvalidReport,
+        model.archivePrefix(arena.allocator(), model.max_timestamp_ms + 1),
+    );
+}
+
+test "N1-AC-20 legacy saved keys migrate without accepting unrelated object paths" {
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const io = std.testing.io;
+    var tmp = std.testing.tmpDir(.{});
+    defer tmp.cleanup();
+    const path = try tmp.dir.realPathFileAlloc(io, ".", a);
+    for ([_][]const u8{ "stdout.txt", "stderr.txt" }) |file|
+        try tmp.dir.writeFile(io, .{ .sub_path = file, .data = "saved" });
+    var value = fixtureReport();
+    try store.collect(a, io, path, &value);
+    const attachments = try a.dupe(model.Attachment, value.attachments);
+    for (attachments) |*attachment| attachment.key = try model.legacyEvidenceKey(
+        a,
+        value,
+        attachment.file,
+        attachment.retention,
+    );
+    value.attachments = attachments;
+    try store.save(a, io, path, value);
+    var saved = try store.load(a, io, path);
+    try store.rekey(a, &saved);
+    try store.save(a, io, path, saved);
+    const migrated = try store.load(a, io, path);
+    try std.testing.expect(std.mem.startsWith(u8, migrated.attachments[0].key, "ci-evidence/"));
+    attachments[0].key = "ci-evidence/2026-10/evidence/v1/unrelated/object";
+    value.attachments = attachments;
+    try store.save(a, io, path, value);
+    try std.testing.expectError(error.EvidenceKeyMismatch, store.load(a, io, path));
+}
+
 test "N1-AC-20 malformed, missing, changed and partial evidence is never a pass" {
     var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
     defer arena.deinit();
@@ -41,7 +111,7 @@ test "N1-AC-20 malformed, missing, changed and partial evidence is never a pass"
     var tmp = std.testing.tmpDir(.{});
     defer tmp.cleanup();
     const path = try tmp.dir.realPathFileAlloc(io, ".", a);
-    var value = report();
+    var value = fixtureReport();
     try store.save(a, io, path, value);
     try std.testing.expectError(error.MissingEvidence, store.load(a, io, path));
     for ([_][]const u8{ "stdout.txt", "stderr.txt" }) |file| {
@@ -71,7 +141,7 @@ test "N1-AC-20 malformed, missing, changed and partial evidence is never a pass"
 }
 
 test "N1-AC-20 optional unsupported contracts cannot hide required failures" {
-    var value = report();
+    var value = fixtureReport();
     value.suite = .conformance;
     value.lane = "L3";
     value.parameters = &.{ "host-user", "seeds=1", "seed-start=0", "tsan=false", "coverage=false" };
@@ -97,7 +167,7 @@ test "N1-AC-20 optional unsupported contracts cannot hide required failures" {
 }
 
 test "N1-AC-20 report replay parameters and timestamps are checked" {
-    var value = report();
+    var value = fixtureReport();
     value.started_ms = -1;
     try std.testing.expectError(error.InvalidReport, model.validate(value));
     value.started_ms = 1;

@@ -42,6 +42,7 @@ pub const Limits = struct {
     test_output_bytes: u32 = 4 << 20,
     test_attachment_bytes: u32 = 64 << 20,
     test_attachments: u16 = 1024,
+    test_archive_workers: u8 = 4,
     test_cases: u16 = 256,
     test_timeout_ms: u32 = 600_000,
     test_bundle_bytes: u32 = 256 << 20,

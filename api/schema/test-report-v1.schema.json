@@ -146,11 +146,13 @@
     },
     "started_ms": {
       "type": "integer",
-      "minimum": 0
+      "minimum": 0,
+      "maximum": 253402300799999
     },
     "finished_ms": {
       "type": "integer",
-      "minimum": 0
+      "minimum": 0,
+      "maximum": 253402300799999
     },
     "complete": {
       "type": "boolean"
@@ -292,7 +294,6 @@
             "head_repository",
             "head_branch",
             "conclusion",
-            "publisher_revision",
             "fork",
             "artifact_id",
             "job_id",
@@ -323,10 +324,6 @@
               "type": "string",
               "maxLength": 4096
             },
-            "publisher_revision": {
-              "type": "string",
-              "maxLength": 4096
-            },
             "fork": {
               "type": "boolean"
             },
@@ -341,6 +338,12 @@
             "job_conclusion": {
               "type": "string",
               "maxLength": 4096
+            },
+            "run_started_ms": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 253402300799999,
+              "default": 0
             }
           }
         }

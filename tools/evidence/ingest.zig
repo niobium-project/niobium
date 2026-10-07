@@ -22,19 +22,11 @@ pub fn publish(c: archive.Client, input: []const u8) !void {
     if (pages != .array or pages.array.items.len > model.limits.test_github_pages)
         return error.InvalidArtifacts;
     // The GitHub run and jobs remain an authoritative record even when tests never started.
-    const key = try std.fmt.allocPrint(c.a, "reports/v1/{s}/{s}/{s}/github", .{
-        repository, expected_run, expected_attempt,
+    const started_ms = (try contracts.time.parseUtc(try string(run, "run_started_at"))) * 1000;
+    const key = try std.fmt.allocPrint(c.a, "{s}/reports/v1/{s}/{s}/{s}/github", .{
+        try model.archivePrefix(c.a, started_ms), repository, expected_run, expected_attempt,
     });
-    for ([_][]const u8{ "run.json", "jobs.json", "artifacts.json" }) |file| {
-        var dir = try std.Io.Dir.cwd().openDir(c.io, input, .{});
-        defer dir.close(c.io);
-        try snapshot(
-            c,
-            key,
-            file,
-            try store.read(c.a, c.io, dir, file, model.limits.test_report_bytes),
-        );
-    }
+    try recordSnapshots(c, input, key);
     try publishJobEvidence(c, input, key, pages, expected_attempt);
     var count: usize = 0;
     for (pages.array.items) |page| {
@@ -60,9 +52,30 @@ pub fn publish(c: archive.Client, input: []const u8) !void {
                 .job = job,
                 .artifact_id = id,
                 .github_job = github_job,
+                .run_started_ms = started_ms,
             });
         }
     }
+}
+
+fn recordSnapshots(c: archive.Client, input: []const u8, key: []const u8) !void {
+    var dir = try std.Io.Dir.cwd().openDir(c.io, input, .{});
+    defer dir.close(c.io);
+    for ([_][]const u8{ "run.json", "jobs.json", "artifacts.json" }) |file| {
+        try snapshot(c, key, file, try store.read(
+            c.a,
+            c.io,
+            dir,
+            file,
+            model.limits.test_report_bytes,
+        ));
+    }
+    // Publisher versions are separate immutable snapshots so redeploying cannot conflict with
+    // identical source evidence during recovery of a partially published run.
+    try snapshot(c, key, "publisher.json", try std.json.Stringify.valueAlloc(c.a, .{
+        .schema = @as(u32, 1),
+        .revision = c.env.get("GITHUB_SHA") orelse return error.MissingPublisherRevision,
+    }, .{}));
 }
 
 fn publishJobEvidence(
@@ -123,6 +136,7 @@ const Source = struct {
     job: []const u8,
     artifact_id: u64,
     github_job: Value,
+    run_started_ms: i64,
 };
 
 fn findJob(c: archive.Client, input: []const u8, name: []const u8) !Value {
@@ -179,9 +193,9 @@ fn publishTree(c: archive.Client, root: []const u8, source: Source) !void {
             .artifact_id = source.artifact_id,
             .job_id = try number(source.github_job, "id"),
             .job_conclusion = try string(source.github_job, "conclusion"),
-            .publisher_revision = c.env.get("GITHUB_SHA") orelse
-                return error.MissingPublisherRevision,
+            .run_started_ms = source.run_started_ms,
         };
+        try store.rekey(scoped.a, &report);
         try store.save(scoped.a, c.io, path, report);
         try archive.publish(scoped, path);
     }

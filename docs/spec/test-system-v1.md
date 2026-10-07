@@ -61,11 +61,16 @@ include relative filename, immutable object key, SHA-256, byte size and retentio
 Each execution uses a UTC Unix-millisecond prefix and random suffix. The five `parameters` entries
 are case filter (empty for all), `seeds=N`, `seed-start=S`, `tsan=BOOL`, `coverage=BOOL`.
 Conformance contract names are the catalog's nine platform probes; lifecycle cases use `lifecycle-v1`.
-Publisher-added `provenance` is null locally and records GitHub source head/fork and publisher revision.
+Publisher-added `provenance` is null locally and records GitHub source head/fork and the attempt's
+`run_started_ms`. The publisher derives the archive month from GitHub's `run_started_at`; local
+publication uses the report's start time. Both use UTC. Retrying next month retains the source keys.
 Source run/job/artifact API snapshots and `evidence-status.json` live under
-`reports/v1/<repository>/<run>/<attempt>/github/<snapshot-sha256>/`; a job without an artifact records
+`ci-evidence/YYYY-MM/reports/v1/<repository>/<run>/<attempt>/github/<snapshot-sha256>/`;
+a job without an artifact records
 `no-saved-evidence`. Artifact presence alone remains unvalidated and cannot imply a PASS.
 Snapshots are content-addressed because later attempts and artifact expiry can change GitHub data.
+`publisher.json` records the trusted publisher revision separately: a code redeployment cannot
+change the same source report during publication recovery.
 Initial and partial reports are explicitly incomplete. A publisher cannot infer absent evidence.
 Historical results answer what ran at that revision/environment; they never satisfy a current run.
 
@@ -73,21 +78,32 @@ Use a private R2 Standard bucket, configured independently from report data:
 
 | Prefix | Contents | Retention |
 |---|---|---|
-| `reports/v1/` | Compact reports | No expiry |
-| `evidence/v1/` | Ordinary logs and bundles | 90 days |
-| `release-evidence/v1/` | Explicit release evidence | No expiry |
+| `ci-evidence/YYYY-MM/reports/v1/` | Compact reports | No expiry |
+| `ci-evidence/YYYY-MM/evidence/v1/` | Ordinary logs and bundles | 90 days |
+| `ci-evidence/YYYY-MM/release-evidence/v1/` | Explicit release evidence | No expiry |
 
-Keys append repository, run, attempt, job, suite and execution identity. Each segment is validated;
-filenames cannot contain separators, traversal or links. Upload evidence first, report last.
+Keys append repository, run, attempt, job, suite and execution identity. Old saved runs with the
+pre-prefix keys remain valid offline and are rekeyed on explicit publication; no writes occur
+outside `ci-evidence/`. Timestamp conversion is bounded to 1970–9999. Each segment is validated;
+filenames cannot contain separators, traversal or links. Upload evidence first, report last. At most
+`contracts.Limits.test_archive_workers` attachment transfers are in flight; each owns its scratch
+files. A transfer failure prevents report publication, and completed objects can be reused.
 Create objects with `If-None-Match: *`. On an existing object, read and compare length and SHA-256:
-identical content is success; conflicting content fails without replacement. An interrupted upload
+identical content is success; conflicting content fails without replacement. Readback also checks
+that ordinary objects have an expiry and permanent objects do not; missing monthly retention
+configuration fails publication without changing the test verdict. An interrupted upload
 leaves at most unreferenced attachments; replaying saved publication is safe. Readers paginate
 ListObjectsV2 and fetch reports/objects directly. There is no mutable latest index or server.
 
-Ordinary local tests never contact the archive. Explicit publication uses the pinned AWS CLI as
+Ordinary local tests never contact the archive. `test -Dsuite=unit -Dr2-live=true` explicitly checks
+the configured service, requires pinned transport and credentials, and records its flag in the
+environment description. Its isolated protocol fixtures are NOT_RUN, not conformance evidence. Explicit publication uses the pinned AWS CLI as
 transport ([ADR-0021](../adr/0021-ci-evidence-transport.md)); credentials, endpoint and bucket are
 deployment inputs and never report fields. Bucket-scoped credentials permit object read/write only.
-Lifecycle configuration uses a separate administrator identity. Verify configuration and real
+Lifecycle configuration uses a separate administrator identity. Since lifecycle matching is
+prefix-based, each configured month has its own 90-day ordinary-evidence rule. Provision months
+ahead and renew the reviewed configuration before its horizon; preserve other bucket rules.
+Verify configuration and real
 upload/readback, digests, duplicate/conflicting creates, interruption and pagination before declaring
 R2 supported. [R2 S3 API](https://developers.cloudflare.com/r2/api/s3/api/) and
 [lifecycle rules](https://developers.cloudflare.com/r2/buckets/object-lifecycles/) define transport.
