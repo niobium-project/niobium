@@ -105,7 +105,11 @@ producer assertions remain test data and do not become trusted release certifica
 checkout is pinned to the workflow event SHA. Metadata and ZIP downloads have enforced byte
 caps; workflow-wide extraction budgets prevent many small artifacts from bypassing per-bundle
 limits, and published extraction trees are removed before processing the next artifact.
-The environment credentials map to AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY only for publication.
+The publisher writes a temporary mode-0600 AWS shared credentials file, removes the secret
+environment variables before invoking Zig, and deletes the file when the step exits. AWS CLI
+loads it through `AWS_SHARED_CREDENTIALS_FILE`; credential values never enter Zig's configure
+cache. Local publication and live verification should likewise use a private AWS credentials
+file, rather than passing secret environment variables to `zig build`.
 The approved transport exception is [ADR-0021](../adr/0021-ci-evidence-transport.md).
 
 With administrator credentials in the deployment environment, use the pinned transport to merge

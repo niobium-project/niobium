@@ -22,7 +22,9 @@ pub const Client = struct {
         const bucket = env.get("R2_BUCKET") orelse return error.MissingR2Bucket;
         try validateEndpoint(endpoint);
         if (!model.segment(bucket)) return error.InvalidR2Configuration;
-        if (env.get("AWS_ACCESS_KEY_ID") == null or env.get("AWS_SECRET_ACCESS_KEY") == null)
+        const have_keys = env.get("AWS_ACCESS_KEY_ID") != null and
+            env.get("AWS_SECRET_ACCESS_KEY") != null;
+        if (!have_keys and env.get("AWS_SHARED_CREDENTIALS_FILE") == null)
             return error.MissingR2Credentials;
         // Native SDK transport retries are bounded by both attempts and the process deadline.
         try env.put("AWS_MAX_ATTEMPTS", "3");

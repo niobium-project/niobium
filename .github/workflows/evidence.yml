@@ -77,4 +77,12 @@ jobs:
           R2_BUCKET: ${{ vars.R2_BUCKET }}
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-        run: zig build evidence -Daction=publish -Dinput="$RUNNER_TEMP/source-evidence" --cache-poison=disallowed
+        run: |
+          set -euo pipefail
+          umask 077
+          export AWS_SHARED_CREDENTIALS_FILE="$(mktemp "$RUNNER_TEMP/r2-credentials.XXXXXX")"
+          trap 'rm -f "$AWS_SHARED_CREDENTIALS_FILE"' EXIT
+          printf '[default]\naws_access_key_id = %s\naws_secret_access_key = %s\n' \
+            "$AWS_ACCESS_KEY_ID" "$AWS_SECRET_ACCESS_KEY" > "$AWS_SHARED_CREDENTIALS_FILE"
+          unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
+          zig build evidence -Daction=publish -Dinput="$RUNNER_TEMP/source-evidence" --cache-poison=disallowed
