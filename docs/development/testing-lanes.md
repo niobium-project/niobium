@@ -19,7 +19,7 @@ criteria are in the [maintainer roadmap](../roadmap-v0.2.md#test-system-construc
 
 ```sh
 zig build test
-zig build test -Dsuite=conformance,e2e
+zig build test "-Dsuite=conformance,e2e"
 zig build test -Dsuite=e2e -Dcase=online-lifecycle
 zig build test -Dsuite=sim -Dseeds=2000 -Dseed-start=42
 zig build verify --cache-poison=disallowed
@@ -30,7 +30,7 @@ zig build evidence -Daction=publish -Dinput=.evidence/e2e/<execution>
 `test` defaults to unit and host conformance. Registered suites are `unit`, `conformance`, `e2e`,
 `sim`, `golden`, `fuzz`, `c-smoke`. Stable case IDs are `host-user`, `host-machine`,
 `online-lifecycle`, `repair-uninstall`, `offline-bundle`, `artifact-tampering`. Unknown/empty
-selections fail. Case selection requires its suite; unselected cases do not claim a result.
+selections fail. Quote comma-separated suite arguments in PowerShell. Case selection requires its suite; unselected cases do not claim a result.
 `verify` rejects suite/case filters. Simulation accepts 1–100,000 seeds and a non-overflowing start.
 `-Dtarget` changes compilation; native execution evidence still names the machine that ran it.
 `-Dcoverage` retains kcov and `-Dtsan` retains the concurrency lane. The old `sim`, `e2e`, `golden`,

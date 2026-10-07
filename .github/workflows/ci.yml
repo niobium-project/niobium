@@ -48,7 +48,7 @@ jobs:
           mode: restore
       - run: zig build check
       - if: needs.changes.outputs.code == 'true'
-        run: zig build test -Dsuite=unit,conformance,e2e
+        run: zig build test "-Dsuite=unit,conformance,e2e"
       - if: needs.changes.outputs.code == 'true'
         run: zig build c-smoke
       - if: needs.changes.outputs.code == 'true' && needs.changes.outputs.ui == 'true'
@@ -140,7 +140,7 @@ jobs:
       - uses: ./.github/actions/zig
         with:
           mode: restore
-      - run: zig build test -Dsuite=unit,conformance,e2e
+      - run: zig build test "-Dsuite=unit,conformance,e2e"
       - if: success() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         uses: ./.github/actions/zig
         with:
@@ -170,7 +170,7 @@ jobs:
       - uses: ./.github/actions/zig
         with:
           mode: restore
-      - run: zig build test -Dsuite=unit,conformance,e2e -Dtsan
+      - run: zig build test "-Dsuite=unit,conformance,e2e" -Dtsan
       - if: success() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         uses: ./.github/actions/zig
         with:
