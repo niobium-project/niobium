@@ -39,7 +39,8 @@ pub fn run(a: std.mem.Allocator, io: std.Io, options: Options) !Result {
         const pending = select.cancel();
         _ = pending;
     }
-    select.async(.deadline, std.Io.sleep, .{
+    // async can sleep inline when workers are busy, delaying an already-completed child.
+    try select.concurrent(.deadline, std.Io.sleep, .{
         io, std.Io.Duration.fromMilliseconds(options.timeout_ms), .awake,
     });
     switch (try select.await()) {
@@ -138,4 +139,26 @@ test "N1-AC-20 capture preserves partial streams on deadline and output overflow
     defer a.free(large.stdout);
     defer a.free(large.stderr);
     try std.testing.expectEqualStrings("StreamTooLong", large.reason);
+}
+
+test "N1-AC-20 completed subprocess does not await its deadline without async workers" {
+    const a = std.testing.allocator;
+    var threaded: std.Io.Threaded = .init(a, .{
+        .async_limit = .nothing,
+        .environ = std.testing.environ,
+    });
+    defer threaded.deinit();
+    const io = threaded.io();
+    const started = std.Io.Clock.awake.now(io).toMilliseconds();
+    const result = try run(a, io, .{
+        .argv = if (@import("builtin").os.tag == .windows) &.{
+            "cmd.exe", "/d", "/c", "echo done",
+        } else &.{ "/bin/sh", "-c", "printf done" },
+        .timeout_ms = 10_000,
+    });
+    defer a.free(result.stdout);
+    defer a.free(result.stderr);
+    try std.testing.expectEqual(@as(u8, 0), result.code);
+    try std.testing.expect(std.mem.startsWith(u8, result.stdout, "done"));
+    try std.testing.expect(std.Io.Clock.awake.now(io).toMilliseconds() - started < 3000);
 }
