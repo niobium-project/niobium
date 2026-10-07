@@ -82,7 +82,7 @@ implementation was applied in bounded patches. No new lint suppressions were int
 | Windows evidence-tool cross compilation | PASS | `zig build-exe -target x86_64-windows` with contracts/catalog module inputs; compilation only |
 | `zig build test -Dsuite=fuzz -Dcontinuous-fuzz --fuzz=1000 --summary failures` | BLOCKED | Native fuzzer rebuild fails with unresolved `___sanitizer_cov_trace_*` symbols from zstd on this macOS toolchain; corpus replay is separate |
 | R2 upload/readback, duplicate/conflict/interruption, pagination and deployed lifecycle | BLOCKED | GitHub environment and endpoint/bucket variables configured; R2 activation requires approval of its metered subscription before bucket creation and scoped credentials |
-| Selected Ubuntu/Windows/macOS CI jobs | FAIL | [Run 37590719646](https://github.com/niobium-project/niobium/actions/runs/37590719646) at `b38746c`: Ubuntu/macOS passed, Windows exposed native path failures; required aggregate correctly failed. Fixes require a new native run |
+| Selected Ubuntu/Windows/macOS CI jobs | PASS | [Run 37597325869](https://github.com/niobium-project/niobium/actions/runs/37597325869) at `576dd55`: all three native unit/conformance/e2e jobs and required `linux` aggregate passed; macOS also ran ThreadSanitizer |
 | Trusted fork publisher workflow | NOT_RUN | Trusted default-branch deployment and R2 credentials remain prerequisites |
 | Reference-OS elevation, desktop, signed release bytes and viewer | NOT_RUN | Separate roadmap prerequisites; hosted contracts do not satisfy L5 |
 
@@ -100,3 +100,15 @@ aarch64 (working tree based on `b38746c`, `dirty=true`). Evidence includes
 `.evidence/sim/1791361322875-suite-sim-5ddad716e49b34d7/report.json` (2,000 seeds).
 The Windows path-normalization regression failed before the fix. Hosted runs also exposed an
 unrelated advisory Codecov upload failure requiring service authentication; coverage tests passed.
+
+The final local gate, `zig build verify -Dseeds=2000 --cache-poison=disallowed --summary failures`,
+also passed on clean commit `576dd551c68e4bca4a98e39d02d24cfe42212ea0` (`dirty=false`). Its evidence is
+`.evidence/conformance/1791363253246-suite-conformance-11ac52df3ae13f24/report.json`,
+`.evidence/e2e/1791363236630-suite-e2e-35224263fe16a273/report.json`, and
+`.evidence/sim/1791363214648-suite-sim-4bd885966979559c/report.json`.
+Windows native validation required fixing directory-link cleanup, junction path normalization,
+snapshot canonicalization, registry handle ABI, and planner registration targets. The planner
+regression checks every generated Windows integration target against platform validation.
+The earlier [failed run](https://github.com/niobium-project/niobium/actions/runs/37593700618)
+retains partial case evidence; offline validation of its Windows report succeeded with verdict FAIL.
+Hosted evidence remains downloadable from the linked runs while R2 activation is blocked.

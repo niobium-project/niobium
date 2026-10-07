@@ -37,6 +37,8 @@ selections fail. Quote comma-separated suite arguments in PowerShell. Case selec
 `fuzz` and `c-smoke` steps are aliases of the same execution nodes. VM execution stays explicit.
 Run Windows e2e (including `verify`) in a disposable OS account: temporary home variables do not
 redirect HKCU, and these CLI cases exercise the sample product's native uninstall registration.
+Evidence-tool timeout/output regressions use stock Windows PowerShell as a bounded child fixture;
+POSIX hosts use their standard shell utilities. The assertions and runner remain Zig.
 
 Continuous fuzzing uses Zig's native protocol: `zig build fuzz -Dcontinuous-fuzz --fuzz` (or
 `zig build test -Dsuite=fuzz -Dcontinuous-fuzz --fuzz=1000` for a bounded investigation). This

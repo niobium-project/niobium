@@ -96,11 +96,18 @@ const Capture = struct {
 };
 
 test "N1-AC-20 capture preserves partial streams on deadline and output overflow" {
-    if (@import("builtin").os.tag == .windows) return error.SkipZigTest;
+    const windows = @import("builtin").os.tag == .windows;
     const a = std.testing.allocator;
+    const timed_argv: []const []const u8 = if (windows) &.{
+        "powershell.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "[Console]::Out.Write('out'); [Console]::Error.Write('err'); Start-Sleep -Seconds 10",
+    } else &.{ "/bin/sh", "-c", "printf out; printf err >&2; exec sleep 10" };
     const timed = try run(a, std.testing.io, .{
-        .argv = &.{ "/bin/sh", "-c", "printf out; printf err >&2; exec sleep 10" },
-        .timeout_ms = 100,
+        .argv = timed_argv,
+        .timeout_ms = if (windows) 5000 else 100,
     });
     defer a.free(timed.stdout);
     defer a.free(timed.stderr);
@@ -108,7 +115,13 @@ test "N1-AC-20 capture preserves partial streams on deadline and output overflow
     try std.testing.expectEqualStrings("out", timed.stdout);
     try std.testing.expectEqualStrings("err", timed.stderr);
     const large = try run(a, std.testing.io, .{
-        .argv = &.{"/usr/bin/yes"},
+        .argv = if (windows) &.{
+            "powershell.exe",
+            "-NoProfile",
+            "-NonInteractive",
+            "-Command",
+            "[Console]::Out.Write('x' * 8192)",
+        } else &.{"/usr/bin/yes"},
         .output_bytes = 100,
     });
     defer a.free(large.stdout);
