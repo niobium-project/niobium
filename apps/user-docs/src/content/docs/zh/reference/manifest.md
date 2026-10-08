@@ -3,6 +3,8 @@ title: 清单与组件 schema
 description: 产品清单（product.json）和组件元数据（component.json）的字段。
 ---
 
+> 适用范围：此页描述保留的 v1 实现。新的 DSL/AOT 产品构建与能力库契约见[项目概览](/zh/)，验收证据见[状态与平台](/zh/status/)。
+
 权威来源：[manifest-v1](https://github.com/niobium-project/niobium/blob/main/docs/spec/manifest-v1.md) 和 [component-v1](https://github.com/niobium-project/niobium/blob/main/docs/spec/component-v1.md) 规范，以及它们的 JSON Schema [manifest-v1.schema.json](https://github.com/niobium-project/niobium/blob/main/api/schema/manifest-v1.schema.json) 和 [component-v1.schema.json](https://github.com/niobium-project/niobium/blob/main/api/schema/component-v1.schema.json)。本页是它们的摘要。
 
 两种文档都按严格模式解析：任意层级的未知字段、重复的键和超过 32 层的嵌套都是错误，`pre_install`、`post_install`、`script`、`exec`、`shell` 和 `command` 字段无论出现在哪里都会被拒绝。

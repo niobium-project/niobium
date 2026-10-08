@@ -14,7 +14,7 @@ Niobium is maintained independently and is not part of TongYuan's commercial pro
 ## Maintenance strategy
 
 - **Best effort, no service level.** There is one maintainer and no guaranteed response time for issues, pull requests or questions.
-- **A deliberately narrow scope.** The [principles](/#principles) are not negotiable: requests for install scripts, hooks, plugins or other runtime extensions are declined, however useful they would be to one product. Product-specific behavior belongs in your application, through [App Bootstrap](/concepts/app-bootstrap/).
+- **Explicit capability boundaries.** Products extend installers through language SDKs, Starlark and fixed Wasm capability libraries. The host controls machine authority, resource ownership and transaction recovery. See the [project overview](/).
 - **Few platforms, done properly.** Effort goes to the Tier 1 platforms first; the tiers and the roadmap are on [Platform support](/platforms/).
 - **Pre-1.0.** Formats and interfaces may still change. Each change to a contract is recorded as a decision in the repository, and the verified state of each feature is on [Status and platforms](/status/).
 - **Security reports** follow the process on [Security](/security/).

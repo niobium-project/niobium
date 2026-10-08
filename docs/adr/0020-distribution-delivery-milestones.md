@@ -1,7 +1,8 @@
 # ADR-0020: Distribution delivery milestones
 
 - **Status:** Accepted
-- **Date:** 2026-10-07
+- **Date:** 2026-10-08
+- **Amended by:** [ADR-0022](0022-installer-dsl-and-aot-toolchain.md) (distribution implementation model; delivery milestones retained)
 
 ## Context
 

@@ -3,6 +3,8 @@ title: 'Tutorial: your first release'
 description: Build the sample product with the Niobium build API, sign it with development keys, install it, publish an update and uninstall it.
 ---
 
+> Scope: the guidance and platform records below apply to the retained v1 implementation. New DSL/AOT interfaces and qualification have separate evidence on [Status and platforms](/status/).
+
 In this tutorial you take the sample product `Hello`, build it as your own product repository would, sign it with throwaway development keys, install it from a local repository, publish a second release, update to it and uninstall it. It takes about fifteen minutes, most of it the first build.
 
 The commands are for a POSIX shell. This walkthrough was run end to end on macOS (arm64); on Linux and Windows the install paths differ, as noted where they appear.

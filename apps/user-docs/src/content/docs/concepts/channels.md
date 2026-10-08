@@ -3,6 +3,8 @@ title: Channels and promotion
 description: How releases reach stable, beta and nightly users, and why promotion changes only metadata.
 ---
 
+> Scope: this page describes the retained v1 implementation. See the [project overview](/) for DSL/AOT authoring and capability contracts, and [Status and platforms](/status/) for evidence.
+
 A channel is a signed pointer from a channel name to one release of a product. Moving users to a new release means re-signing that pointer; the artifacts are never rebuilt or repacked. The rule behind this: build once, sign once, test the final bytes, then promote by metadata only.
 
 ## The three channels

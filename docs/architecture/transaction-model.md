@@ -1,6 +1,42 @@
 # Transaction model
 
-## Install root
+The active DSL lifecycle is specified in [runtime-lifecycle-v1](../spec/runtime-lifecycle-v1.md). `libs/runtime` freezes guest outputs and state before host mutation; N2 recovery evidence is tracked in [acceptance-plan-v0.2](../acceptance-plan-v0.2.md).
+
+The legacy sections describe the retained `libs/transaction` and `libs/engine` implementation and its N1 tests. Their exact files and op names do not define the new host ABI.
+
+## DSL runtime storage
+
+`libs/runtime/storage.zig` provides user-scope storage with no-follow directory
+handles and atomic replacement. `state.zig` owns strict record decoding and
+validation; `transaction.zig` executes and recovers frozen plans.
+
+```text
+<root>/
+  owner.json                 product and root identity
+  installation.json          current snapshot
+  current -> generations/N   active generation
+  generations/N/             emitted files and .niobium-generation receipt
+  pending.json               frozen host plan, output bytes and snapshots
+  committed                  durable commit-v1 marker
+```
+
+The `planned`, `staged` and `swapped` failpoints precede the durable commit
+marker. Recovery without that marker restores the previous pointer/snapshot
+and removes only the incomplete generation's registered resources and receipt.
+It validates the old generation receipt and hashes before that rollback.
+With the marker, recovery restages
+frozen bytes and completes the next snapshot. The `committed` and `finalized`
+failpoints belong to the new outcome.
+
+The transaction removes `pending.json` before the commit marker. A leftover
+marker without a plan therefore describes completed work. Unknown plan formats
+or invalid content preserve evidence and refuse mutation. Unknown user-added files survive generation cleanup; only empty directories are
+pruned. Guest code is not part of either recovery path.
+
+The wire owners are [runtime lifecycle](../spec/runtime-lifecycle-v1.md) and
+its linked machine schemas. Native kill-point results belong to N2-REC-01.
+
+## Legacy install root
 
 ```text
 <root>/

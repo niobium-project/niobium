@@ -3,6 +3,8 @@ title: Artifacts and Portable Run
 description: Immutable component artifacts, how they are identified, and running a component without installing it.
 ---
 
+> Scope: this page describes the retained v1 implementation. See the [project overview](/) for DSL/AOT authoring and capability contracts, and [Status and platforms](/status/) for evidence.
+
 An artifact is an immutable file identified by its SHA-256 digest. Once a release names a digest, the bytes behind it can never change; a new build is a new artifact. This is what lets Niobium test the exact bytes it later ships, and promote a release between channels without rebuilding it.
 
 ## Component artifacts

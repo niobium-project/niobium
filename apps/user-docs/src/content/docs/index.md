@@ -1,58 +1,26 @@
 ---
 title: Niobium
-description: A native, declarative, transactional installation and distribution framework written in Zig.
+description: An installation and distribution DSL with an AOT compiler and precompiled native runtime.
 ---
 
-Niobium installs, updates, repairs and uninstalls desktop software from a signed release description. You describe a release as data, Niobium packs and signs it, and a small native `setup` executable applies it as a transaction: after a crash at any moment, the machine holds either the old version or the new one, never a mix.
+Niobium lets product teams program their installer model through language SDKs or Starlark. Its compiler validates capability contracts, fixes library and artifact identities, and packages a complete precompiled runtime into a product setup.
 
-Niobium is at version 0.1 and makes no compatibility promise yet. What has and has not been verified is listed on one page: [Status and platforms](/status/).
+The runtime binds user choices and machine facts, evaluates fixed Wasm capability libraries, and applies a durable host plan. Official libraries and product libraries use the same checked interface. Product policies such as optional components, SDK coexistence and upgrade paths belong to libraries and presets.
 
-## Principles
+## Authoring and execution
 
-1. **The manifest is data, never code.** There are no install scripts, shell commands or `exec` fields.
-2. **Desired state, not execution steps.** You declare what should be installed; Niobium plans the steps.
-3. **The installer deploys; the application migrates.** Business logic such as database upgrades runs in your application through [App Bootstrap](/concepts/app-bootstrap/).
-4. **Privilege is a closed capability.** The elevated helper accepts only a fixed set of typed file and integration operations.
-5. **Installation is transactional.** Recovery after a crash reaches only the old or the new version.
-6. **No runtime extensions.** There are no plugins, hooks or custom libraries loaded by the installer.
+1. Build a product model with the authoring SDK. Functions, loops and project composition use the source language.
+2. Bind library implementations and artifacts at build time. The compiler validates their contracts and packages the runtime without relinking it.
+3. Distribute the final signed setup. Runtime host primitives control machine effects, state ownership and recovery.
 
-## How a release flows
+Author source runs only at build time. Wasm libraries receive explicit bounded inputs and host authority. Recovery replays frozen host operations without reevaluating the author program or library.
 
-1. **Describe.** Write a `product.json` manifest and one `component.json` per component, next to the files your own build produces.
-2. **Pack and sign.** `nbpack` turns each component into an immutable `tar.zst` artifact, composes the release manifest and signs it into a [TUF](/concepts/trust/) repository. Your `build.zig` drives this through the Niobium build API.
-3. **Publish and install.** Serve the repository over HTTP or ship it in an offline bundle. Users run `setup`, which verifies the signatures and applies the release as a transaction.
+## Current scope
 
-[Tutorial: your first release](/start/) walks through all three steps with the sample product.
+The executable baseline targets macOS arm64, user scope and CLI, with a bounded single-file carrier. New interfaces remain pre-release. Check [Status and platforms](/status/) for evidence before relying on a behavior.
 
-## Is it right for you?
+The [roadmap](/roadmap/) separates this baseline from parallel work on SDKs, libraries, distribution and platforms. Maintainer specifications and detailed designs are indexed in the repository's [documentation](https://github.com/niobium-project/niobium/blob/main/docs/README.md).
 
-Niobium may fit when:
+Existing [tutorials](/start/) and manifest/`nbpack` references are retained for the legacy implementation. Their N1 results do not establish the new compiler/runtime boundary. The [new glossary](/reference/glossary/) defines current terms.
 
-- you ship native desktop software for macOS, Windows or Linux and want one installer model across them;
-- you want installs and updates that cannot be left half-applied;
-- you want release authorization (who may publish what, rollback protection) separate from the application version;
-- you can build from source with Zig 0.17: there are no prebuilt Niobium binaries.
-
-Niobium does not fit when:
-
-- you need install-time scripts or custom actions: the framework rejects them by design;
-- you need a capability outside its closed set (shortcuts, file associations, services, application registration, managed files);
-- you need a production-ready installer today: real-OS verification on Windows and Linux, machine-wide installs and OS code signing are not done yet ([Status and platforms](/status/));
-- you need a platform outside the short [supported list](/platforms/), or a support commitment: Niobium is a hobby project maintained on a best-effort basis ([About the project](/about/)).
-
-## What each section is for
-
-| Section | Use it to |
-|---|---|
-| [Tutorial](/start/) | Build, sign, install, update and uninstall the sample product once, end to end |
-| [Concepts](/concepts/desired-state/) | Understand the model: manifests, artifacts, transactions, privilege, trust, channels |
-| [Guides](/guides/package/) | Do one task: package, sign, publish, implement App Bootstrap, embed, install silently |
-| [Security](/security/) | Learn what Niobium defends against, what it does not, and how to report a problem |
-| [Status and platforms](/status/) | Check what has been verified, on which platform, with which result |
-| [Platform support](/platforms/) | See which platforms are targeted, at which support tier, and what comes next |
-| [Roadmap](/roadmap/) | See which features are available, which are being built, and which are not planned |
-| [Troubleshooting](/troubleshooting/) | Map an exit code or failure to its cause, and find logs |
-| [About the project](/about/) | Learn why Niobium exists, who maintains it, and what support to expect |
-| [Reference](/reference/manifest/) | Look up fields, commands, exit codes, events and the C ABI |
-
-The source, specifications and issue tracker are on [GitHub](https://github.com/niobium-project/niobium).
+Project background and maintenance expectations are on [About the project](/about/).

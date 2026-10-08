@@ -6,6 +6,8 @@ const core = @import("core");
 const contracts = @import("contracts");
 const manifest = @import("manifest");
 const package = @import("package");
+const program = @import("program");
+const wasm_profile = @import("wasm_profile");
 
 test "fuzz exit-code classification" {
     try std.testing.fuzz({}, fuzzExitCode, .{ .corpus = &.{ "TrustHashMismatch", "", "Usage" } });
@@ -74,4 +76,34 @@ fn fuzzManifest(_: void, smith: *std.testing.Smith) anyerror!void {
     defer arena.deinit();
     const limits: contracts.Limits = .{};
     if (manifest.parse(arena.allocator(), buffer[0..len], "0.1.0", limits)) |_| {} else |_| {}
+}
+
+test "N2-SAFE-01: compiled program and image parsers reject malformed bounded inputs" {
+    try std.testing.fuzz({}, fuzzProgram, .{ .corpus = &.{
+        @embedFile("corpus/program/minimal.json"),
+        @embedFile("corpus/program/duplicate.json"),
+        "NIOPROG1",
+        "NIORT001",
+        "[[[[[[",
+        "\x00asm\x01\x00\x00\x00",
+    } });
+}
+
+fn fuzzProgram(_: void, smith: *std.testing.Smith) anyerror!void {
+    var buffer: [4096]u8 = @splat(0);
+    const length = smith.slice(&buffer);
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+    const bytes = buffer[0..length];
+    if (program.decode(arena.allocator(), bytes)) |model| {
+        try program.validate(model);
+        try std.testing.expect(model.inputs.len <= (contracts.Limits{}).program_items);
+    } else |_| {}
+    if (program.image.unpack(bytes)) |payload| {
+        try std.testing.expect(payload.len <= bytes.len);
+    } else |_| {}
+    if (program.image.productFromExecutable(bytes)) |payload| {
+        try std.testing.expect(payload.len <= bytes.len);
+    } else |_| {}
+    if (wasm_profile.validate(bytes, .{})) |_| {} else |_| {}
 }

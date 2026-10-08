@@ -1,5 +1,7 @@
 # Test lanes and evidence
 
+The DSL/AOT lane uses `zig build aot-test aot-e2e` and [N2 acceptance](../acceptance-plan-v0.2.md). Native N2 execution targets macOS arm64 user scope. Existing N1 lanes remain regression evidence for their legacy interfaces.
+
 | Lane | Content | Command | Part of verify |
 |---|---|---|---|
 | L0 static | fmt, ast-check, lint, check, check-docs, complexity, schema, size gate, binary lint | `zig build check`, `zig build size-gate` | Yes |

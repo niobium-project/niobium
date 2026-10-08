@@ -1,0 +1,32 @@
+--- a/core/iwasm/interpreter/wasm_interp_classic.c
++++ b/core/iwasm/interpreter/wasm_interp_classic.c
+@@ -1548,12 +1548,12 @@
+ 
+ #if WASM_ENABLE_INSTRUCTION_METERING != 0
+ #define CHECK_INSTRUCTION_LIMIT()                                 \
+-    if (instructions_left == 0) {                                 \
++    if (exec_env->instructions_to_execute == 0) {                                 \
+         wasm_set_exception(module, "instruction limit exceeded"); \
+         goto got_exception;                                       \
+     }                                                             \
+-    else if (instructions_left > 0)                               \
+-        instructions_left--;
++    else if (exec_env->instructions_to_execute > 0)                               \
++        exec_env->instructions_to_execute--;
+ #else
+ #define CHECK_INSTRUCTION_LIMIT() (void)0
+ #endif
+@@ -1602,12 +1602,7 @@
+     uint8 local_type, *global_addr;
+     uint32 cache_index, type_index, param_cell_num, cell_num;
+ 
+-#if WASM_ENABLE_INSTRUCTION_METERING != 0
+-    int instructions_left = -1;
+-    if (exec_env) {
+-        instructions_left = exec_env->instructions_to_execute;
+-    }
+-#endif
++
+ 
+ #if WASM_ENABLE_EXCE_HANDLING != 0
+     int32_t exception_tag_index;

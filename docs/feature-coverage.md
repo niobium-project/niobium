@@ -1,5 +1,7 @@
 # Installer framework feature coverage
 
+> Scope: legacy feature inventory. Target ownership and follow-on work are defined by [module boundaries](architecture/module-boundaries.md) and [roadmap v0.2](roadmap-v0.2.md).
+
 This catalog proposes the coverage boundary for Niobium across authoring, distribution, deployment and maintenance. Each row names a capability and an acceptance question. It does not declare implementation, platform support or release commitments.
 
 The [current roadmap](roadmap-v0.2.md) owns scheduled work. The [acceptance plan](acceptance-plan-v0.1.md) owns actual results. Existing contracts remain authoritative through the [documentation index](README.md#specifications-normative).

@@ -13,6 +13,7 @@ pub const source_roots = [_][]const u8{
     "examples",
     "third_party/stb_truetype/bindings.zig",
     "third_party/zstd/bindings.zig",
+    "third_party/wamr/bindings.zig",
 };
 
 pub const Tools = struct {

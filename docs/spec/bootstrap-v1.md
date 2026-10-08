@@ -1,5 +1,7 @@
 # App Bootstrap Protocol v1
 
+> Scope: retained v1 implementation. New DSL/AOT interfaces are indexed in [active contracts](../README.md#active-contracts); ADR-0022 governs reuse.
+
 - **Status:** Baseline
 
 Bootstrap lets the application perform its own business migration after the installer has completed machine deployment. The code belongs to the application, not to the installer protocol.

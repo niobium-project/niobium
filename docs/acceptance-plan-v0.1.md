@@ -1,5 +1,7 @@
 # Acceptance plan v0.1
 
+> N1 product evidence applies to the retained legacy implementation. Shared test-system and evidence-transport records keep their stated scope. New architecture product results are recorded in [acceptance-plan-v0.2](acceptance-plan-v0.2.md).
+
 Status uses only `PASS`, `FAIL`, `BLOCKED`, `NOT_RUN`, `DEFERRED`. Every entry whose "Coverage" column is `zig test` must be cited by at least one test name (checked by `tools/check-docs`).
 
 Basis for status: `zig build verify` passes on a macOS aarch64 host (covering all entries with `zig test` and `build` coverage), and the e2e suite also passes in a Debian bookworm arm64 container; e2e evidence is in `.evidence/e2e/<UTC>/`. The reason for the `BLOCKED` entries is in `.evidence/vm-smoke/<UTC>/summary.txt`: neither VM was running, and the tool does not start them without `--start` ([vm-smoke](runbooks/vm-smoke.md)). N1-UJ-02 additionally needs machine scope, while `tools/vm-smoke` currently runs only user scope. N1-UJ-10 is a manual item: on a macOS host, run `zig build example`, then open `zig-out/example/setup` and walk through all five screens.

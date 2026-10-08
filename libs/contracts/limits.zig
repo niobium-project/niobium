@@ -3,6 +3,22 @@
 //! (`LimitExceeded` families per module), never a panic.
 
 pub const Limits = struct {
+    program_bytes: u32 = 1 << 20,
+    program_items: u16 = 64,
+    program_blob_bytes: u32 = 256 << 10,
+    program_state_bytes: u32 = 64 << 10,
+    program_image_bytes: u32 = 1 << 20,
+    runtime_plan_bytes: u32 = 16 << 20,
+    wasm_module_bytes: u32 = 256 << 10,
+    wasm_memory_pages: u32 = 16,
+    wasm_table_elements: u32 = 256,
+    wasm_functions: u32 = 1024,
+    wasm_instructions: u64 = 1_000_000,
+    wasm_stack_bytes: u32 = 64 << 10,
+    wasm_heap_bytes: u32 = 8 << 20,
+    wasm_output_bytes: u32 = 64 << 10,
+    wasm_state_bytes: u32 = 16 << 10,
+    wasm_host_calls: u32 = 1024,
     manifest_bytes: u32 = 1 << 20,
     json_depth: u8 = 32,
     json_string_bytes: u32 = 64 << 10,

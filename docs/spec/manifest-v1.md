@@ -1,5 +1,7 @@
 # Product manifest v1
 
+> Scope: retained v1 implementation. New DSL/AOT interfaces are indexed in [active contracts](../README.md#active-contracts); ADR-0022 governs reuse.
+
 - **Status:** Baseline
 - **Decision:** [ADR-0003](../adr/0003-strict-json-manifest.md)
 

@@ -8,7 +8,8 @@ const links = @import("links.zig");
 const locales = @import("locales.zig");
 const targets = @import("targets.zig");
 
-pub const acceptance_path = "docs/acceptance-plan-v0.1.md";
+pub const acceptance_path = "docs/acceptance-plan-v0.2.md";
+const acceptance_paths = [_][]const u8{ "docs/acceptance-plan-v0.1.md", acceptance_path };
 
 /// Public hosts the repository may reference; adding one is a reviewed change.
 /// `example.com` and its subdomains are always allowed for fixtures.
@@ -28,6 +29,7 @@ pub const allowed_hosts = [_][]const u8{
     "niobium.dev",
     "nsis.sourceforge.io",
     "raw.githubusercontent.com",
+    "proxy.golang.org", // Public Go module acquisition for the build-time Starlark worker.
     "registry.npmjs.org",
     "schemas.microsoft.com",
     "sourceforge.net",
@@ -38,7 +40,7 @@ pub const allowed_hosts = [_][]const u8{
 /// Text files scanned for URL hosts.
 pub const text_suffixes = [_][]const u8{
     ".md",  ".mdx", ".zig",   ".zon", ".json", ".manifest", ".h", ".c", ".gitignore", ".yml",
-    ".mjs", ".ts",  ".astro",
+    ".mjs", ".ts",  ".astro", ".go",  ".star",
 };
 
 pub fn main(init: std.process.Init) !void {
@@ -46,6 +48,7 @@ pub fn main(init: std.process.Init) !void {
     const io = init.io;
     const files = try repo.list(arena, io);
     var report: repo.Report = .{ .arena = arena, .tool = "check-docs" };
+    const adr_index = try repo.read(arena, io, "docs/adr/README.md");
     for (files.paths) |path| {
         const markdown = isMarkdown(path);
         if (!isText(path) and !markdown) continue;
@@ -54,7 +57,7 @@ pub fn main(init: std.process.Init) !void {
         try checkLanguage(&report, io, path, bytes, markdown);
         if (!markdown) continue;
         try checkLinks(&report, io, path, bytes);
-        if (isAdr(path)) try checkAdr(&report, path, bytes);
+        if (isAdr(path)) try checkAdr(&report, path, bytes, adr_index);
         if (std.mem.startsWith(u8, path, "docs/spec/") and !hasVersion(path)) {
             try report.add("{s}: spec filename must end with -v<N>.md", .{path});
         }
@@ -121,7 +124,12 @@ pub fn hasVersion(path: []const u8) bool {
     return true;
 }
 
-fn checkAdr(report: *repo.Report, path: []const u8, bytes: []const u8) !void {
+fn checkAdr(
+    report: *repo.Report,
+    path: []const u8,
+    bytes: []const u8,
+    index: []const u8,
+) !void {
     const fields = [_][]const u8{ "Status", "Date" };
     for (fields) |field| {
         const marker = try report.arena.print("**{s}:**", .{field});
@@ -130,6 +138,37 @@ fn checkAdr(report: *repo.Report, path: []const u8, bytes: []const u8) !void {
             .{ path, field },
         );
     }
+    const status = adrStatus(bytes) orelse {
+        try report.add("{s}: ADR has an invalid status or missing successor", .{path});
+        return;
+    };
+    const name = std.fs.path.basenamePosix(path);
+    const marker = try report.arena.print("| [{s}]({s})", .{ name[0..4], name });
+    const start = std.mem.find(u8, index, marker) orelse {
+        try report.add("{s}: ADR missing from index", .{path});
+        return;
+    };
+    const end = std.mem.findScalarPos(u8, index, start, '\n') orelse index.len;
+    const expected = try report.arena.print("| {s}", .{status});
+    if (std.mem.find(u8, index[start..end], expected) == null) {
+        try report.add("{s}: ADR index status does not match {s}", .{ path, status });
+    }
+}
+
+fn adrStatus(bytes: []const u8) ?[]const u8 {
+    const marker = "- **Status:** ";
+    const at = std.mem.find(u8, bytes, marker) orelse return null;
+    const start = at + marker.len;
+    const end = std.mem.findScalarPos(u8, bytes, start, '\n') orelse bytes.len;
+    const status = std.mem.trim(u8, bytes[start..end], " \r");
+    const values = [_][]const u8{ "Proposed", "Accepted", "Superseded", "Deprecated" };
+    for (values) |value| {
+        if (!std.mem.eql(u8, status, value)) continue;
+        if (std.mem.eql(u8, value, "Superseded") and
+            std.mem.find(u8, bytes, "**Superseded by:**") == null) return null;
+        return status;
+    }
+    return null;
 }
 
 fn isText(path: []const u8) bool {
@@ -185,37 +224,38 @@ fn routeExists(io: std.Io, candidates: [4][]const u8) bool {
 
 pub const IdSet = std.StringArrayHashMapUnmanaged(void);
 
-/// Collects `N1-(UJ|INV|AC)-NN` identifiers.
+/// Collects complete legacy N1 and active N2 acceptance identifiers.
 pub fn collectIds(arena: std.mem.Allocator, bytes: []const u8, set: *IdSet) !void {
     var index: usize = 0;
-    while (std.mem.findPos(u8, bytes, index, "N1-")) |start| {
-        index = start + 3;
-        var end = index;
+    while (std.mem.findScalarPos(u8, bytes, index, 'N')) |start| {
+        index = start + 1;
+        if (start + 4 > bytes.len or bytes[start + 2] != '-') continue;
+        const legacy = bytes[start + 1] == '1';
+        if (!legacy and bytes[start + 1] != '2') continue;
+        if (start > 0 and std.ascii.isAlphanumeric(bytes[start - 1])) continue;
+        var end = start + 3;
         while (end < bytes.len and std.ascii.isUpper(bytes[end])) end += 1;
-        const family = bytes[index..end];
-        const known = std.mem.eql(u8, family, "UJ") or std.mem.eql(
-            u8,
-            family,
-            "INV",
-        ) or std.mem.eql(u8, family, "AC");
-        if (!known or end + 3 > bytes.len or bytes[end] != '-') continue;
+        const family = bytes[start + 3 .. end];
+        if (family.len == 0 or family.len > 16) continue;
+        if (legacy and !std.mem.eql(u8, family, "UJ") and
+            !std.mem.eql(u8, family, "INV") and !std.mem.eql(u8, family, "AC")) continue;
+        if (end + 3 > bytes.len or bytes[end] != '-') continue;
         if (!std.ascii.isDigit(bytes[end + 1]) or !std.ascii.isDigit(bytes[end + 2])) continue;
-        try set.put(arena, bytes[start .. end + 3], {});
+        end += 3;
+        if (end < bytes.len and (std.ascii.isAlphanumeric(bytes[end]) or bytes[end] == '-')) {
+            continue;
+        }
+        try set.put(arena, bytes[start..end], {});
     }
 }
 
-/// Plan rows covered by `zig test` must be cited by a test name; cited IDs must exist.
+/// Historical test requirements remain active; new plans have independent status/evidence.
 fn checkAcceptance(report: *repo.Report, io: std.Io, files: repo.Files) !void {
-    const plan = try repo.read(report.arena, io, acceptance_path);
     var planned: IdSet = .empty;
     var needs_test: IdSet = .empty;
-    var lines = std.mem.splitScalar(u8, plan, '\n');
-    while (lines.next()) |line| {
-        if (!std.mem.startsWith(u8, line, "| N1-")) continue;
-        try collectIds(report.arena, line[0..@min(line.len, 16)], &planned);
-        if (std.mem.find(u8, line, "| zig test |") != null) {
-            try collectIds(report.arena, line[0..@min(line.len, 16)], &needs_test);
-        }
+    for (acceptance_paths) |path| {
+        const plan = try repo.read(report.arena, io, path);
+        try collectPlan(report, path, plan, &planned, &needs_test);
     }
     var cited: IdSet = .empty;
     for (files.paths) |path| {
@@ -228,15 +268,68 @@ fn checkAcceptance(report: *repo.Report, io: std.Io, files: repo.Files) !void {
     }
     for (needs_test.keys()) |id| {
         if (!cited.contains(id)) try report.add(
-            "{s}: {s} is 'zig test' but no test cites it",
-            .{ acceptance_path, id },
+            "{s} has unit-test coverage but no test cites it",
+            .{id},
         );
     }
 }
 
+fn collectPlan(
+    report: *repo.Report,
+    path: []const u8,
+    bytes: []const u8,
+    planned: *IdSet,
+    needs_test: *IdSet,
+) !void {
+    var in_table = false;
+    var lines = std.mem.splitScalar(u8, bytes, '\n');
+    while (lines.next()) |line| {
+        if (!std.mem.startsWith(u8, line, "|")) in_table = false;
+        if (std.mem.startsWith(u8, line, "| ID | Description | Coverage | Status |")) {
+            in_table = true;
+            continue;
+        }
+        if (!in_table or !std.mem.startsWith(u8, line, "| N")) continue;
+        var cells = std.mem.splitScalar(u8, line, '|');
+        const leading = cells.next();
+        std.debug.assert(leading != null);
+        const id = std.mem.trim(u8, cells.next() orelse "", " ");
+        const description = cells.next() orelse "";
+        if (description.len == 0) try report.add("{s}: missing ID description", .{path});
+        const coverage = std.mem.trim(u8, cells.next() orelse "", " ");
+        const status = std.mem.trim(u8, cells.next() orelse "", " ");
+        const count = planned.count();
+        try collectIds(report.arena, id, planned);
+        if (planned.count() == count) {
+            try report.add("{s}: duplicate/invalid ID {s}", .{ path, id });
+        }
+        if (!acceptanceStatus(status)) try report.add("{s}: invalid status {s}", .{ path, status });
+        if (needsTest(coverage, status)) try collectIds(report.arena, id, needs_test);
+        if (std.mem.startsWith(u8, id, "N2-") and std.mem.eql(u8, status, "PASS")) {
+            if (std.mem.find(u8, line, ".evidence/") == null or
+                std.mem.find(u8, line, "<UTC>") != null)
+            {
+                try report.add("{s}: {s} PASS needs a concrete evidence path", .{ path, id });
+            }
+        }
+    }
+}
+
+fn acceptanceStatus(status: []const u8) bool {
+    for ([_][]const u8{ "PASS", "FAIL", "BLOCKED", "NOT_RUN", "DEFERRED" }) |valid| {
+        if (std.mem.eql(u8, status, valid)) return true;
+    }
+    return false;
+}
+
+fn needsTest(coverage: []const u8, status: []const u8) bool {
+    if (std.mem.eql(u8, status, "DEFERRED")) return false;
+    return std.mem.eql(u8, coverage, "zig test") or std.mem.eql(u8, coverage, "aot-test");
+}
+
 fn collectTestIds(arena: std.mem.Allocator, bytes: []const u8, set: *IdSet) !void {
     var rest = bytes;
-    while (std.mem.find(u8, rest, "test \"N1-")) |start| {
+    while (std.mem.find(u8, rest, "test \"N")) |start| {
         rest = rest[start + "test \"".len ..];
         const end = std.mem.findScalar(u8, rest, '"') orelse break;
         try collectIds(arena, rest[0..end], set);
@@ -386,4 +479,33 @@ test "site sources and workflows are scanned, mdx is markdown" {
 test "spec filenames need a version" {
     try std.testing.expect(hasVersion("docs/spec/manifest-v1.md"));
     try std.testing.expect(!hasVersion("docs/spec/manifest.md"));
+}
+
+test "acceptance IDs include N2 and reject malformed suffixes" {
+    var set: IdSet = .empty;
+    defer set.deinit(std.testing.allocator);
+    try collectIds(
+        std.testing.allocator,
+        "N1-UJ-01 N2-AUTH-01 N2-SAFE-01 N2-WSDK-01 N2-AUTH-010 N2--01",
+        &set,
+    );
+    try std.testing.expectEqual(@as(usize, 4), set.count());
+    try std.testing.expect(set.contains("N2-WSDK-01"));
+}
+
+test "deferred acceptance needs no fabricated test and status remains closed" {
+    try std.testing.expect(!needsTest("zig test", "DEFERRED"));
+    try std.testing.expect(needsTest("zig test", "NOT_RUN"));
+    try std.testing.expect(needsTest("aot-test", "PASS"));
+    try std.testing.expect(!acceptanceStatus("SUPPORTED"));
+    try std.testing.expect(acceptanceStatus("BLOCKED"));
+}
+
+test "superseded ADRs name successors and reject unknown statuses" {
+    try std.testing.expect(adrStatus("- **Status:** Superseded\n") == null);
+    try std.testing.expect(adrStatus("- **Status:** Done\n") == null);
+    try std.testing.expectEqualStrings("Accepted", adrStatus("- **Status:** Accepted\n").?);
+    try std.testing.expectEqualStrings("Superseded", adrStatus(
+        "- **Status:** Superseded\n- **Superseded by:** [new](0022.md)\n",
+    ).?);
 }

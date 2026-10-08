@@ -3,6 +3,8 @@ title: Installer and App Bootstrap
 description: Where the installer's responsibility ends and the application's begins.
 ---
 
+> Scope: this page describes the retained v1 implementation. See the [project overview](/) for DSL/AOT authoring and capability contracts, and [Status and platforms](/status/) for evidence.
+
 Niobium deploys files and OS integrations; your application owns everything that depends on what the application means. Moving a database schema, converting settings or registering with a license server are application semantics, and they run in your application's own process through App Bootstrap, not in an installer hook.
 
 ## The division

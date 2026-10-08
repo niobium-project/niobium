@@ -15,6 +15,7 @@ const ui = @import("build/steps/ui.zig");
 const vm = @import("build/steps/vm.zig");
 const example = @import("build/steps/example.zig");
 const sdk = @import("build/sdk.zig");
+const aot = @import("build/aot.zig");
 
 pub const version = "0.1.0";
 
@@ -139,6 +140,7 @@ fn addTestGates(
     const c_smoke = b.step("c-smoke", "C program against distribution.h + static library");
     c_smoke.dependOn(e2e.addCSmoke(b, graph, binaries.static_lib, config));
     const example_step = addExampleSteps(b, graph.config.target, tools.vm_smoke);
+    const aot_step = aot.add(b, graph.config.inputs, tools.check_binary);
 
     addRunSteps(b, binaries.setup, workbench);
 
@@ -168,6 +170,7 @@ fn addTestGates(
         example_step,
     }) |step| verify.dependOn(step);
     if (steps.tsan) |tsan_step| verify.dependOn(tsan_step);
+    if (aot_step) |step| verify.dependOn(step);
 }
 
 /// Both build examples/hello as a separate package that depends on this one. Returns `example`.

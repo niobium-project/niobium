@@ -3,6 +3,8 @@ title: Artifact format
 description: Layout, unpacking rules and limits of component artifacts (tar.zst).
 ---
 
+> Scope: this page describes the retained v1 implementation. See the [project overview](/) for DSL/AOT authoring and capability contracts, and [Status and platforms](/status/) for evidence.
+
 Canonical source: [artifact-format-v1](https://github.com/niobium-project/niobium/blob/main/docs/spec/artifact-format-v1.md).
 
 ## Layout

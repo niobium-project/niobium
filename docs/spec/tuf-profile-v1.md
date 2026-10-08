@@ -1,5 +1,7 @@
 # Installer TUF Profile v1
 
+> Scope: retained v1 implementation. New DSL/AOT interfaces are indexed in [active contracts](../README.md#active-contracts); ADR-0022 governs reuse.
+
 - **Status:** Baseline
 - **Decision:** [ADR-0004](../adr/0004-tuf-profile-v1.md)
 

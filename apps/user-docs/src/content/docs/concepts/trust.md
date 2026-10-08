@@ -3,6 +3,8 @@ title: Trust model
 description: How TUF authorizes releases, and how that differs from operating-system code signing.
 ---
 
+> Scope: this page describes the retained v1 implementation. See the [project overview](/) for DSL/AOT authoring and capability contracts, and [Status and platforms](/status/) for evidence.
+
 Niobium separates two questions. Is this release one the publisher authorized, current, and not older than what I already have? That is answered by TUF (The Update Framework) metadata signed with the publisher's keys. Does the operating system trust this executable's publisher? That is answered by platform signatures such as Authenticode or Apple Developer ID. The first protects the update channel; the second is what the OS shows the user.
 
 ## Release authorization with TUF

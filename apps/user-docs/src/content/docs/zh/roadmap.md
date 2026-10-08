@@ -1,48 +1,34 @@
 ---
 title: 路线图
-description: Niobium 现在能做什么、正在开发什么、接下来做什么，以及哪些不在计划内。
+description: DSL/AOT 基线和后续可并行实施的能力。
 ---
 
-本页按计划顺序列出各项功能，并说明它们能为你以及安装你软件的用户带来什么。这里不写日期：Niobium 由一个人在业余时间维护（[关于本项目](/zh/about/)），所以顺序是承诺，时间不是。
+当前方向是面向安装与分发的 DSL、AOT 编译器、预编译 runtime 和基于契约的能力库。🚧 表示当前交付，🔜 表示基线后可并行实施，🗓️ 表示后续验收。功能优先级与执行证据分开，证据见[状态与平台](/zh/status/)。
 
-路线图说明的是计划，而不是已经可用的功能。某项功能是否经过验证、在哪个平台上验证，只记录在[状态与平台](/zh/status/)上。各个平台自己的计划见[平台支持](/zh/platforms/#roadmap)。
-
-| 标记 | 含义 |
+| 状态 | 功能 |
 |---|---|
-| ✅ | Niobium 0.1 中已提供；验证状态见[状态与平台](/zh/status/) |
-| 🚧 | 正在为下一次发布开发，编号表示优先级 |
-| 🔜 | 接下来，在当前工作之后 |
-| 🗓️ | 之后 |
-| ⛔ | 有意不在计划内 |
+| 🚧 | 程序化产品构建与 AOT 编译器 |
+| 🚧 | 预编译 runtime 与固定的 Wasm 能力库 |
+| 🚧 | 事务化部署与显式状态迁移 |
+| 🔜 | 编译缓存、能力库 SDK 与更多宿主操作 |
+| 🔜 | Python、TypeScript、Go 与 Rust 产品 SDK |
+| 🔜 | 组件、SDK 与工具链预设 |
+| 🔜 | 分发、信任与通道能力库 |
+| 🔜 | 在线、完整离线文件与自解压安装程序 |
+| 🗓️ | 大容量原生封装与发布者签名 |
+| 🗓️ | 标准 UI、嵌入式维护与无障碍支持 |
+| 🗓️ | Windows/Linux 与整机范围验收 |
 
-## 功能 { #features }
+当前交付包括 Compiler 工程化、Wasm library SDK、Host primitives 与 stdlib 的详细设计，以及一个贯通三个作者入口、两个产品、独立能力库、迁移和恢复的 PoC。设计完成不等于其中的全部工程功能都已实现。
 
-| 状态 | 功能 | 对你意味着什么 |
-|---|---|---|
-| ✅ | 在线和离线安装 | 用户可以从你通过 HTTP 托管的仓库安装，也可以从磁盘或共享目录上的离线包安装（[发布与托管](/zh/guides/publish-and-host/)） |
-| ✅ | 发布通道 | `stable`、`beta` 和 `nightly` 让你先在一部分用户中测试某次发布，再推给所有人，而无需重新构建（[通道与晋升](/zh/concepts/channels/)） |
-| ✅ | 安装、更新、修复和卸载 | 每次变更都是一个事务，所以崩溃或断电绝不会留下一个只装了一半的应用（[事务](/zh/concepts/transactions/)） |
-| ✅ | 安全回滚 | 要撤回一次有问题的发布，你发布一个包含上一个良好版本的新发布；已有安装会像接收其他更新一样迁移到它 |
-| ✅ | 便携运行 | 组件从经过验证的缓存中运行，而无需安装（[制品与便携运行](/zh/concepts/artifacts/#portable-run)） |
-| ✅ | 在应用内部更新 | 你的应用通过 `libdistribution` 自行检查、下载并应用更新（[通过 C ABI 嵌入](/zh/guides/embed-c-abi/)） |
-| 🚧 1 | 内置功能模块 | 每项系统集成和分发功能都成为 Niobium 内部一个自成一体的模块，在每个平台上都以同样的方式测试。新的系统集成会来得更快，另一个目标是让你的 `setup` 只包含你的产品用到的模块 |
-| 🚧 2 | 预设和主题 | 从适合你产品类型的预设开始（桌面应用、命令行工具、Electron 应用、后台服务），为安装程序窗口选择主题，并设置名称、徽标和颜色。无需手写每个字段，就能得到一个可以签名并发布的安装程序，并在发布前预览 |
-| 🚧 3 | 在 macOS、Windows 和 Linux 上可用于生产环境 | 在真实机器上测试，验证为整台机器所有用户安装的场景，`setup` 使用 Authenticode 和 Apple Developer ID 签名（[平台代码签名](/zh/guides/sign-and-keys/#platform-code-signing)），用户不会看到“未知发布者”或 Gatekeeper 警告 |
-| 🚧 4 | 更容易上手 | 预构建的 `setup`、`nbpack` 和 `libdistribution`，以及构建 API 的兼容性承诺。无需安装 Zig 就能试用 Niobium，升级时也不必重写你的构建 |
-| 🚧 5 | 更多系统集成 | 从 `myapp://` 链接打开你的应用，把命令行工具加入 `PATH`，设置环境变量；卸载时全部干净移除，而且无需安装脚本 |
-| 🚧 6 | 适用于任何应用的应用内更新 | 你的应用使用与 `setup` 相同的签名和事务自行更新。首先提供 Electron 和 Node.js 包；其他语言调用 C ABI，并提供示例 |
-| 🔜 | 在线、完整离线文件和 SFX 分发 | 三个里程碑：已签名的在线安装程序、安装前先打开或解包的完整离线文件，以及无需单独解包步骤的自解压离线安装程序（SFX）。平台格式和验证仍属计划（[分发决策](https://github.com/niobium-project/niobium/blob/main/docs/adr/0020-distribution-delivery-milestones.md)） |
-| 🔜 | 新功能说明 | 发布说明显示在安装程序和你应用的更新提示中，并与发布一起签名，因此无法被替换 |
-| 🔜 | 登录时启动 | 你的应用注册为在用户登录时启动，无需脚本或手动步骤 |
-| 🔜 | 通过 `nbpack` 轮换密钥 | 替换丢失或过期的签名密钥，而不会破坏已有安装；客户端已经接受轮换后的密钥（[签名与密钥管理](/zh/guides/sign-and-keys/#rotate-or-recover-keys)） |
-| 🔜 | 安全策略 | 一份公开的策略，以及一个私密的漏洞报告渠道（[安全](/zh/security/#report-a-vulnerability)） |
-| 🗓️ | 屏幕阅读器支持 | 使用屏幕阅读器的人也能在全部三个平台上安装你的软件 |
-| 🗓️ | Linux 上的原生文件夹选择器 | 选择安装位置时的外观和操作与桌面的其他部分一致 |
-| 🗓️ | 以用户的语言显示安装程序窗口 | 用户用自己读得懂的语言完成安装 |
-| 🗓️ | 更多平台 | ARM 版 Windows、麒麟（Kylin）和统信（UOS），见[平台支持](/zh/platforms/#candidates)上的候选平台 |
-| ⛔ | 安装脚本和自定义动作 | 清单是数据。数据库迁移这类产品特有的工作通过 [App Bootstrap](/zh/concepts/app-bootstrap/) 在你的应用中运行 |
-| ⛔ | 第三方插件和运行时扩展 | 功能模块内置在 Niobium 中，并随 Niobium 一起审查；`setup` 不加载任何其他东西 |
-| ⛔ | 以管理员权限运行任意命令 | 提权助手只接受一组固定的、带类型的操作（[权限边界](/zh/concepts/privilege/)） |
-| ⛔ | 原生 Wayland 后端 | 在 Wayland 上，安装程序窗口通过 XWayland 运行（[平台支持](/zh/platforms/#not-planned)） |
+产品可通过能力库扩展行为；机器副作用仍需宿主提供相应的权限与事务操作。Runtime 不提供任意 shell 命令或环境权限。单文件 setup 属于当前封装方案，较大容量和各平台发布签名继续独立验收。
 
-功能模块是 Niobium 本身的一部分：你仍然以数据描述你的产品，安装时不会加载 Niobium 之外的任何东西。标记为 ⛔ 的内容是有意不做的，这样安装才能保持可预期、可审计。
+现有在线/离线安装、通道、Portable Run 和嵌入式更新的 N1 实现提供可复用的基础。它们需要接入新契约并取得 N2 证据后，才能算作新架构功能。
+
+维护者的[工作包与依赖关系](https://github.com/niobium-project/niobium/blob/main/docs/roadmap-v0.2.md)包含逐项验收方案。平台义务见[平台支持](/zh/platforms/)；原生 Wayland 不在当前计划内。
+
+[分发里程碑](https://github.com/niobium-project/niobium/blob/main/docs/adr/0020-distribution-delivery-milestones.md)
+包含在线安装程序、安装前打开或解包的完整离线文件，以及无需单独解包即可开始安装的 SFX。
+[分发工作清单](https://github.com/niobium-project/niobium/blob/main/docs/development/distribution-backlog.md)
+保留签名、扫描、资源预算、离线有效期和维护程序生命周期工作。容量有界的 macOS PoC
+不能证明这些完整发布形态已经通过验收。

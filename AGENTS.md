@@ -1,10 +1,10 @@
 # Niobium development conventions
 
-Niobium is a native, declarative, transactional installation and distribution framework written in Zig. This file holds the repository's hard constraints, forbidden patterns and review gates. Procedures live in `.agents/skills/`; contracts and trade-offs live in `docs/spec/` and `docs/adr/`. A requirement is stated once and linked, never copied in full to several places.
+Niobium is an installation and distribution DSL with an AOT compiler, a precompiled native runtime and host-controlled Wasm capability libraries ([ADR-0022](docs/adr/0022-installer-dsl-and-aot-toolchain.md)). This file holds the repository's hard constraints, forbidden patterns and review gates. Procedures live in `.agents/skills/`; contracts and trade-offs live in `docs/spec/` and `docs/adr/`. A requirement is stated once and linked, never copied in full to several places.
 
 ## 1. Rule precedence and sources of truth
 
-Current explicit user instruction > this file > accepted ADRs > versioned specs (`docs/spec/*-v1.md`) > architecture baseline (`docs/source/`) > general engineering practice. When you find a conflict, pause the affected change and record the conflict and a proposed ADR first; never change architectural semantics silently through code.
+Current explicit user instruction > this file > accepted ADRs > active versioned specs (listed in `docs/README.md`) > descriptive architecture documentation > general engineering practice. When you find a conflict, pause the affected change and record the conflict and a proposed ADR first; never change architectural semantics silently through code.
 
 - `docs/source/` is the original architecture input, a read-only archive; current decisions are the ADRs and specs.
 - `docs/implementation/YYYY-MM-DD-*.md` are optional implementation traces; they go stale and are not a source of truth.
@@ -14,27 +14,22 @@ Current explicit user instruction > this file > accepted ADRs > versioned specs 
 
 ## 2. Inviolable principles
 
-The six architecture principles (from section 2 of `docs/source/architecture-v0.1.md`):
+[ADR-0022](docs/adr/0022-installer-dsl-and-aot-toolchain.md) owns the architecture direction. These rules apply to every new feature:
 
-1. **Manifest is data, never code.** There is no shell, PowerShell, script, `exec()` or any generic command field.
-2. **Desired state, not execution steps.**
-3. **Installer owns machine deployment; application owns application semantics.** Business migration belongs to App Bootstrap.
-4. **Privilege is capability-based.** The elevated helper accepts only closed typed operations.
-5. **Installation is transactional.** After a crash at any moment, recovery reaches only old-good or new-good.
-6. **The framework is intentionally non-extensible at runtime.** No plugins, no script hooks, no custom DLL hooks.
+1. **Author programs execute at build time.** Native-language SDKs and Starlark construct the same typed product model. Serialized program data is a compiler output.
+2. **The compiler packages a complete precompiled runtime.** Product builds must preserve the template input and executable code sections, and must not relink a product-specific runtime. Filling its reserved product section and final signing change only the output image.
+3. **Capability contracts bind libraries.** Official and product/third-party Wasm libraries use the same host-controlled ABI. No ambient WASI, filesystem, network, process or elevation authority is granted.
+4. **Core provides mechanisms.** Product distribution, component selection, coexistence, channels and layout policies belong to libraries, presets and templates.
+5. **Machine effects are transactional.** The host validates and freezes outputs before mutation; recovery uses durable plans and reaches only old-good or new-good.
+6. **Compatibility is explicit.** Product migration/bridge policy belongs to the product. Framework and library state have independent versioned compatibility contracts.
+7. **Release bytes are fixed.** Runtime, program, libraries and artifacts have distinct identities. Final signing and qualification apply to the delivered bytes.
 
-The five mantras (from v0.2):
-
-1. Distribution Core is a library, not an updater executable.
-2. Artifacts are immutable native objects; Portable Artifact is a first-class deployment model.
-3. Installation metadata describes state, never executable scripts.
-4. TUF authorizes releases; platform signatures establish OS-level publisher trust.
-5. Build once, sign once, test the final bytes, then promote by metadata only.
+The pre-release reset does not require compatibility with old manifest/API/state formats. It does not waive compatibility checks for new product releases. Retained manifest/engine v1 specs and N1 product evidence describe the legacy implementation. Shared test-system evidence retains its own stated scope.
 
 ## 3. Repository boundaries and dependency direction
 
 ```text
-apps/ process assembly (setup, nbpack, libdistribution, ui-workbench), no business logic
+apps/ process assembly (compiler, runtime, language/ABI adapters, legacy apps), no business logic
 libs/ implementation; one owner directory per module
 api/ machine-readable contracts (JSON Schema, C header)
 tools/ checks, generators and gates written in Zig
@@ -43,8 +38,9 @@ build/ the single source of truth for the build graph: modules.zig declares modu
 third_party/ upstream sources pinned by deps.zon + PROVENANCE + patches + bindings; upstream files are fetched at build time, not committed
 ```
 
-Dependencies only point downward: `apps → engine → {resolver, planner, transaction, privilege, bootstrap, portable} → {trust, repository, package, executor} → platform/api → contracts → core`. `ui/core` and `ui/kit` must not import `engine` or `platform`; `ui/screens` talks to the engine only through the `contracts` ViewModel; platform backends are injected only by `apps/*`.
+The target dependency direction is `apps → compiler/runtime → program/capability contracts → host/platform → core`. Build-time frontends never enter runtime. Capability libraries cannot import native host implementation modules. Standard-library and preset policy must not become global core enums or schema fields. Current module registrations and allowed imports are owned by `build/modules.zig`; [module boundaries](docs/architecture/module-boundaries.md) records the transition.
 
+`ui/core` and `ui/kit` remain pure. The current standard UI uses contracts at its engine boundary; extending this UI does not authorize changes to the runtime/library ABI.
 A module may only `@import` the modules `build/modules.zig` hands it, which the compiler enforces; `tools/check` additionally rejects relative `@import("../...")` across module directories. Do not create `shared/`, `common/`, `utils/` or `helpers/` grab-bag directories.
 
 ## 4. Starting a task
@@ -53,9 +49,10 @@ A module may only `@import` the modules `build/modules.zig` hands it, which the 
 2. For any design, implementation, debugging or acceptance work: read [.agents/skills/niobium-development/SKILL.md](.agents/skills/niobium-development/SKILL.md).
 3. For writing or changing Zig code: read the `zig-0.17` and `zig-tiger-style` skills (under `.agents/skills/`); this repository's deviations are in section 5.
 4. For installer UI, tokens, components and screens: read [niobium-ui-kit](.agents/skills/niobium-ui-kit/SKILL.md) and [niobium-native-look](.agents/skills/niobium-native-look/SKILL.md).
-5. For a new OS capability or platform backend: read [niobium-platform-capability](.agents/skills/niobium-platform-capability/SKILL.md). Which targets the project builds, gates and releases on is decided by the tiers in [ADR-0014](docs/adr/0014-tier-based-platform-support.md).
+5. For a capability library, host primitive or platform backend: read [niobium-platform-capability](.agents/skills/niobium-platform-capability/SKILL.md). Which targets the project builds, gates and releases on is decided by the tiers in [ADR-0014](docs/adr/0014-tier-based-platform-support.md).
 6. For review, security or boundary-related changes: review against the [review-niobium](.agents/skills/review-niobium/SKILL.md) checklist.
-7. External GUI skills (`apple-hig`, `winui-app`, `gtk-ui-ux-engineer`) only provide design values and checklists; the SwiftUI/AppKit controls, WinUI 3/XAML/C#/MSIX and GTK/libadwaita they recommend do not change [ADR-0008](docs/adr/0008-shared-software-renderer.md).
+7. For technical prose, read the installed `technical-writing` skill; for terminology or decisions also read `domain-modeling`.
+8. External GUI skills (`apple-hig`, `winui-app`, `gtk-ui-ux-engineer`) only provide design values and checklists; the SwiftUI/AppKit controls, WinUI 3/XAML/C#/MSIX and GTK/libadwaita they recommend do not change [ADR-0008](docs/adr/0008-shared-software-renderer.md).
 
 ## 5. Zig rules
 
@@ -75,6 +72,7 @@ Test lanes: L0 static (check/lint/schema/size), L1 pure core (VirtualPlatform), 
 
 - Crash-injection invariant: after recovery from any kill point, `Active == OLD` or `Active == NEW`, never MIXED.
 - No artifact can write outside the staging root through extraction.
+- New architecture evidence uses N2 IDs in [acceptance-plan-v0.2](docs/acceptance-plan-v0.2.md). N1 product results cover the retained implementation and cannot establish N2 completion; shared test-system evidence retains its declared scope.
 - Acceptance status uses only `PASS`/`FAIL`/`BLOCKED`/`NOT_RUN`/`DEFERRED`; without real evidence, never write "supported" or "passed".
 - Compiling, mocks succeeding, screenshots and an agent's own claims do not constitute completion. Evidence goes to `.evidence/<suite>/<UTC>/`.
 - Goldens are never updated wholesale: `zig build golden -Dupdate=<component>` must name a scope, and the diff is inspected in review.

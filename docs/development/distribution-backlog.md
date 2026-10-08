@@ -4,6 +4,20 @@ The milestones in [ADR-0020](../adr/0020-distribution-delivery-milestones.md) re
 This backlog owns the work items; the [user roadmap](../../apps/user-docs/src/content/docs/roadmap.md) owns feature names and priority.
 All tasks are `NOT_RUN`. These are planning IDs, not acceptance IDs or evidence of implemented features.
 
+## Architecture transition
+
+[ADR-0022](../adr/0022-installer-dsl-and-aot-toolchain.md) assigns implementation
+to the compiler, precompiled runtime, host primitives and capability libraries.
+The task IDs, delivery outcomes and release-quality tests below remain open.
+References to manifest, engine, packager or `nbpack` describe the retained
+implementation and identify behavior to adapt; they do not require a product
+JSON authoring interface or a closed set of built-in libraries.
+
+The bounded macOS PoC is a contract/consumer proof. It does not close large-file,
+production signing, offline trust, malware scanning or maintainer qualification.
+Owners use [roadmap-v0.2](../roadmap-v0.2.md#distribution-delivery-milestones) to
+map these tasks to the DSL/AOT work packages before claiming completion.
+
 ## Milestone outcomes
 
 | Milestone | Delivery outcome | Completion evidence |

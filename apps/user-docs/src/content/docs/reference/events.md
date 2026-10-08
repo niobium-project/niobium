@@ -3,6 +3,8 @@ title: Events
 description: The JSON progress events emitted by setup --json and the C ABI.
 ---
 
+> Scope: this page describes the retained v1 implementation. See the [project overview](/) for DSL/AOT authoring and capability contracts, and [Status and platforms](/status/) for evidence.
+
 Canonical sources: the events section of [cli-v1](https://github.com/niobium-project/niobium/blob/main/docs/spec/cli-v1.md#events) and [event-v1.schema.json](https://github.com/niobium-project/niobium/blob/main/api/schema/event-v1.schema.json).
 
 `setup --json` writes one JSON object per line to standard output. The C ABI delivers the same objects, without the newline, to the callback registered with `event_subscribe`.

@@ -1,5 +1,7 @@
 # Privilege IPC v1
 
+> Scope: retained v1 implementation. New DSL/AOT interfaces are indexed in [active contracts](../README.md#active-contracts); ADR-0022 governs reuse.
+
 - **Status:** Baseline
 - **Decision:** [ADR-0007](../adr/0007-same-binary-privilege-helper.md)
 - **Implementation:** `libs/contracts/ipc.zig` (wire format), `libs/privilege/{broker,helper,elevate}.zig`

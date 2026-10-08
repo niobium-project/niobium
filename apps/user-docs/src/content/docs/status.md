@@ -3,7 +3,16 @@ title: Status and platforms
 description: What has been verified in Niobium 0.1, on which platforms, and what is blocked, not run or deferred.
 ---
 
-Niobium 0.1 is a vertical slice that proves the model; it is not production-ready. This page is the site's single statement of what has been verified. Other pages link here instead of repeating it.
+## DSL/AOT qualification
+
+The [N2 acceptance plan](https://github.com/niobium-project/niobium/blob/main/docs/acceptance-plan-v0.2.md) owns new-architecture results. The initial native target is macOS arm64, user scope and CLI. Building is insufficient evidence for a final setup; that record maintains each N2 ID's result, command and evidence path.
+
+The N1 tables below preserve historical results for the manifest/engine implementation. They do not qualify the new compiler, Wasm libraries or runtime.
+
+## Historical v1 status
+
+
+Niobium 0.1 is a vertical slice that proves the model; it is not production-ready. The following records describe its historical verification.
 
 Statuses use five values only:
 

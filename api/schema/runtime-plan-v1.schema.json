@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://niobium.dev/schema/runtime-plan-v1.schema.json",
+  "title": "runtime-plan-v1",
+  "$comment": "Wire shape for runtime-lifecycle-v1. Native validation additionally checks root identity/path, generation ordering, output digests and exact correspondence between files and the next snapshot resource inventory. Resource paths use the printable-ASCII PoC profile; installation roots may use Unicode.",
+  "type": "object",
+  "properties": {
+    "schema": {
+      "const": 1,
+      "default": 1
+    },
+    "host_abi": {
+      "const": 1,
+      "default": 1
+    },
+    "root_id": {
+      "$ref": "https://niobium.dev/schema/runtime-state-v1.schema.json#/$defs/root_id"
+    },
+    "root_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 524288,
+      "pattern": "^/[^\\u0000]*$",
+      "$comment": "The host resolves and compares the actual absolute root; parser ceiling is 524288 UTF-8 bytes."
+    },
+    "product_id": {
+      "$ref": "https://niobium.dev/schema/compiled-program-v1.schema.json#/$defs/id"
+    },
+    "generation": {
+      "$ref": "https://niobium.dev/schema/compiled-program-v1.schema.json#/$defs/u64"
+    },
+    "previous": {
+      "$ref": "#/$defs/snapshot_or_null"
+    },
+    "next": {
+      "$ref": "#/$defs/snapshot_or_null"
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/file"
+      },
+      "minItems": 0,
+      "maxItems": 64
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "root_id",
+    "root_path",
+    "product_id",
+    "generation",
+    "previous",
+    "next",
+    "files"
+  ],
+  "$defs": {
+    "snapshot_or_null": {
+      "anyOf": [
+        {
+          "$ref": "https://niobium.dev/schema/runtime-state-v1.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "file": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "https://niobium.dev/schema/compiled-program-v1.schema.json#/$defs/id"
+        },
+        "path": {
+          "$ref": "https://niobium.dev/schema/compiled-program-v1.schema.json#/$defs/relative_path"
+        },
+        "sha256": {
+          "$ref": "https://niobium.dev/schema/compiled-program-v1.schema.json#/$defs/sha256"
+        },
+        "data_hex": {
+          "$ref": "https://niobium.dev/schema/compiled-program-v1.schema.json#/$defs/hex_blob"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "path",
+        "sha256",
+        "data_hex"
+      ]
+    }
+  }
+}

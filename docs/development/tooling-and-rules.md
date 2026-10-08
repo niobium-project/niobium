@@ -6,8 +6,8 @@ All checks are Zig programs, driven by `zig build check`.
 |---|---|
 | `zig fmt --check`, `zig ast-check` | Formatting and syntax |
 | `tools/lint` | TigerStyle, crash safety, boundary rules (see below) |
-| `tools/check` | Module graph matches the allow table, no cross-module relative imports, files ≤ 600 lines, schema rules, catalog golden complete |
-| `tools/check-docs` | Links resolve (relative paths, user-site routes, `github.com/niobium-project/niobium` file URLs), URL hosts allowlisted, English only outside the Chinese paths of ADR-0017, user-site locale mirror, ADR fields complete, acceptance IDs consistent, spec file names versioned |
+| `tools/check` | Module graph preserves layers and transitive execution-phase boundaries, no cross-module relative imports, files ≤ 600 lines, schema rules, catalog golden complete |
+| `tools/check-docs` | Links resolve (relative paths, user-site routes, `github.com/niobium-project/niobium` file URLs), URL hosts allowlisted, English only outside the Chinese paths of ADR-0017, user-site locale mirror, ADR fields complete, N1/N2 acceptance IDs and statuses consistent, ADR successor/index status consistent, spec file names versioned |
 | `tools/check-binary` | Dynamic dependency allowlist, PE security flags, no RWX segments, size gate |
 | `tools/check-commits` | `<type>(<scope>): summary` |
 | `zig fmt --complexity` | Per-file token/node baseline; growth > 10% requires updating the baseline in the same commit |
@@ -30,6 +30,8 @@ All checks are Zig programs, driven by `zig build check`.
 | `spawn-allowlist`, `ptr-cast-allowlist` | error |
 | `no-global-var`, `no-page-allocator` (libs/) | error |
 | `no-anyerror-pub`, `no-usize-contracts`, `no-debug-print`, `no-sleep-in-tests` | error |
+
+The new parser roots `program`, `compiler`, `runtime`, `wasm_profile` and `wasm_host` join the integer-narrowing rule; serialized guest/host input does not bypass trust-boundary checks.
 
 Suppression: `// lint-allow(<rule>): <reason>`, the reason is required; `tools/lint` reports the total number of suppressions.
 

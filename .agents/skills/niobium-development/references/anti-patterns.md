@@ -2,7 +2,10 @@
 
 | Symptom | Guarantee broken | Recommended design | Verification |
 |---|---|---|---|
-| Manifest gains `post_install`, `script`, or `hooks` fields | Principles 1 and 6: manifest is data, the framework is not extensible | App Bootstrap v1 (product logic runs inside the app process) | `tools/check` forbidden-field scan; schema `additionalProperties: false` |
+| Compiled program gains author expressions or arbitrary command hooks | Authoring/runtime boundary and host authority | Evaluate source at build time; use fixed capability libraries and typed primitives | Program/profile negative tests |
+| Product assembly recompiles runtime | Precompiled consumer boundary | Package the published template and preserve executable code | N2-AOT-01, N2-IMAGE-01 |
+| Core schema gains component/channel policy | Library ownership | Express policy in author libraries and fixed guests | Import-graph review and independent product scenarios |
+| Guest writes machine state directly or recovery reruns guest | Transaction integrity | Freeze output and host operations first | N2-SAFE-01, N2-REC-01 |
 | Overwriting files in `current/` directly | Transactionality: MIXED after a crash | Unpack into `versions/<seq>`, commit by pointer swap | sim OLD-or-NEW assertion |
 | JSON parsing ignores unknown fields | Contract strictness; semantic drift not covered by signatures | `contracts.json.decodeStrict` | Negative tests: unknown fields, duplicate keys |
 | Unpacking artifacts with `std.tar.pipeToFileSystem` | Path traversal, symlink escape, device files | `package.extract` strict walker | All of `tests/fixtures/malicious` rejected |

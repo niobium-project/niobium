@@ -1,5 +1,7 @@
 # Component metadata v1
 
+> Scope: retained v1 implementation. New DSL/AOT interfaces are indexed in [active contracts](../README.md#active-contracts); ADR-0022 governs reuse.
+
 - **Status:** Baseline
 
 The root directory of every component artifact contains `component.json`; all other files are under `files/`. A component owns no absolute machine paths and contains no install scripts.

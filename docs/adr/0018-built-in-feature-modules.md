@@ -1,7 +1,8 @@
 # ADR-0018: Built-in feature modules
 
-- **Status:** Proposed
-- **Date:** 2026-10-07
+- **Status:** Superseded
+- **Date:** 2026-10-08
+- **Superseded by:** [ADR-0022](0022-installer-dsl-and-aot-toolchain.md)
 
 ## Context
 

@@ -3,6 +3,8 @@ title: C ABI
 description: Functions, structures and status codes of libdistribution.
 ---
 
+> Scope: this page describes the retained v1 implementation. See the [project overview](/) for DSL/AOT authoring and capability contracts, and [Status and platforms](/status/) for evidence.
+
 Canonical sources: the header [`api/c/distribution.h`](https://github.com/niobium-project/niobium/blob/main/api/c/distribution.h) and the [abi-v1](https://github.com/niobium-project/niobium/blob/main/docs/spec/abi-v1.md) specification. For a walkthrough, see [Embed through the C ABI](/guides/embed-c-abi/).
 
 ## Entry point

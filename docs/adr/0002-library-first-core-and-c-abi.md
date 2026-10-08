@@ -1,7 +1,8 @@
 # ADR-0002: Library-first core and C ABI
 
 - **Status:** Accepted
-- **Date:** 2026-10-07
+- **Date:** 2026-10-08
+- **Amended by:** [ADR-0022](0022-installer-dsl-and-aot-toolchain.md) (DSL/toolchain scope; body retained as historical context)
 
 ## Context
 

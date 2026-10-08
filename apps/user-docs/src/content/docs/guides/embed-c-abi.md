@@ -3,6 +3,8 @@ title: Embed through the C ABI
 description: Check for, download and apply updates from your own process with libdistribution.
 ---
 
+> Scope: this page describes the retained v1 implementation. See the [project overview](/) for DSL/AOT authoring and capability contracts, and [Status and platforms](/status/) for evidence.
+
 `libdistribution` exposes the same engine as `setup` through a C ABI, so an application or launcher can check for and apply updates itself. This guide links the library and walks through one update.
 
 ## Build and link the library

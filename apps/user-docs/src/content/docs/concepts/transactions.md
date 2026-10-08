@@ -3,6 +3,8 @@ title: Transactions
 description: How Niobium guarantees that an interrupted install, update or uninstall ends at the old version or the new one.
 ---
 
+> Scope: this page describes the retained v1 implementation. See the [project overview](/) for DSL/AOT authoring and capability contracts, and [Status and platforms](/status/) for evidence.
+
 Every install, update, repair and uninstall runs as one transaction with a single point of no return. Before that point the old version stays active and recovery rolls back; after it the new version is active and recovery rolls forward. Kill the process, cut the power or fill the disk at any moment: the next run of `setup` ends at the old version or the new one, never a mix.
 
 ## The install root
