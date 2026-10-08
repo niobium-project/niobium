@@ -36,7 +36,8 @@ pub fn resolve(
     const package = try decode(arena, metadata);
     if (!std.mem.eql(u8, package.template_sha256, runtime.sha256) or
         package.template_bytes != runtime.bytes or package.profile.target != runtime.target or
-        !std.mem.eql(u8, package.version, runtime.version)) return error.LockMismatch;
+        !std.mem.eql(u8, package.version, runtime.version) or
+        !std.mem.eql(u8, package.version, published.version)) return error.LockMismatch;
     return package;
 }
 
@@ -88,6 +89,12 @@ test "N2-PROFILE-02: locked metadata must describe the exact runtime publication
     };
     const package = try resolve(a, .{ .inputs = &entries }, "runtime", "metadata", bytes);
     try std.testing.expectEqual(.@"x86_64-linux", package.profile.target);
+    entries[1].version = "1";
+    try std.testing.expectError(
+        error.LockMismatch,
+        resolve(a, .{ .inputs = &entries }, "runtime", "metadata", bytes),
+    );
+    entries[1].version = "2";
     entries[0].target = .@"x86_64-windows";
     try std.testing.expectError(
         error.LockMismatch,

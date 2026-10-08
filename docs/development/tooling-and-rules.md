@@ -31,7 +31,13 @@ All checks are Zig programs, driven by `zig build check`.
 | `no-global-var`, `no-page-allocator` (libs/) | error |
 | `no-anyerror-pub`, `no-usize-contracts`, `no-debug-print`, `no-sleep-in-tests` | error |
 
-The parser roots `program`, `compiler`, `runtime`, `wasm_profile` and `wasm_host` join the integer-narrowing rule; serialized guest/host input does not bypass trust-boundary checks.
+The complete parser-root list is `parser_paths` in
+[`tools/lint/token_rules.zig`](../../tools/lint/token_rules.zig). It includes the
+new `content`, `tar`, `image`, `kernel`, `component_worker`, `component_client`,
+`evaluator` and `access` roots alongside `compiler` and the retained parsers.
+Within every listed root, `@intCast` and `@truncate` are prohibited; use
+`std.math.cast` to reject unrepresentable untrusted integers. Serialized guest/host
+input does not bypass these trust-boundary checks.
 
 Suppression: `// lint-allow(<rule>): <reason>`, the reason is required; `tools/lint` reports the total number of suppressions.
 
