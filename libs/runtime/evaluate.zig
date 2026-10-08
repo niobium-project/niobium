@@ -11,6 +11,7 @@ pub const Error = state.Error || wasm.Error || error{
     InputUnknown,
     ReleaseRegression,
     ReleaseIdentityMismatch,
+    LibraryIdentityMismatch,
 };
 
 pub fn prepare(
@@ -24,6 +25,7 @@ pub fn prepare(
     try program.validate(model);
     const program_hash = try program.digest(arena, try program.encode(arena, model));
     if (current) |old| {
+        try state.validateSnapshot(old, owner);
         if (model.release_sequence < old.release_sequence) return error.ReleaseRegression;
         if (model.release_sequence == old.release_sequence) {
             if (!std.mem.eql(u8, program_hash, old.program_sha256)) {
@@ -104,6 +106,9 @@ fn evaluateInstance(
     const instance = call.instance;
     const library = program.find(program.Library, call.model.libraries, instance.library) orelse
         return error.ProgramReference;
+    if (call.previous) |old| {
+        if (!std.mem.eql(u8, old.library_id, library.id)) return error.LibraryIdentityMismatch;
+    }
     const inputs = try arena.alloc([]const u8, instance.inputs.len);
     for (inputs, instance.inputs) |*value, id| {
         const input = program.find(state.Value, call.inputs, id) orelse
@@ -179,7 +184,7 @@ fn resolveInputs(
     if (overrides.len > (contracts.Limits{}).program_items) return error.ProgramLimit;
     for (overrides, 0..) |value, index| {
         if (program.find(program.Input, declarations, value.id) == null) return error.InputUnknown;
-        if (value.value.len > (contracts.Limits{}).program_state_bytes) return error.ProgramLimit;
+        try program.validation.inputValue(value.value, .{});
         if (program.find(state.Value, overrides[0..index], value.id) != null) {
             return error.ProgramDuplicate;
         }

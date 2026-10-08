@@ -77,3 +77,12 @@ test "N2-SAFE-01: resource profile rejects aliases and internal metadata subtree
 test "N2-AUTH-01: a release may explicitly retire all capability instances" {
     try root.validate(.{ .product_id = "example.empty", .release_sequence = 3 });
 }
+
+test "N2-AUTH-01: input text is bounded in UTF-8 bytes" {
+    try root.validation.inputValue("\u{e9}", .{ .program_state_bytes = 2 });
+    try std.testing.expectError(error.ProgramLimit, root.validation.inputValue(
+        "\u{e9}",
+        .{ .program_state_bytes = 1 },
+    ));
+    try std.testing.expectError(error.ProgramInvalid, root.validation.inputValue("\xff", .{}));
+}

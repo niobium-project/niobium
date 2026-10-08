@@ -77,7 +77,7 @@ pub fn validateSnapshot(value: Snapshot, owner: Owner) Error!void {
     if (value.migrations.len > (contracts.Limits{}).program_items) return error.ProgramLimit;
     for (value.inputs, 0..) |input, index| {
         try program.validation.identifier(input.id);
-        if (input.value.len > (contracts.Limits{}).program_state_bytes) return error.ProgramLimit;
+        try program.validation.inputValue(input.value, .{});
         if (program.find(Value, value.inputs[0..index], input.id) != null) {
             return error.StateInvalid;
         }
@@ -151,6 +151,7 @@ pub fn validatePlan(
 ) Error!void {
     if (value.schema != 1 or value.host_abi != 1) return error.PlanUnsupported;
     try identity(value.product_id, value.root_id, owner);
+    if (!std.unicode.utf8ValidateSlice(value.root_path)) return error.StateInvalid;
     if (!std.mem.eql(u8, value.root_path, path)) return error.StateInvalid;
     if (value.generation == 0) return error.StateInvalid;
     if (value.previous) |previous| {

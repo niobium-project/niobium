@@ -244,3 +244,43 @@ test "N2-AUTH-01: emitted buffer outlives builder and failed additions remain ab
     try std.testing.expect(output.data == null);
     try std.testing.expectEqual(@as(usize, 0), output.len);
 }
+
+test "N2-AUTH-01: C byte views reject invalid UTF-8 and preserve Unicode defaults" {
+    const view = struct {
+        fn of(bytes: []const u8) View {
+            return .{ .data = bytes.ptr, .len = bytes.len };
+        }
+    }.of;
+    const unicode = "caf\u{e9} \u{1f680}";
+    for ([_][]const u8{ "\xff", unicode }) |text| {
+        var handle: ?*Handle = null;
+        try std.testing.expectEqual(@as(i32, 0), nbc_create(
+            1,
+            view("example.product"),
+            1,
+            1,
+            &handle,
+        ));
+        defer nbc_destroy(handle);
+        try std.testing.expectEqual(@as(i32, 0), nbc_add_input(handle, view("choice"), view(text)));
+        var output: Buffer = .{ .data = null, .len = 0 };
+        defer nbc_buffer_free(&output);
+        if (std.mem.eql(u8, text, "\xff")) {
+            try std.testing.expectEqual(@as(i32, -2), nbc_emit(handle, &output));
+            try std.testing.expect(output.data == null);
+            try std.testing.expectEqual(@as(usize, 0), output.len);
+            var message: View = .{ .data = null, .len = 0 };
+            try std.testing.expectEqual(@as(i32, 0), nbc_last_error(handle, &message));
+            try std.testing.expectEqualStrings("ProgramInvalid", message.data.?[0..message.len]);
+        } else {
+            try std.testing.expectEqual(@as(i32, 0), nbc_emit(handle, &output));
+            var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+            defer arena.deinit();
+            const model = try compiler.program.decode(
+                arena.allocator(),
+                output.data.?[0..output.len],
+            );
+            try std.testing.expectEqualStrings(unicode, model.inputs[0].default);
+        }
+    }
+}

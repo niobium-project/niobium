@@ -27,7 +27,19 @@ The product program declares permitted model transitions as identified `from` an
 compiler checks IDs, forward version movement and unique source versions.
 Runtime validates the applicable path against the actual installed versions.
 
-Equal versions require no migration. Different versions require one direct declared edge to the target version in
+Persisted state belongs to an instance within its library identity. The initial
+profile rejects rebinding an existing instance to a different library ID, even
+when the state versions are equal or a version transition is declared. A new
+instance ID starts with empty state. Cross-library state transfer requires a
+separate future contract.
+
+A library implementation digest may change while its library ID and state version
+remain stable. Keeping that version declares that the new implementation can read
+the existing state format; an incompatible format requires a declared migration.
+The guest ABI version describes calling conventions, not state compatibility.
+
+Equal versions within the same library identity require no migration. Different
+versions require one direct declared edge to the target version in
 the initial executable profile. A missing path is a refusal before mutation. Neither
 display-version ordering nor a newly default-selected component creates a path.
 Version-skipping is allowed only when the declared edge explicitly covers it.

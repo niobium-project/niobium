@@ -14,7 +14,17 @@ pub const Error = evaluation.Error || transaction.Error || error{
     NotInstalled,
     RootNotEmpty,
 };
-pub const Action = enum { install, apply, uninstall, status, recover };
+pub const Action = enum {
+    install,
+    apply,
+    uninstall,
+    status,
+    recover,
+
+    pub fn needsProduct(action: Action) bool {
+        return action != .status and action != .recover;
+    }
+};
 pub const Options = struct {
     io: std.Io,
     arena: std.mem.Allocator,
@@ -27,6 +37,7 @@ pub const Options = struct {
 pub const Result = struct { recovered: bool, state: ?state.Snapshot };
 
 pub fn run(options: Options) Error!Result {
+    if (options.action.needsProduct() and options.model == null) return error.ProductMismatch;
     if (options.model) |model| try program.validate(model);
     const store = try storage.Storage.open(options.io, options.arena, options.root);
     defer store.close();
@@ -121,4 +132,15 @@ fn uninstallPlan(
 
 test {
     _ = @import("runtime_test.zig");
+}
+
+test "N2-SAFE-01: mutating actions require a product before opening storage" {
+    for ([_]Action{ .install, .apply, .uninstall }) |action| {
+        try std.testing.expectError(error.ProductMismatch, run(.{
+            .io = std.testing.io,
+            .arena = std.testing.allocator,
+            .root = "relative-root-must-not-be-opened",
+            .action = action,
+        }));
+    }
 }

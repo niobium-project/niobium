@@ -2,7 +2,7 @@
 .{
     .files = .{
         .{ .path = "apps/compiler/main.zig", .tokens = 919, .nodes = 446 },
-        .{ .path = "apps/libcompiler/root.zig", .tokens = 2173, .nodes = 1092 },
+        .{ .path = "apps/libcompiler/root.zig", .tokens = 2585, .nodes = 1301 },
         .{ .path = "apps/libdistribution/abi_test.zig", .tokens = 2099, .nodes = 1068 },
         .{ .path = "apps/libdistribution/root.zig", .tokens = 3746, .nodes = 1867 },
         .{ .path = "apps/nbpack/cli.zig", .tokens = 1906, .nodes = 953 },
@@ -43,7 +43,7 @@
         .{ .path = "libs/bootstrap/bootstrap_test.zig", .tokens = 936, .nodes = 438 },
         .{ .path = "libs/bootstrap/root.zig", .tokens = 1302, .nodes = 612 },
         .{ .path = "libs/capability_sdk/root.zig", .tokens = 346, .nodes = 163 },
-        .{ .path = "libs/compiler/root.zig", .tokens = 1770, .nodes = 854 },
+        .{ .path = "libs/compiler/root.zig", .tokens = 1979, .nodes = 964 },
         .{ .path = "libs/conformance/root.zig", .tokens = 3639, .nodes = 1871 },
         .{ .path = "libs/contracts/bootstrap.zig", .tokens = 509, .nodes = 227 },
         .{ .path = "libs/contracts/canonical.zig", .tokens = 766, .nodes = 385 },
@@ -128,8 +128,8 @@
         .{ .path = "libs/resolver/resolver_test.zig", .tokens = 1908, .nodes = 859 },
         .{ .path = "libs/resolver/root.zig", .tokens = 1015, .nodes = 464 },
         .{ .path = "libs/runtime/evaluate.zig", .tokens = 1821, .nodes = 805 },
-        .{ .path = "libs/runtime/root.zig", .tokens = 1069, .nodes = 528 },
-        .{ .path = "libs/runtime/runtime_test.zig", .tokens = 2533, .nodes = 1233 },
+        .{ .path = "libs/runtime/root.zig", .tokens = 1186, .nodes = 581 },
+        .{ .path = "libs/runtime/runtime_test.zig", .tokens = 3605, .nodes = 1716 },
         .{ .path = "libs/runtime/state.zig", .tokens = 1940, .nodes = 966 },
         .{ .path = "libs/runtime/storage.zig", .tokens = 2324, .nodes = 1117 },
         .{ .path = "libs/runtime/transaction.zig", .tokens = 1507, .nodes = 784 },

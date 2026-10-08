@@ -62,6 +62,8 @@ versions, and check references before runtime mutation.
 The serializer emits all fields. Decoder defaults are recorded in the schema;
 library and instance arrays default to empty. An empty capability set is valid,
 including a release that removes all previously selected capabilities.
+Input defaults are valid UTF-8 text. Native authoring byte views with invalid UTF-8
+are rejected before normalization or serialization; valid Unicode text is preserved.
 JSON Schema lengths count characters. Native limits count UTF-8 bytes, and the
 complete encoded program also has its own byte ceiling. Lowercase hex uses two
 characters per decoded byte.

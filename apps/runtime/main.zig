@@ -42,8 +42,7 @@ fn execute(init: std.process.Init) !void {
         return;
     }
     const args = try arguments(arena, argv);
-    const needs_product = args.action == .install or args.action == .apply;
-    const model = if (needs_product) try ownProgram(init) else null;
+    const model = if (args.action.needsProduct()) try ownProgram(init) else null;
     var fault: Fault = .{ .io = init.io, .name = args.failpoint };
     const result = try runtime.run(.{
         .io = init.io,

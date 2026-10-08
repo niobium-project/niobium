@@ -235,3 +235,131 @@ test "N2-MIG-01: stored versions and direct transitions must be explicitly suppo
         },
     }));
 }
+
+const empty_guest = "\x00asm\x01\x00\x00\x00" ++
+    "\x01\x05\x01\x60\x00\x01\x7f" ++
+    "\x03\x02\x01\x00" ++
+    "\x05\x04\x01\x01\x01\x01" ++
+    "\x07\x17\x02\x06memory\x02\x00\x0anb_plan_v1\x00\x00" ++
+    "\x0a\x06\x01\x04\x00\x41\x00\x0b";
+
+fn inputProgram() program.Program {
+    return .{
+        .product_id = owner.product_id,
+        .release_sequence = 1,
+        .inputs = &.{.{ .id = "sdk", .default = "stable" }},
+    };
+}
+
+test "N2-MIG-01: persisted instance state cannot cross library identities" {
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    var model = inputProgram();
+    model.release_sequence = 2;
+    const digest = try program.digest(a, empty_guest);
+    model.libraries = &.{.{
+        .id = "replacement",
+        .wasm_hex = try program.encodeHex(a, empty_guest),
+        .sha256 = digest,
+    }};
+    model.instances = &.{.{ .id = "instance", .library = "replacement" }};
+    const previous: state.Snapshot = .{
+        .root_id = owner.root_id,
+        .product_id = owner.product_id,
+        .generation = 1,
+        .release_sequence = 1,
+        .model_version = 1,
+        .program_sha256 = try program.digest(a, "previous-program"),
+        .inputs = &.{},
+        .instances = &.{.{
+            .id = "instance",
+            .library_id = "original",
+            .library_sha256 = digest,
+            .version = 1,
+            .data_hex = try program.encodeHex(a, "original-private-state"),
+        }},
+        .migrations = &.{},
+    };
+    try std.testing.expectError(
+        error.LibraryIdentityMismatch,
+        runtime.evaluation.prepare(a, model, owner, "/test", previous, &.{}),
+    );
+    const updated_guest = empty_guest ++ "\x00\x01\x00";
+    model.libraries = &.{.{
+        .id = "original",
+        .wasm_hex = try program.encodeHex(a, updated_guest),
+        .sha256 = try program.digest(a, updated_guest),
+    }};
+    model.instances = &.{.{ .id = "instance", .library = "original" }};
+    const accepted = try runtime.evaluation.prepare(a, model, owner, "/test", previous, &.{});
+    const instance = (accepted.next orelse return error.TestUnexpectedResult).instances[0];
+    try std.testing.expectEqualStrings(previous.instances[0].data_hex, instance.data_hex);
+    try std.testing.expect(!std.mem.eql(
+        u8,
+        previous.instances[0].library_sha256,
+        instance.library_sha256,
+    ));
+}
+
+test "N2-SAFE-01: runtime overrides and durable snapshot inputs must be UTF-8" {
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const model = inputProgram();
+    for ([_][]const u8{ "\xff", "\xc0\x80", "\xed\xa0\x80", "\xe2\x82" }) |invalid| {
+        try std.testing.expectError(error.ProgramInvalid, runtime.evaluation.prepare(
+            a,
+            model,
+            owner,
+            "/test",
+            null,
+            &.{.{ .id = "sdk", .value = invalid }},
+        ));
+    }
+    const prepared = try runtime.evaluation.prepare(a, model, owner, "/test", null, &.{});
+    var snapshot = prepared.next orelse return error.TestUnexpectedResult;
+    snapshot.inputs = &.{.{ .id = "sdk", .value = "\xff" }};
+    try std.testing.expectError(error.ProgramInvalid, state.validateSnapshot(snapshot, owner));
+    try std.testing.expectError(
+        error.ProgramInvalid,
+        runtime.evaluation.prepare(a, model, owner, "/test", snapshot, &.{}),
+    );
+}
+
+test "N2-LIFE-01: Unicode runtime input roundtrips through durable state" {
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const text = "工具链 café 🦀";
+    const model = inputProgram();
+    const selected: []const state.Value = &.{.{ .id = "sdk", .value = text }};
+    const prepared = try runtime.evaluation.prepare(a, model, owner, "/test", null, selected);
+    const snapshot = prepared.next orelse return error.TestUnexpectedResult;
+    const decoded = try state.decode(state.Snapshot, a, try state.encode(a, snapshot));
+    try state.validateSnapshot(decoded, owner);
+    try std.testing.expectEqualStrings(text, decoded.inputs[0].value);
+    const reapplied = try runtime.evaluation.prepare(a, model, owner, "/test", decoded, &.{});
+    const retained = (reapplied.next orelse return error.TestUnexpectedResult).inputs[0].value;
+    try std.testing.expectEqualStrings(text, retained);
+}
+
+test "N2-SAFE-01: durable plan root paths must be UTF-8" {
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+    const invalid: state.Plan = .{
+        .root_id = owner.root_id,
+        .root_path = "/bad\xff/path",
+        .product_id = owner.product_id,
+        .generation = 1,
+        .previous = null,
+        .next = null,
+        .files = &.{},
+    };
+    try std.testing.expectError(error.StateInvalid, state.validatePlan(
+        arena.allocator(),
+        invalid,
+        owner,
+        invalid.root_path,
+    ));
+}

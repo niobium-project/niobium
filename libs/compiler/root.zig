@@ -203,3 +203,20 @@ test "N2-AUTH-01: authoring owns input bytes and bounds additions" {
     for (1..(contracts.Limits{}).program_items) |_| try builder.addInput("bounded", "");
     try std.testing.expectError(error.AuthoringLimit, builder.addInput("overflow", ""));
 }
+
+test "N2-AUTH-01: native authoring rejects invalid UTF-8 and preserves Unicode inputs" {
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+    for ([_][]const u8{ "\xff", "\xc3", "\xc0\xaf", "\xed\xa0\x80" }) |invalid| {
+        var builder = try Builder.init(arena.allocator(), "example.product", 1, 1);
+        try builder.addInput("choice", invalid);
+        try std.testing.expectError(error.ProgramInvalid, builder.emit());
+    }
+    const unicode = "caf\u{e9} \u{1f680}";
+    var builder = try Builder.init(arena.allocator(), "example.product", 1, 1);
+    try builder.addInput("choice", unicode);
+    const emitted = try builder.emit();
+    const decoded = try program.decode(arena.allocator(), emitted);
+    try std.testing.expectEqualStrings(unicode, decoded.inputs[0].default);
+    try std.testing.expectEqualStrings(emitted, try program.encode(arena.allocator(), decoded));
+}

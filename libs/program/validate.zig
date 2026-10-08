@@ -15,9 +15,7 @@ pub fn program(value: root.Program, limits: contracts.Limits) Error!void {
     try entries(root.Resource, value.resources, limits);
     try entries(root.Instance, value.instances, limits);
     try migrations(value.upgrades, value.model_version, limits);
-    for (value.inputs) |input| {
-        if (input.default.len > limits.program_state_bytes) return error.ProgramLimit;
-    }
+    for (value.inputs) |input| try inputValue(input.default, limits);
     for (value.libraries) |library| {
         if (library.abi != 1) return error.ProgramUnsupported;
         try blob(library.wasm_hex, library.sha256, limits.wasm_module_bytes);
@@ -41,6 +39,11 @@ pub fn program(value: root.Program, limits: contracts.Limits) Error!void {
             }
         }
     }
+}
+
+pub fn inputValue(bytes: []const u8, limits: contracts.Limits) Error!void {
+    if (bytes.len > limits.program_state_bytes) return error.ProgramLimit;
+    if (!std.unicode.utf8ValidateSlice(bytes)) return error.ProgramInvalid;
 }
 
 fn ancestor(parent: []const u8, child: []const u8) bool {

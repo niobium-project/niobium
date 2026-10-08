@@ -78,9 +78,12 @@ fn rejectionPreservesState(w: *World, setups: Setups, root: []const u8) !void {
     }, false);
     try expect(std.mem.indexOf(u8, unknown.stderr, "InputUnknown") != null);
     try w.expectFile(state_path, before);
-    const mismatch = try w.run(&.{ setups.files, "apply", "--root", root }, false);
-    try expect(std.mem.indexOf(u8, mismatch.stderr, "ProductMismatch") != null);
-    try w.expectFile(state_path, before);
+    for ([_][]const u8{ "apply", "uninstall" }) |action| {
+        const mismatch = try w.run(&.{ setups.files, action, "--root", root }, false);
+        try expect(std.mem.indexOf(u8, mismatch.stderr, "ProductMismatch") != null);
+        try w.expectFile(state_path, before);
+        try environment(w, root, "beta", "1:nightly");
+    }
 }
 
 pub fn environment(w: *World, root: []const u8, sdk: []const u8, previous: []const u8) !void {

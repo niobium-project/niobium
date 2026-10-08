@@ -23,6 +23,10 @@ Before mutation, the runtime validates the image, program, compatibility, owners
 and upgrade declaration. Recovery of a pending transaction precedes new work.
 Unknown state or plan versions fail without trying to reinterpret their fields.
 
+Install, apply and uninstall require a validated compiled product whose identity
+matches the root owner before pending recovery or new work. Status and recover
+may use the unbound runtime template and do not require product or guest bytes.
+
 Each instance receives only its bound inputs, assets and resources. Evaluation is
 defined by [capability-library-v1](capability-library-v1.md). The runtime validates
 the union of outputs for ownership and collisions before freezing a plan. No
