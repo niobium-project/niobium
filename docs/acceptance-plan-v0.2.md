@@ -10,25 +10,25 @@ The designated target is macOS arm64, user scope, CLI, ad-hoc signed single-file
 
 | ID | Description | Coverage | Status | Evidence |
 |---|---|---|---|---|
-| N2-AUTH-01 | Zig, C and Starlark produce equivalent normalized models; bindings and C ownership are preserved | aot-e2e | PASS | `.evidence/aot/20261008T020918Z` |
-| N2-AOT-01 | Two products use one precompiled runtime with no runtime relink or product-stage source access | aot-e2e | PASS | `.evidence/aot/20261008T020918Z` |
-| N2-LIB-01 | Official and independent Wasm libraries execute through the same ABI; actual input/facts affect resources | aot-e2e | PASS | `.evidence/aot/20261008T020918Z` |
-| N2-SAFE-01 | Invalid programs, images and guest behavior fail within budgets before machine effects | aot-e2e | PASS | `.evidence/pr-validation/20261008T020715Z/1.log (guest, parser and ownership checks); .evidence/aot/20261008T020918Z` |
-| N2-LIFE-01 | Packaged products install, reconfigure, update, report state and uninstall real owned files | aot-e2e | PASS | `.evidence/aot/20261008T020918Z` |
-| N2-MIG-01 | Explicit product and library-state 1-to-2 migration commits with resources; missing paths refuse | aot-e2e | PASS | `.evidence/aot/20261008T020918Z` |
-| N2-REC-01 | Real process kills recover complete OLD or NEW using frozen host plans without guest reevaluation | aot-e2e | PASS | `.evidence/aot/20261008T020918Z` |
-| N2-IMAGE-01 | Final setup preserves template code, runs after signing, verifies signature and rejects tampering/capacity errors | aot-e2e | PASS | `.evidence/aot/20261008T020918Z` |
+| N2-AUTH-01 | Zig, C and Starlark produce equivalent normalized models; bindings and C ownership are preserved | aot-e2e | PASS | `.evidence/aot/20261008T032800Z-b55200b0a349f66c` |
+| N2-AOT-01 | Two products use one precompiled runtime with no runtime relink or product-stage source access | aot-e2e | PASS | `.evidence/aot/20261008T032800Z-b55200b0a349f66c` |
+| N2-LIB-01 | Official and independent Wasm libraries execute through the same ABI; actual input/facts affect resources | aot-e2e | PASS | `.evidence/aot/20261008T032800Z-b55200b0a349f66c` |
+| N2-SAFE-01 | Invalid programs, images and guest behavior fail within budgets before machine effects | aot-e2e | PASS | `.evidence/pr-review/20261008T032747Z/1.log (guest, parser and ownership checks); .evidence/aot/20261008T032800Z-b55200b0a349f66c` |
+| N2-LIFE-01 | Packaged products install, reconfigure, update, report state and uninstall real owned files | aot-e2e | PASS | `.evidence/aot/20261008T032800Z-b55200b0a349f66c` |
+| N2-MIG-01 | Explicit product and library-state 1-to-2 migration commits with resources; missing paths refuse | aot-e2e | PASS | `.evidence/aot/20261008T032800Z-b55200b0a349f66c` |
+| N2-REC-01 | Real process kills recover complete OLD or NEW using frozen host plans without guest reevaluation | aot-e2e | PASS | `.evidence/aot/20261008T032800Z-b55200b0a349f66c` |
+| N2-IMAGE-01 | Final setup preserves template code, runs after signing, verifies signature and rejects tampering/capacity errors | aot-e2e | PASS | `.evidence/aot/20261008T032800Z-b55200b0a349f66c` |
 
 ## Required scenarios
 
 | ID | Positive scenarios | Negative and failure scenarios | Observable assertion |
 |---|---|---|---|
-| N2-AUTH-01 | Functions, loops, conditionals and module composition; identical Zig/C/Starlark program bytes | Invalid references and targets, duplicate IDs, C null/length and ownership errors | Compare canonical bytes and exact error category; preserve binding order |
+| N2-AUTH-01 | Functions, loops, conditionals and module composition; identical Zig/C/Starlark program bytes | Invalid references and targets, duplicate IDs, non-UTF-8 defaults, C null/length and ownership errors | Compare canonical bytes and exact error category; preserve binding order |
 | N2-AOT-01 | Isolated product assembly with published tools, template, author outputs and libraries only | Missing library/runtime, incompatible ABI and assembly capacity | Record template identity and code-section digests; no compiler/linker for runtime in trace |
 | N2-LIB-01 | External library uses input, OS, architecture and existing state | Missing export/library, digest mismatch and invalid binding | Compare actual deployed bytes after changing guest code/input with same template |
 | N2-SAFE-01 | Valid maximum-bound inputs remain usable | Unknown imports/WASI, start/implicit init, forged handles, pointer overflow, OOB, duplicate emit, infinite loop, memory/output/host-call limits | Bounded failure, unchanged active files/state, no ambient host access |
-| N2-LIFE-01 | Install and repeat, changed input apply, higher release update, status, uninstall | Foreign owner, nonempty unclaimed root, generation collision, symlink escape, corrupt state and concurrent transaction | Real filesystem contents, current generation and persisted state agree; unregistered files survive cleanup |
-| N2-MIG-01 | Explicit model and state transition; migrated state feeds planning | Missing/ambiguous path, guest converter failure, unknown stored version | Version and resources move together; rejected transition leaves previous state |
+| N2-LIFE-01 | Install and repeat, changed input apply, higher release update, status, uninstall | Foreign owner on apply/uninstall, non-UTF-8 runtime inputs, nonempty unclaimed root, generation collision, symlink escape, corrupt state and concurrent transaction | Real filesystem contents, current generation and persisted state agree; unregistered files survive cleanup |
+| N2-MIG-01 | Explicit model and state transition; migrated state feeds planning | Missing/ambiguous path, changed library identity, guest converter failure, unknown stored version | Version and resources move together; rejected transition leaves previous state |
 | N2-REC-01 | Kill after plan persistence, staging, activation and commit; recover twice | Missing frozen bytes, unknown plan schema and corrupted old generation | OLD or NEW only; no partial state; guest-free recovery; corrupted old state refuses before mutation |
 | N2-IMAGE-01 | Two signed setups from one immutable template | Corrupt length/digest/padding, malformed section, over-capacity payload, post-sign tampering | Native execution and strict signature verification on the same final bytes |
 
@@ -115,3 +115,18 @@ The same tree's user-site build produced 61 pages with valid internal links;
 its log is `.evidence/pr-validation/20261008T020715Z/site.log`. Only the AGENTS
 wording about shared test-system evidence and this acceptance record changed
 after the source snapshot; documentation checks were repeated on those edits.
+
+## Boundary regression qualification
+
+Commit `54dd3f310898ce794b6de541b0007366df02c892` completed `verify` (550/550
+build steps), `fuzz` corpus replay and `sim -Dseeds=2000`. Commands, exit codes
+and logs are in `.evidence/pr-review/20261008T032747Z`. Its N2 evidence is
+`.evidence/aot/20261008T032800Z-b55200b0a349f66c`, with a clean source revision,
+716 independently checked source-file hashes and a matching executed-binary
+digest. The companion deliberate argument failure saved `FAIL`, `Usage` and
+exit code 1; `provenance-check.json` in the review evidence records both checks.
+
+The regressions cover product-bound uninstall, capability-state library identity,
+UTF-8 defaults/overrides/inherited state/root paths, valid Unicode roundtrips and
+failure-path evidence. The acceptance-record edit was followed by documentation
+and commit checks; executable sources are unchanged from the qualified commit.
