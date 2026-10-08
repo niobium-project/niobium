@@ -34,7 +34,7 @@ export default defineConfig({
     starlight({
       title: 'Niobium',
       description:
-        'A declarative, transactional installation and distribution framework written in Zig.',
+        'An installation and distribution DSL with an AOT compiler and precompiled native runtime.',
       defaultLocale: 'root',
       locales: {
         root: { label: en['niobium.locale.label'], lang: 'en' },

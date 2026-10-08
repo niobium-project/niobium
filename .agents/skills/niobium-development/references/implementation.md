@@ -26,10 +26,12 @@ The libc hooks for `stb_truetype` are `export`ed by `bindings.zig`. Any artifact
 
 ## Errors and exit codes
 
-- Each module defines its own error set; `engine` merges them, and `core.exit_code.fromError` maps them to the `cli-v1` table. A new error must appear in the mapping, otherwise compilation fails (exhaustive switch).
-- C ABI: `nb_status` = `-exit_code`.
+- Each module defines its own explicit error set. The owning application or ABI adapter maps errors to its public protocol. Authoring C and Wasm guest ABI status conventions are independent.
+- The retained `engine` maps errors through `core.exit_code.fromError` to `cli-v1`; its legacy distribution C ABI uses `nb_status = -exit_code`.
 
 ## Phases and side effects
+
+The active DSL flow freezes guest outputs and host operations under [runtime-lifecycle-v1](../../../../docs/spec/runtime-lifecycle-v1.md). The following phase names describe the retained manifest/engine profile.
 
 - `Prepare` downloads, verifies through TUF, and unpacks into staging before `Execute` starts.
 - `Execute` writes only `versions/<seq>` and never touches `current`; `Commit` is the pointer swap ([ADR-0006](../../../../docs/adr/0006-transaction-and-pointer-swap-commit.md)).
@@ -38,7 +40,7 @@ The libc hooks for `stb_truetype` are `export`ed by `bindings.zig`. Any artifact
 
 ## Platform code
 
-- OS APIs and `@ptrCast` appear only in `libs/platform/<os>/` and `libs/ui/backend/<os>/`.
+- Native APIs and pointer conversions stay in the explicit bridges listed by `build/modules.zig`. The Wasm host validates every guest range before translating it; an ABI bridge never grants ambient authority.
 - Windows paths are always converted to UTF-16 with the `\\?\` prefix; do not use ANSI APIs.
 - For the platform pitfall list, see the `niobium-platform-capability` skill.
 

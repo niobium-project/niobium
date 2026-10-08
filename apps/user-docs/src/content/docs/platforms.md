@@ -3,6 +3,8 @@ title: Platform support
 description: Which platforms Niobium targets, what each support tier commits to, and what comes next.
 ---
 
+> Scope: the guidance and platform records below apply to the retained v1 implementation. New DSL/AOT interfaces and qualification have separate evidence on [Status and platforms](/status/).
+
 Niobium sorts the platforms it builds for into three tiers. A tier states what the project commits to on that platform; whether the commitment is met today is recorded on [Status and platforms](/status/), the only page that reports results.
 
 The list is short on purpose. Niobium is maintained by one person in spare time, with no company resources behind it ([About the project](/about/)), and every Tier 1 platform costs build, test and release time on every change.

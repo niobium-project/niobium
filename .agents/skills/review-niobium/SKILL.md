@@ -7,6 +7,16 @@ description: Security and boundary checklist for reviewing Niobium changes (proc
 
 Answer each item "yes/no/not applicable"; every "no" must come with a fix or a justification in the review.
 
+## Compiler, libraries and runtime
+
+- [ ] Author code and Starlark are absent from runtime dependencies.
+- [ ] Product assembly preserves the runtime template input and executable code sections without relinking.
+- [ ] Official and external libraries use the same checked ABI and authority grants.
+- [ ] Wasm validation rejects ambient imports and automatic initialization; all explicit calls share a budget.
+- [ ] Guest state/output is copied and frozen before mutation; recovery executes only durable host plans.
+- [ ] Library/product/framework versions and migration identities are checked independently.
+- [ ] Core types contain no product-specific component/channel policy.
+
 ## Execution and elevation
 
 - [ ] New process spawns appear only in paths listed in `build/modules.zig` `spawn_allowlist`.
@@ -17,10 +27,12 @@ Answer each item "yes/no/not applicable"; every "no" must come with a fix or a j
 ## Archives and file system
 
 - [ ] Extraction goes only through `package.extract`; it rejects absolute paths, `..`, symlinks, hardlinks, devices, duplicate paths, and over-limit sizes and compression ratios.
-- [ ] Writes happen only in the `versions/<seq>` staging area; the only commit is the pointer swap.
+- [ ] Machine writes follow the selected host primitive lifecycle; generation deployment stages before pointer activation. Guest imports cannot write directly.
 - [ ] Delete operations are confined to the install root and have journal records.
 
 ## Trust
+
+The following checks apply to the retained TUF distribution profile and its library adaptation. Other declared profiles require their own authorization contract and evidence.
 
 - [ ] All remote bytes are verified by TUF before use (length + sha256 + signature chain).
 - [ ] Comparing old and new uses `release_sequence` and the TUF version number; rollback, freeze (expiry), and mix-and-match snapshots are rejected.
@@ -29,8 +41,8 @@ Answer each item "yes/no/not applicable"; every "no" must come with a fix or a j
 ## C ABI
 
 - [ ] `export fn` does not expose Zig types, slices, error unions, or allocators.
-- [ ] Every error maps to an `nb_status`; output buffers are provided by the caller or have a matching free function.
-- [ ] `distribution.h` is in sync with the implementation, and `zig build c-smoke` passes.
+- [ ] Every error maps to the owning ABI status; output buffers are provided by the caller or have a matching free function.
+- [ ] The owning header (`compiler.h`, `capability.h` or retained `distribution.h`) matches its implementation and consumer tests; its designated test lane ran.
 
 ## Size and dependencies
 

@@ -3,6 +3,8 @@ title: Install silently
 description: Run setup without a window from scripts, deployment tools or CI, and read its result.
 ---
 
+> Scope: this page describes the retained v1 implementation. See the [project overview](/) for DSL/AOT authoring and capability contracts, and [Status and platforms](/status/) for evidence.
+
 Every operation the installer window offers is also a command. With `--silent` and `--json`, `setup` runs without interaction, prints machine-readable events on standard output, and reports the outcome through its exit code.
 
 ## Install

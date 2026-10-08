@@ -3,6 +3,8 @@ title: Publish and host
 description: Create a repository, publish and promote releases on channels, serve the repository over HTTP, and ship offline bundles.
 ---
 
+> Scope: this page describes the retained v1 implementation. See the [project overview](/) for DSL/AOT authoring and capability contracts, and [Status and platforms](/status/) for evidence.
+
 A Niobium repository is a directory of signed metadata and content-addressed files. You create it once, publish every release into it with `nbpack`, and either serve it over HTTP or copy it into offline bundles. This guide assumes you have component artifacts ([Package](/guides/package/)) and keys ([Sign and manage keys](/guides/sign-and-keys/)).
 
 ## Create the repository with the first release

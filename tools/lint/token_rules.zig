@@ -15,6 +15,11 @@ const panic_owners = [_][]const u8{
 /// Modules that parse untrusted bytes: no @intCast/@truncate (use std.math.cast).
 const parser_paths = [_][]const u8{
     "libs/contracts/",
+    "libs/program/",
+    "libs/compiler/",
+    "libs/runtime/",
+    "libs/wasm_profile/",
+    "libs/wasm_host/",
     "libs/manifest/",
     "libs/trust/",
     "libs/package/",
@@ -244,5 +249,27 @@ fn checkBoundaryIdentifier(
             "{s} in a contracts wire type",
             .{name},
         );
+    }
+}
+
+test "DSL trust-boundary modules reject narrowing casts" {
+    const paths = [_][]const u8{
+        "libs/program/decode.zig",    "libs/compiler/input.zig",    "libs/runtime/state.zig",
+        "libs/wasm_profile/root.zig", "libs/wasm_host/imports.zig",
+    };
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+    for (paths) |path| {
+        var ctx = try Ctx.init(
+            arena.allocator(),
+            path,
+            "fn decode(value: u64) u8 { return @intCast(value); }",
+        );
+        try run(&ctx);
+        var found = false;
+        for (ctx.findings.items) |finding| {
+            if (std.mem.eql(u8, finding.rule, "parser-int-cast")) found = true;
+        }
+        try std.testing.expect(found);
     }
 }

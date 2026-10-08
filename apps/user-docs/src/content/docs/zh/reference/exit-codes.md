@@ -3,6 +3,8 @@ title: 退出码
 description: setup 和 nbpack 的稳定退出码、对应的 C ABI 状态码，以及事件错误码。
 ---
 
+> 适用范围：此页描述保留的 v1 实现。新的 DSL/AOT 产品构建与能力库契约见[项目概览](/zh/)，验收证据见[状态与平台](/zh/status/)。
+
 权威来源：[cli-v1](https://github.com/niobium-project/niobium/blob/main/docs/spec/cli-v1.md#exit-codes) 中的退出码表及其实现 [`libs/core/exit_code.zig`](https://github.com/niobium-project/niobium/blob/main/libs/core/exit_code.zig)。退出码是公开的兼容性契约：一个代码的含义永远不会改变。
 
 C ABI 以负数返回相同的代码；常量定义在 [`distribution.h`](https://github.com/niobium-project/niobium/blob/main/api/c/distribution.h) 中。

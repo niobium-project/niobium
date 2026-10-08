@@ -2,14 +2,14 @@
 
 ## Design checklist
 
-1. **Data or code?** Product differences go into the manifest; when logic is needed, hand it to the App Bootstrap process.
-2. **Desired state?** The planner only compares "current state + manifest → desired state" and does not record imperative steps.
+1. **Evaluation boundary?** Author source executes at build time. Fixed Wasm libraries compute runtime policy through explicit host authority. Application-owned business migration uses its own activation contract.
+2. **Frozen result?** Planning combines compiled program, explicit inputs and observed state. Host effects and resulting state become durable before mutation; recovery never reruns guest policy.
 3. **Ownership?** The installer owns `versions/`, the `current` pointer, the journal, and trust state; the app owns user data and runtime configuration. The installer does not write to the app data directory.
 4. **Privilege?** Operations that need elevation must belong to the closed op set of `ipc-v1`; adding an op = changing the spec + broker + helper + negative tests.
-5. **Transaction?** A new operation must be expressible as a journal record and be rollbackable; the only commit point is the pointer swap.
+5. **Transaction?** A new primitive specifies durable recovery semantics. The initial generation profile commits through a pointer swap; another profile requires an explicit contract and OLD-or-NEW evidence.
 6. **Bounds?** Every loop, queue, retry, and read states its upper bound and timeout.
-7. **Journey?** Who triggers the change, and what success, refusal, and waiting look like to the user; which `N1-*` ID it maps to. Name the states that must not be confused: `versions/<seq>` vs `current`, broker vs helper, UI snapshot vs journal.
-8. **Identity?** The install root, product id, and `release_sequence` come from the manifest, plan, or `installation.json`. Never infer them from a display name or the process cwd.
+7. **Journey?** Who triggers the change, and what success, refusal, and waiting look like to the user; which N2 ID it maps to (N1 remains legacy). Name the states that must not be confused: `versions/<seq>` vs `current`, broker vs helper, UI snapshot vs journal.
+8. **Identity?** Product/release, runtime template, program, library and artifact identities are distinct. The install root and selections come from validated bindings and installed state. Never infer them from a display name or the process cwd.
 9. **Failure?** For each new state: what is durable, and how recovery (`RecoverIncompleteTransaction`, implemented as `transaction.recover` in `libs/transaction/recovery.zig`) reaches OLD or NEW. An unknown outcome (lost helper, kill mid-op, dropped download) stays unknown until it is reconciled from the journal.
 
 ## Debugging process

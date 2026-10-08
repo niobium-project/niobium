@@ -1,0 +1,5 @@
+product("example.files", 1, 1)
+library("files", read_blob(library_path))
+asset("readme", "Installed through a capability library.\n")
+resource("readme", "README.txt")
+instance("files", "files", assets = ["readme"], resources = ["readme"])

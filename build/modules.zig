@@ -16,7 +16,8 @@ pub const Layer = enum(u8) {
     third_party = 20,
 };
 
-pub const CLibrary = enum { none, stb_truetype, zstd_compress };
+pub const CLibrary = enum { none, stb_truetype, zstd_compress, wamr };
+pub const Phase = enum { shared, build_time, install_time, policy };
 
 pub const ModuleSpec = struct {
     name: []const u8,
@@ -31,6 +32,9 @@ pub const ModuleSpec = struct {
     windows_libraries: []const []const u8 = &.{},
     /// Generated modules have no source root in the repository.
     generated: bool = false,
+    phase: Phase = .shared,
+    /// A declared PoC profile, not a claim about other platform implementations.
+    macos_arm64_only: bool = false,
 };
 
 pub const specs = [_]ModuleSpec{
@@ -40,6 +44,56 @@ pub const specs = [_]ModuleSpec{
         .root = "libs/contracts/root.zig",
         .layer = .contracts,
         .imports = &.{"core"},
+    },
+    .{
+        .name = "program",
+        .root = "libs/program/root.zig",
+        .layer = .service,
+        .imports = &.{ "core", "contracts" },
+    },
+    .{
+        .name = "wasm_profile",
+        .root = "libs/wasm_profile/root.zig",
+        .layer = .service,
+        .imports = &.{"contracts"},
+    },
+    .{
+        .name = "capability_sdk",
+        .root = "libs/capability_sdk/root.zig",
+        .layer = .service,
+        .imports = &.{},
+    },
+    .{
+        .name = "compiler",
+        .root = "libs/compiler/root.zig",
+        .layer = .orchestration,
+        .imports = &.{ "program", "contracts", "wasm_profile" },
+        .phase = .build_time,
+    },
+    .{
+        .name = "wasm_host",
+        .root = "libs/wasm_host/root.zig",
+        .layer = .service,
+        .imports = &.{ "contracts", "wasm_profile", "wamr" },
+        .phase = .install_time,
+        .macos_arm64_only = true,
+    },
+    .{
+        .name = "runtime",
+        .root = "libs/runtime/root.zig",
+        .layer = .orchestration,
+        .imports = &.{ "program", "contracts", "platform", "wasm_host" },
+        .phase = .install_time,
+        .macos_arm64_only = true,
+    },
+    .{
+        .name = "wamr",
+        .root = "third_party/wamr/bindings.zig",
+        .layer = .third_party,
+        .imports = &.{},
+        .c_library = .wamr,
+        .phase = .install_time,
+        .macos_arm64_only = true,
     },
     .{
         .name = "platform",
@@ -225,6 +279,9 @@ pub const ptr_cast_allowlist = [_][]const u8{
     "libs/ui/backend/",
     "libs/ui/render/",
     "apps/libdistribution/",
+    "apps/libcompiler/",
+    "apps/runtime/",
+    "libs/wasm_host/",
     "third_party/",
 };
 

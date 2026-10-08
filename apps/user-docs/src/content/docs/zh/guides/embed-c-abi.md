@@ -3,6 +3,8 @@ title: 通过 C ABI 嵌入
 description: 使用 libdistribution 在你自己的进程中检查、下载并应用更新。
 ---
 
+> 适用范围：此页描述保留的 v1 实现。新的 DSL/AOT 产品构建与能力库契约见[项目概览](/zh/)，验收证据见[状态与平台](/zh/status/)。
+
 `libdistribution` 通过 C ABI 提供与 `setup` 相同的引擎，因此应用或启动器可以自己检查并应用更新。本指南链接该库并完整走一遍一次更新。
 
 ## 构建并链接库

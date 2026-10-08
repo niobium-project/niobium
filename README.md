@@ -4,84 +4,60 @@
 
 English | [Chinese](README.zh.md)
 
-A native, declarative, transactional installation and distribution framework written in Zig: a small, auditable deployment substrate with deliberately limited semantics.
+Niobium is an installation and distribution DSL with an AOT compiler, a precompiled native runtime and host-controlled Wasm capability libraries. Product authors compose installers through language SDKs or Starlark. The compiler fixes dependencies and packages the runtime; products define their distribution and upgrade policies through libraries and presets.
 
-- **The manifest is data, not code**: no pre/post install scripts, no exec.
-- **Transactional**: after a crash at any moment, recovery reaches only the old version or the new one.
-- **TUF trust**: release authorization, freshness and rollback protection; `release_sequence` is separate from the application version.
-- **Library-first**: the GUI, the CLI and the C ABI share one engine.
-- **Own UI**: a closed component vocabulary + tokens + a software renderer, embedded in native AppKit / Win32 / X11 windows.
+The architecture baseline is [ADR-0022](docs/adr/0022-installer-dsl-and-aot-toolchain.md). New interfaces are pre-release and may change. [N2 acceptance](docs/acceptance-plan-v0.2.md) records actual results; historical N1 evidence applies to the retained implementation.
 
-## Quick start
+## Build and verify
 
-Requires Zig 0.17.0.
+The native toolchain requires Zig 0.17.0. The Starlark build-time worker requires Go 1.25 or newer and a host C compiler for cgo. The initial native product lane targets macOS arm64, user scope and CLI.
 
 ```sh
-zig build                 # host binaries: zig-out/bin/setup, nbpack
-zig build test            # unit tests
-zig build verify          # definition-of-done gate (check + test + sim + golden + e2e + example + cross + size-gate)
-zig build gallery         # UI component gallery PNGs -> .evidence/ui-gallery/
+zig build aot             # compiler, author ABI, guest examples and runtime template
+zig build aot-test        # program/profile/host contract checks
+zig build aot-e2e         # native products, migration, recovery and final image checks
+zig build verify          # new architecture lane plus retained regression gates
 ```
 
-Pull requests run on GitHub Actions. The required check is `CI / linux`. Code changes also run `zig build test` and `zig build c-smoke`; the full `zig build verify` gate runs daily when `main` has new commits. See [testing lanes](docs/development/testing-lanes.md).
+Product assembly consumes a complete runtime template and preserves its executable code sections. The PoC fills a reserved 1 MiB product section and applies ad-hoc signing. Resource names use printable ASCII; installation roots may use Unicode. Publisher signing, larger carriers and additional platforms have separate qualification work.
 
-## Example product
+[Compiler frontends](docs/spec/compiler-frontends-v1.md) defines authoring; [capability libraries](docs/spec/capability-library-v1.md) defines runtime extension. Existing `examples/hello` and manifest tutorials describe the legacy build API.
 
-`examples/hello` is a standalone Zig package that depends on this repository and builds the same way any other product repository would ([using Niobium from another repository](docs/development/consuming.md)).
-
-```sh
-zig build example                                        # offline bundle: zig-out/example/
-zig-out/example/setup install --silent --scope user
-zig-out/example/setup status --json
-```
+The [PoC workflow](docs/development/aot-poc.md) walks through authoring, assembly,
+installation and an explicit state migration using two releases.
 
 ## Roadmap
 
-✅ available in 0.1 · 🚧 being built now, in priority order · 🔜 next · 🗓️ later · ⛔ not planned. Verification results are on [Status and platforms](apps/user-docs/src/content/docs/status.md).
+🚧 current delivery · 🔜 parallel implementation after the baseline · 🗓️ later qualification. These marks describe work priority; execution results use the acceptance status vocabulary.
 
 | Status | Feature |
 |---|---|
-| ✅ | Online and offline installs |
-| ✅ | Release channels (`stable`, `beta`, `nightly`) |
-| ✅ | Install, update, repair and uninstall as transactions |
-| ✅ | Safe rollback |
-| ✅ | Portable Run |
-| ✅ | Updates from inside your app through the C ABI |
-| 🚧 1 | Built-in feature modules |
-| 🚧 2 | Presets and themes for building installers quickly |
-| 🚧 3 | Production-ready on macOS, Windows and Linux: real-OS testing, machine-wide installs, OS code signing |
-| 🚧 4 | Easier to adopt: prebuilt downloads and a stable build API |
-| 🚧 5 | More system integrations: `myapp://` links, `PATH` and environment variables |
-| 🚧 6 | In-app updates for any application, Electron and Node.js first |
+| 🚧 | Programmable authoring and the AOT compiler |
+| 🚧 | Precompiled runtime and fixed Wasm capability libraries |
+| 🚧 | Transactional deployment and explicit state migration |
+| 🔜 | Compiler caching, library SDK and additional host primitives |
+| 🔜 | Python, TypeScript, Go and Rust author SDKs |
+| 🔜 | Component, SDK and toolchain presets |
+| 🔜 | Distribution, trust and channels as libraries |
 | 🔜 | Online, offline-file and SFX delivery |
-| 🔜 | "What's new" release notes, signed with the release |
-| 🔜 | Start at login |
-| 🔜 | Key rotation from `nbpack` |
-| 🔜 | A security policy with a private reporting channel |
-| 🗓️ | Screen-reader support |
-| 🗓️ | A native folder picker on Linux |
-| 🗓️ | The installer window in the user's language |
-| 🗓️ | More platforms: Windows on ARM, Kylin, UOS |
-| ⛔ | Install scripts, custom actions, plugins and runtime extensions |
-| ⛔ | Running arbitrary commands with administrator rights |
-| ⛔ | A native Wayland backend |
+| 🗓️ | Large native images and publisher signing |
+| 🗓️ | Standard UI, embedded maintenance and accessibility |
+| 🗓️ | Windows/Linux and machine-scope qualification |
 
-What each feature means for you, and why the ⛔ items are left out: [Roadmap](apps/user-docs/src/content/docs/roadmap.md).
+The [user roadmap](apps/user-docs/src/content/docs/roadmap.md) explains these items. The [maintainer roadmap](docs/roadmap-v0.2.md) assigns interfaces, owners, dependencies and acceptance.
 
 ## Background
 
-Niobium is an independent open source installer framework, maintained by its author in spare time. It grew out of installer needs encountered while working at TongYuan and is designed as a general-purpose framework. The project is maintained independently, without direct support or direction from TongYuan. Maintenance is best effort, with a focused platform scope: see [About the project](apps/user-docs/src/content/docs/about.md) and [Platform support](apps/user-docs/src/content/docs/platforms.md).
+Niobium is a hobby project that the author works on while employed at TongYuan. It is not part of TongYuan's commercial products. It supports creating installers for products, including internal, experimental and commercial work. TongYuan provides no direct support or steering. See [About the project](apps/user-docs/src/content/docs/about.md).
 
 ## Documentation
 
-- User documentation (English and Chinese): https://niobium-project.dev
-- Feature roadmap: [Roadmap](apps/user-docs/src/content/docs/roadmap.md)
-- Platform tiers and roadmap: [Platform support](apps/user-docs/src/content/docs/platforms.md)
-- Conventions: [AGENTS.md](AGENTS.md)
-- Glossary: [GLOSSARY.md](GLOSSARY.md)
-- Docs index: [docs/README.md](docs/README.md)
-- Development roadmap and deferred items: [docs/roadmap-v0.2.md](docs/roadmap-v0.2.md)
-- Acceptance status: [docs/acceptance-plan-v0.1.md](docs/acceptance-plan-v0.1.md)
+- User documentation: https://niobium-project.dev
+- Architecture and contracts: [Documentation index](docs/README.md)
+- Engineering designs: [Compiler](docs/design/compiler-engineering.md), [library SDK](docs/design/wasm-library-sdk.md), [host and stdlib](docs/design/host-primitives-and-stdlib.md)
+- Development constraints: [AGENTS.md](AGENTS.md)
+- Domain terms: [GLOSSARY.md](GLOSSARY.md)
+- Evidence: [N2 acceptance](docs/acceptance-plan-v0.2.md), [historical N1](docs/acceptance-plan-v0.1.md)
 
 ## License
 

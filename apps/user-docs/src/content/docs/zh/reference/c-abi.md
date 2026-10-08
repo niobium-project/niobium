@@ -3,6 +3,8 @@ title: C ABI
 description: libdistribution 的函数、结构体和状态码。
 ---
 
+> 适用范围：此页描述保留的 v1 实现。新的 DSL/AOT 产品构建与能力库契约见[项目概览](/zh/)，验收证据见[状态与平台](/zh/status/)。
+
 权威来源：头文件 [`api/c/distribution.h`](https://github.com/niobium-project/niobium/blob/main/api/c/distribution.h) 和 [abi-v1](https://github.com/niobium-project/niobium/blob/main/docs/spec/abi-v1.md) 规范。完整的使用流程见[通过 C ABI 嵌入](/zh/guides/embed-c-abi/)。
 
 ## 入口

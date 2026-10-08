@@ -3,6 +3,8 @@ title: 制品格式
 description: 组件制品（tar.zst）的布局、解包规则和限制。
 ---
 
+> 适用范围：此页描述保留的 v1 实现。新的 DSL/AOT 产品构建与能力库契约见[项目概览](/zh/)，验收证据见[状态与平台](/zh/status/)。
+
 权威来源：[artifact-format-v1](https://github.com/niobium-project/niobium/blob/main/docs/spec/artifact-format-v1.md)。
 
 ## 布局

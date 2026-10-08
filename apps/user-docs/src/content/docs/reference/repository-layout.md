@@ -3,6 +3,8 @@ title: Repository and install layout
 description: The files of a Niobium repository, an offline bundle, an install root and the per-user cache, and their default locations.
 ---
 
+> Scope: this page describes the retained v1 implementation. See the [project overview](/) for DSL/AOT authoring and capability contracts, and [Status and platforms](/status/) for evidence.
+
 Canonical sources: [tuf-profile-v1](https://github.com/niobium-project/niobium/blob/main/docs/spec/tuf-profile-v1.md) for the repository, the [transaction model](https://github.com/niobium-project/niobium/blob/main/docs/architecture/transaction-model.md) for the install root, and the path policy in [`libs/planner/paths.zig`](https://github.com/niobium-project/niobium/blob/main/libs/planner/paths.zig).
 
 ## Repository

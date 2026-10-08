@@ -1,5 +1,7 @@
 # CLI and events v1
 
+> Scope: retained v1 implementation. New DSL/AOT interfaces are indexed in [active contracts](../README.md#active-contracts); ADR-0022 governs reuse.
+
 - **Status:** Baseline
 
 The CLI is the headless frontend of `InstallerEngine` and shares the same plan with the GUI. Exit codes and the event schema are a public compatibility contract.

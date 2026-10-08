@@ -4,6 +4,18 @@
 .{
     .packages = .{
         .{
+            .name = "wamr",
+            .version = "WAMR-2.4.5",
+            .sources = .{.{
+                .url = "https://codeload.github.com/bytecodealliance/wasm-micro-runtime/tar.gz/refs/tags/WAMR-2.4.5",
+                .sha256 = "1ab09d51099f276ca4a1d6629f6b589aab2bd0caa01445e05031a4bed22c199b",
+                .archive = .tar_gz,
+                .strip_components = 1,
+                .extract = .{ "LICENSE", "core/" },
+            }},
+            .patches = .{ "shared-instruction-budget.patch", "table-alignment.patch" },
+        },
+        .{
             .name = "zstd",
             .version = "1.5.7",
             .sources = .{

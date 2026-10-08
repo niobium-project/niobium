@@ -3,6 +3,8 @@ title: nbpack 命令行
 description: 发布工具 nbpack 的命令和选项。
 ---
 
+> 适用范围：此页描述保留的 v1 实现。新的 DSL/AOT 产品构建与能力库契约见[项目概览](/zh/)，验收证据见[状态与平台](/zh/status/)。
+
 权威来源：[`apps/nbpack/cli.zig`](https://github.com/niobium-project/niobium/blob/main/apps/nbpack/cli.zig) 中的解析器和用法文本；操作流程见[发布签名运行手册](https://github.com/niobium-project/niobium/blob/main/docs/runbooks/release-signing.md)。`nbpack` 由 Niobium 检出目录中的 `zig build` 构建，或由你的 `build.zig` 中的 `niobium.nbpack(b)` 构建。
 
 除 `--artifact` 外，每个选项只接受一个值，且不能重复。未知的命令或选项、缺少的值和缺少的必需选项都以退出码 2 退出。其他失败会打印 `nbpack: <ErrorName>`，并以对应的[退出码](/zh/reference/exit-codes/)退出，例如 `PackSequenceNotIncreasing` 为 3。

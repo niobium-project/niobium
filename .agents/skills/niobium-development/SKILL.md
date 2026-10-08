@@ -18,26 +18,26 @@ AGENTS.md holds the constraints; this skill holds the steps. When the two confli
 
 ## 0. Orient
 
-1. Identify the layer the task touches: `core` / `contracts` / `platform` / service (manifest, trust, repository, package, executor) / flow (resolver, planner, transaction, privilege, bootstrap, portable) / `engine` / UI / apps / tools.
+1. Identify the owner: author frontend, compiler, program/capability contract, Wasm library, runtime kernel, host primitive, platform, stdlib/preset, UI or legacy subsystem. Use ADR-0022 and the module disposition table.
 2. Read `build/modules.zig` to confirm the allowed import directions. If you need a new dependency, change it there first and state it in the PR description; `tools/check` rejects undeclared edges.
-3. Find the affected spec (`docs/spec/*-v1.md`) and ADRs. Changing a wire format = changing the spec + schema + tests, all three in the same commit.
+3. Find the active spec in `docs/README.md` and its ADRs. Retained v1 specs apply only to their named legacy subsystem. Changing a wire format = changing the spec + schema + tests, all three in the same commit.
 4. Name the user-visible result and the acceptance ID it maps to. Do not re-ask choices that accepted ADRs or AGENTS.md already settle.
-5. A docs, skill, or tooling change with no product case does not invent an `N1-UJ` or `N1-INV` row and does not claim a product PASS; its gate is `N1-AC-20` in `docs/acceptance-plan-v0.1.md`.
+5. A docs, skill, or tooling change with no product case does not invent a product PASS. Run the repository documentation/check gates; use N2 IDs only for the behavior they actually cover.
 
 Bug fixes follow the same loop: before patching, record the trigger sequence and the contract it breaks.
 
 ## 1. Design
 
 - Write the failure scenarios before the success path: power loss, kill, disk full, locked file, UAC cancel, network reset, expired signature, rollback attack.
-- Every new state must answer: after a crash here, how does `RecoverIncompleteTransaction` handle it? Write the answer into the recovery table in `docs/architecture/transaction-model.md`.
-- Product differences can only be manifest data. When you need "product-specific logic", the answer is App Bootstrap (the app's own process), not an installer hook.
+- Every durable state must define its recovery outcome in `docs/spec/runtime-lifecycle-v1.md`. Describe the implementation in `docs/architecture/transaction-model.md` and test the real persistence boundary.
+- Product source executes at build time through a language SDK or Starlark. Runtime product policy belongs to fixed capability libraries using host-controlled primitives. Keep component/channel/layout conventions in stdlib or presets; business-data migration remains product-owned.
 - See [references/design-and-debugging.md](references/design-and-debugging.md) for details.
 
 ## 2. Contract
 
-- External data first goes through `contracts.json.decodeStrict` (unknown fields, duplicate keys, depth, and byte limits all fail), then semantic validation (`libs/manifest`).
+- External JSON goes through `contracts.json.decodeStrict`, then the owning semantic validator (`program` for compiled programs). Wasm uses bounded profile validation plus full engine validation. Neither serialization accepts author expressions.
 - Put new limits in `contracts.Limits`; do not scatter constants.
-- New C ABI function: keep `api/c/distribution.h` + `apps/libdistribution/root.zig` + `tests/c-smoke/main.c` in sync.
+- Keep each public ABI header, implementation and consumer tests in sync. Authoring uses `api/c/compiler.h`; guest Wasm uses `api/c/capability.h`; retained runtime embedding uses `api/c/distribution.h`. Their versions and ownership are independent.
 
 ## 3. Implement
 
@@ -59,7 +59,7 @@ Pick the minimal set for the change, then run the full set:
 | Size / dependencies | `zig build cross check-binary size-gate` |
 | Before delivery | `zig build verify --cache-poison=disallowed` |
 
-Put the acceptance ID at the start of the test name (`test "N1-INV-03: ..."`) and write the status back to `docs/acceptance-plan-v0.1.md`. Details in [references/acceptance.md](references/acceptance.md).
+Put the acceptance ID at the start of the test name. New DSL/AOT behavior uses N2 IDs and `docs/acceptance-plan-v0.2.md`; preserve historical N1 results. Run `zig build aot-test aot-e2e` for the new contracts and native product slice. Details in [references/acceptance.md](references/acceptance.md).
 
 ## 5. Deliver
 

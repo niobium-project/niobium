@@ -6,9 +6,11 @@ Use only `PASS`, `FAIL`, `BLOCKED`, `NOT_RUN`, `DEFERRED`. `PASS` must satisfy a
 
 1. At least one test name starts with the acceptance ID;
 2. That test actually ran and passed in this `zig build verify` (or the designated lane);
-3. The evidence path is written into the corresponding row of `docs/acceptance-plan-v0.1.md`.
+3. The evidence path is written into the corresponding row of `docs/acceptance-plan-v0.2.md` for N2; historical N1 rows retain their original evidence.
 
 ## ID families
+
+N2 IDs and scenario definitions are owned by [acceptance-plan-v0.2](../../../../docs/acceptance-plan-v0.2.md). `aot-e2e` provides the native product lane; `aot-test` provides contract/host checks. The following N1 families apply only to retained regressions.
 
 | Prefix | Meaning | Main lane |
 |---|---|---|
@@ -30,7 +32,7 @@ Write the cases the risk calls for, not five per helper. A lower lane never upgr
 
 ## Evidence directory
 
-`.evidence/<suite>/<UTC>/`: `summary.json` (command, exit code, start and end time, git rev) + logs + artifact hashes. The evidence directory is not committed; the acceptance table only records the path and the verdict.
+Catalog suites use `.evidence/<suite>/<execution>/report.json` and bounded attachments under [test-system-v1](../../../../docs/spec/test-system-v1.md). PoC and retained non-catalog lanes keep their explicitly documented layouts. Reports identify the command, exit code, time, source revision and artifact hashes. The evidence directory is not committed; acceptance records its location and verdict. Publication is governed by ADR-0021 and does not rerun tests.
 
 ## How to write BLOCKED
 

@@ -1,36 +1,43 @@
 # Architecture overview
 
-Niobium is a library-first distribution substrate: `libs/engine` orchestrates Discover → Validate → Resolve → Plan → Prepare → Execute → Commit → Bootstrap → Verify → Finalize, and the GUI, CLI and C ABI are only its frontends.
+The target architecture is defined by [ADR-0022](../adr/0022-installer-dsl-and-aot-toolchain.md). The repository contains both the new compiler/runtime slice and the legacy engine. This page identifies their owners; [N2 acceptance](../acceptance-plan-v0.2.md) records which behavior has actually run.
+
+## Compiler and runtime
 
 ```text
-setup (GUI/CLI) ─┐
-libdistribution ─┼─► engine ─► resolver ─► trust (TUF) ─► repository (Http/Directory/Embedded)
-                 │          ├► planner ─► typed InstallationPlan
-                 │          ├► transaction ─► executor ─► platform.api ─► macOS/Windows/Linux/Virtual
-                 │          │             └► privilege broker ─► setup --priv-helper-v1
-                 │          ├► bootstrap (App Bootstrap v1)
-                 │          └► portable (Portable Run)
-ui/screens ─► ui/kit ─► ui/core ◄─ ui/render ◄─ ui/backend (AppKit/Win32/X11/offscreen)
+native Zig/C author API       Starlark worker
+          |                       |
+          +-------- compiler -----+
+                       |
+                program + bindings
+                       |
+        precompiled runtime + fixed Wasm libraries
+                       |
+                 image assembly
+                       |
+                signed product setup
+                       |
+       runtime -> Wasm host -> frozen resource plan
+                       |
+             host transaction/recovery
 ```
 
-## Three stable contracts
+`libs/program` owns shared model validation, normalization and the image format. `libs/compiler` consumes that model; `apps/compiler` and `apps/libcompiler` expose build-time entrypoints. The Starlark worker lives under `apps/starlark` and calls the authoring C ABI.
 
-1. **Product contract**: [manifest-v1](../spec/manifest-v1.md) and [component-v1](../spec/component-v1.md).
-2. **Installer contract**: Desired State → transactional deployment ([transaction-model](transaction-model.md), [platform-contract-v1](../spec/platform-contract-v1.md)).
-3. **App contract**: [bootstrap-v1](../spec/bootstrap-v1.md).
+`libs/wasm_profile` checks the permitted module profile. `libs/wasm_host` executes fixed libraries through WAMR and copies their proposed outputs. `libs/runtime` owns binding, installed state and durable host execution; `apps/runtime` assembles the native process.
 
-The outer layer is the **Trust contract**: [tuf-profile-v1](../spec/tuf-profile-v1.md).
+The carrier holds product bytes in a reserved Mach-O section. Product assembly copies a complete runtime template and leaves its executable code sections intact. Final signing changes output metadata. The input template, normalized program, libraries and final setup have distinct digests.
 
-## Process model
+Guest evaluation computes desired resources before mutation. Recovery uses frozen host operations and durable content; it does not repeat guest or author evaluation. Normative transitions are in [runtime-lifecycle-v1](../spec/runtime-lifecycle-v1.md).
 
-- `setup` runs as a normal user; the engine runs on a worker thread, and the UI thread only renders read-only snapshots and sends intents.
-- `setup --priv-helper-v1` is started only when the plan contains a machine-scope op, and it exits when the transaction ends.
-- App Bootstrap and Portable Run targets are separate child processes with timeouts.
+## Retained implementation
 
-## Profile
+The existing `apps/setup`, `apps/nbpack` and `apps/libdistribution` use `libs/engine`. Its pipeline is Discover, Validate, Resolve, Plan, Prepare, Execute, Commit, Bootstrap, Verify and Finalize. Manifest/component v1, TUF, archive, platform and UI behavior remain available for regression and selective reuse.
 
-| Profile | Capability | v0.1 |
-|---|---|---|
-| InstalledApplication | desired state → plan → machine mutation | Implemented |
-| PortableRun | trusted artifact → execute (no machine integration) | Implemented |
-| EmbeddedUpdate | resolve / download / verify / stage / handoff | C ABI provides the foundation; Node-API deferred |
+`libs/ui/core` and `libs/ui/kit` remain independent of engine/platform. The existing screens use contracts and the shared renderer. A new UI adapter must consume runtime state and inputs without receiving mutation authority.
+
+The [module disposition table](module-boundaries.md) identifies which behavior belongs in kernel, host primitives or libraries. Porting an existing module requires N2 evidence at the new boundary; historical N1 results retain their original meaning.
+
+## Engineering designs
+
+[Compiler engineering](../design/compiler-engineering.md), [Wasm library SDK](../design/wasm-library-sdk.md), and [host primitives/stdlib](../design/host-primitives-and-stdlib.md) define work beyond the executable PoC. The [roadmap](../roadmap-v0.2.md) supplies independent work packages and integration dependencies.

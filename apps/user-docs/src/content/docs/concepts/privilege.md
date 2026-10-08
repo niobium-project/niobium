@@ -3,6 +3,8 @@ title: Privilege boundary
 description: How machine-wide installs get elevated rights without running arbitrary code as administrator.
 ---
 
+> Scope: this page describes the retained v1 implementation. See the [project overview](/) for DSL/AOT authoring and capability contracts, and [Status and platforms](/status/) for evidence.
+
 A user-scope install needs no elevation: everything lives in the user's own directories. A machine-scope install writes to system locations, so it needs administrator rights, and Niobium grants them as a closed capability rather than as a general-purpose elevated process.
 
 ## The helper

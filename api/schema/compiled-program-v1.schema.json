@@ -1,0 +1,262 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://niobium.dev/schema/compiled-program-v1.schema.json",
+  "title": "compiled-program-v1",
+  "$comment": "Wire shape for the corresponding versioned Niobium contract. Native validation additionally enforces UTF-8 byte limits, identity/reference uniqueness, digests, ownership and version relationships.",
+  "type": "object",
+  "properties": {
+    "schema": {
+      "const": 1,
+      "default": 1
+    },
+    "runtime_abi": {
+      "const": 1,
+      "default": 1
+    },
+    "product_id": {
+      "$ref": "#/$defs/id"
+    },
+    "release_sequence": {
+      "$ref": "#/$defs/u64"
+    },
+    "model_version": {
+      "$ref": "#/$defs/u32",
+      "default": 1
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/input"
+      },
+      "minItems": 0,
+      "maxItems": 64
+    },
+    "libraries": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/library"
+      },
+      "minItems": 0,
+      "maxItems": 64
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/asset"
+      },
+      "minItems": 0,
+      "maxItems": 64
+    },
+    "resources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/resource"
+      },
+      "minItems": 0,
+      "maxItems": 64
+    },
+    "instances": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/instance"
+      },
+      "minItems": 0,
+      "maxItems": 64
+    },
+    "upgrades": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/migration"
+      },
+      "minItems": 0,
+      "maxItems": 64
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "product_id",
+    "release_sequence"
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[a-z0-9._-]+$"
+    },
+    "u32": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4294967295
+    },
+    "u64": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 18446744073709551615
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "text": {
+      "type": "string",
+      "maxLength": 65536,
+      "$comment": "Native validation applies a 65536-byte UTF-8 limit; JSON Schema maxLength counts characters."
+    },
+    "hex_blob": {
+      "type": "string",
+      "pattern": "^(?:[0-9a-f]{2})*$",
+      "maxLength": 524288,
+      "$comment": "Two characters per byte; at most 262144 decoded bytes."
+    },
+    "relative_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^(?=[ -~]+$)(?!\\.{1,2}(?:/|$))(?!.*?/\\.{1,2}(?:/|$))(?!\\.[nN][iI][oO][bB][iI][uU][mM]-[gG][eE][nN][eE][rR][aA][tT][iI][oO][nN](?:/|$))[^/\\\\]+(?:/[^/\\\\]+){0,61}$",
+      "$comment": "PoC resource paths use printable ASCII, at most 1024 bytes and 62 components. The host metadata name and its descendants are reserved. Native validation rejects case-insensitive and ancestor collisions across resources; installation-root paths may use Unicode."
+    },
+    "bindings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/id"
+      },
+      "minItems": 0,
+      "maxItems": 64,
+      "uniqueItems": true
+    },
+    "migration": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "from": {
+          "$ref": "#/$defs/u32"
+        },
+        "to": {
+          "$ref": "#/$defs/u32"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "from",
+        "to"
+      ]
+    },
+    "input": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "default": {
+          "$ref": "#/$defs/text"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "default"
+      ]
+    },
+    "library": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "abi": {
+          "const": 1,
+          "default": 1
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "wasm_hex": {
+          "$ref": "#/$defs/hex_blob"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "sha256",
+        "wasm_hex"
+      ]
+    },
+    "asset": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "data_hex": {
+          "$ref": "#/$defs/hex_blob"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "sha256",
+        "data_hex"
+      ]
+    },
+    "resource": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "path": {
+          "$ref": "#/$defs/relative_path"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "path"
+      ]
+    },
+    "instance": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "library": {
+          "$ref": "#/$defs/id"
+        },
+        "inputs": {
+          "$ref": "#/$defs/bindings"
+        },
+        "assets": {
+          "$ref": "#/$defs/bindings"
+        },
+        "resources": {
+          "$ref": "#/$defs/bindings"
+        },
+        "state_version": {
+          "$ref": "#/$defs/u32",
+          "default": 1
+        },
+        "migrations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/migration"
+          },
+          "minItems": 0,
+          "maxItems": 64
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "library"
+      ]
+    }
+  }
+}

@@ -3,6 +3,15 @@ title: 状态与平台
 description: Niobium 0.1 中哪些内容已经验证、在哪些平台上，以及哪些被阻塞、未运行或推迟。
 ---
 
+## DSL/AOT 验收
+
+新架构的唯一验收记录是 [N2 验收计划](https://github.com/niobium-project/niobium/blob/main/docs/acceptance-plan-v0.2.md)。首个原生验收目标是 macOS arm64、用户范围和 CLI。构建完成不能代替最终 setup 的执行证据；每个 N2 ID 的结果、命令与证据路径由该记录维护。
+
+下面的 N1 表格保留历史结果，仅适用于旧 manifest/engine 实现，不能证明新的编译器、Wasm 能力库或 runtime 已经验收。
+
+## 历史 v1 状态
+
+
 Niobium 0.1 是一个用来证明模型可行的纵向切片，尚不能用于生产环境。本页是本站关于验证情况的唯一说明，其他页面都链接到这里，而不重复其内容。
 
 状态只使用五个值：

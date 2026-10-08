@@ -2,6 +2,7 @@
 
 const std = @import("std");
 const specs = @import("modules.zig");
+const wamr = @import("wamr.zig");
 
 pub const Config = struct {
     target: std.Build.ResolvedTarget,
@@ -21,6 +22,7 @@ pub const Inputs = struct {
 
 /// Package roots fetched by build/steps/deps.zig, one field per third_party/deps.zon package.
 pub const Deps = struct {
+    wamr: std.Build.LazyPath,
     zstd: std.Build.LazyPath,
     stb_truetype: std.Build.LazyPath,
     inter: std.Build.LazyPath,
@@ -83,6 +85,12 @@ fn createModule(b: *std.Build, config: Config, spec: specs.ModuleSpec) *std.Buil
         .none => {},
         .stb_truetype => addStbTruetype(b, module, config.inputs.deps.stb_truetype),
         .zstd_compress => addZstdCompress(module, config.inputs.deps.zstd),
+        .wamr => if (config.target.result.os.tag == .macos and
+            config.target.result.cpu.arch == .aarch64)
+        {
+            wamr.attach(b, module, config.inputs.deps.wamr);
+            addMacosSdk(b, config, module);
+        },
     }
     if (config.target.result.os.tag == .macos and spec.macos_frameworks.len > 0) {
         addMacosSdk(b, config, module);
@@ -106,6 +114,7 @@ fn addMacosSdk(b: *std.Build, config: Config, module: *std.Build.Module) void {
     module.addSystemFrameworkPath(
         .{ .cwd_relative = b.pathJoin(&.{ sdk, "System/Library/Frameworks" }) },
     );
+    module.addSystemIncludePath(.{ .cwd_relative = b.pathJoin(&.{ sdk, "usr/include" }) });
     module.addLibraryPath(.{ .cwd_relative = b.pathJoin(&.{ sdk, "usr/lib" }) });
 }
 

@@ -4,14 +4,14 @@ Numbers are assigned once and never reused or renumbered. Template: title `# ADR
 
 | Number | Title | Status |
 |---|---|---|
-| [0001](0001-repository-baseline-and-zig-only-toolchain.md) | Repository baseline and Zig-only toolchain | Accepted; amended by 0021 |
-| [0002](0002-library-first-core-and-c-abi.md) | Library-first core and C ABI | Accepted |
-| [0003](0003-strict-json-manifest.md) | Strict JSON product manifest | Accepted |
-| [0004](0004-tuf-profile-v1.md) | Installer TUF profile v1 | Accepted |
+| [0001](0001-repository-baseline-and-zig-only-toolchain.md) | Repository baseline and Zig-only toolchain | Accepted; amended by 0021 and 0022 |
+| [0002](0002-library-first-core-and-c-abi.md) | Library-first core and C ABI | Accepted; amended by 0022 |
+| [0003](0003-strict-json-manifest.md) | Strict JSON product manifest | Accepted; amended by 0022 |
+| [0004](0004-tuf-profile-v1.md) | Installer TUF profile v1 | Accepted; amended by 0022 |
 | [0005](0005-tar-zst-artifact-format.md) | tar.zst component payload format | Accepted |
-| [0006](0006-transaction-and-pointer-swap-commit.md) | Transaction journal and pointer-swap commit | Accepted |
-| [0007](0007-same-binary-privilege-helper.md) | Same-binary closed-capability privilege helper | Accepted |
-| [0008](0008-shared-software-renderer.md) | Shared software renderer | Accepted |
+| [0006](0006-transaction-and-pointer-swap-commit.md) | Transaction journal and pointer-swap commit | Accepted; amended by 0022 |
+| [0007](0007-same-binary-privilege-helper.md) | Same-binary closed-capability privilege helper | Accepted; amended by 0022 |
+| [0008](0008-shared-software-renderer.md) | Shared software renderer | Accepted; amended by 0022 |
 | [0009](0009-zon-screen-ir-and-tokens-codegen.md) | ZON screen IR and tokens code generation | Accepted |
 | [0010](0010-x11-now-wayland-deferred.md) | X11 on Linux first, Wayland deferred | Accepted |
 | [0011](0011-third-party-fetch.md) | Versioned third-party fetch and patches | Accepted |
@@ -21,7 +21,8 @@ Numbers are assigned once and never reused or renumbered. Template: title `# ADR
 | [0015](0015-node-toolchain-for-user-docs.md) | Node.js toolchain for the user documentation site | Accepted; amended by 0017 |
 | [0016](0016-documentation-lifecycle.md) | Documentation lifecycle | Accepted |
 | [0017](0017-chinese-user-documentation.md) | Chinese user documentation | Accepted |
-| [0018](0018-built-in-feature-modules.md) | Built-in feature modules | Proposed |
-| [0019](0019-presets-and-themes.md) | Presets and themes | Proposed |
-| [0020](0020-distribution-delivery-milestones.md) | Distribution delivery milestones | Accepted |
+| [0018](0018-built-in-feature-modules.md) | Built-in feature modules | Superseded by 0022 |
+| [0019](0019-presets-and-themes.md) | Presets and themes | Superseded by 0022 |
+| [0020](0020-distribution-delivery-milestones.md) | Distribution delivery milestones | Accepted; amended by 0022 |
 | [0021](0021-ci-evidence-transport.md) | CI evidence transport | Accepted |
+| [0022](0022-installer-dsl-and-aot-toolchain.md) | Installer DSL and AOT toolchain | Accepted |

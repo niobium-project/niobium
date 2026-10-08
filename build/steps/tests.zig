@@ -11,7 +11,7 @@ pub const suite_imports = [_][]const u8{
     "core",       "contracts",   "platform",    "manifest", "trust",
     "repository", "package",     "executor",    "resolver", "planner",
     "privilege",  "bootstrap",   "transaction", "portable", "engine",
-    "packager",   "conformance", "zstd",
+    "packager",   "conformance", "zstd",        "program",  "wasm_profile",
 };
 
 /// One test binary per library module; each runs under std.testing.allocator (SafeAllocator).
@@ -24,6 +24,7 @@ pub fn addUnitTests(
     config: evidence.Config,
 ) void {
     for (specs.specs, 0..) |spec, index| {
+        if (!supports(spec, graph.config.target.result)) continue;
         const unit = b.addTest(.{
             .name = b.fmt("unit-{s}", .{spec.name}),
             .root_module = graph.modules[index],
@@ -103,6 +104,10 @@ pub fn dependOnTest(
     step.dependOn(&evidence.addRun(b, config, suite, exe, dir).step);
 }
 
+fn supports(spec: specs.ModuleSpec, target: std.Target) bool {
+    return !spec.macos_arm64_only or (target.os.tag == .macos and target.cpu.arch == .aarch64);
+}
+
 fn coverageDir(b: *std.Build, root: ?[]const u8, name: []const u8) ?[]const u8 {
     const base = root orelse return null;
     return b.fmt("{s}/{s}", .{ base, name });
@@ -128,6 +133,7 @@ pub fn addCrossTests(
             .custom = b.fmt("cross-tests/{s}", .{cross_target.name}),
         };
         for (specs.specs, 0..) |spec, index| {
+            if (!supports(spec, graph.config.target.result)) continue;
             const unit = b.addTest(.{
                 .name = b.fmt("unit-{s}", .{spec.name}),
                 .root_module = graph.modules[index],

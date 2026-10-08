@@ -4,86 +4,59 @@
 
 [English](README.md) | 简体中文
 
-用 Zig 实现的 native、declarative、transactional 安装与分发框架：一个小而可审计的部署 substrate，语义被刻意限制。
+Niobium 是面向安装与分发的 DSL，包含 AOT 编译器、预编译原生 runtime 和由宿主管理权限的 Wasm 能力库。产品作者通过语言 SDK 或 Starlark 组合安装程序。编译器固定依赖并封装 runtime，产品通过库与预设定义分发和升级策略。
 
-- **Manifest 是数据，不是代码**：没有 pre/post install 脚本，没有 exec。
-- **事务化**：任意时刻崩溃后只会恢复到旧版本或新版本。
-- **TUF 信任**：发布授权、新鲜度与反回滚；`release_sequence` 与应用版本分离。
-- **Library-first**：GUI、CLI 与 C ABI 共用同一个 engine。
-- **自有 UI**：封闭组件词汇 + tokens + 软件渲染器，嵌入 AppKit / Win32 / X11 原生窗口。
+架构基线见 [ADR-0022](docs/adr/0022-installer-dsl-and-aot-toolchain.md)。新接口处于发布前阶段，仍可能变更。[N2 验收](docs/acceptance-plan-v0.2.md)记录实际结果；历史 N1 证据仅适用于保留的旧实现。
 
-## 快速开始
+## 构建与验证
 
-需要 Zig 0.17.0。
+原生工具链需要 Zig 0.17.0。Starlark 构建端 worker 还需要 Go 1.25 或更高版本，以及用于 cgo 的主机 C 编译器。首个原生产品验收目标为 macOS arm64、用户范围和 CLI。
 
 ```sh
-zig build                 # 主机二进制：zig-out/bin/setup、nbpack
-zig build test            # 单元测试
-zig build verify          # 完成定义门禁（check + test + sim + golden + e2e + example + cross + size-gate）
-zig build gallery         # UI 组件画廊 PNG → .evidence/ui-gallery/
+zig build aot             # 编译器、作者 ABI、能力库示例和 runtime 模板
+zig build aot-test        # 产品模型、Wasm profile 与宿主契约检查
+zig build aot-e2e         # 原生产品、迁移、恢复与最终封装检查
+zig build verify          # 新架构验收与保留的回归门禁
 ```
 
-拉取请求在 GitHub Actions 上运行。必需检查是 `CI / linux`。代码变更还会运行 `zig build test` 与 `zig build c-smoke`；完整的 `zig build verify` 在 `main` 有新提交时每天运行一次。详见 [testing lanes](docs/development/testing-lanes.md)。
+产品组装使用完整的 runtime 模板，并保留其可执行代码段。PoC 填充预留的 1 MiB 产品段，再进行 ad-hoc 签名。资源名称使用可打印 ASCII，安装根目录允许 Unicode。发布者签名、更大容量的封装和其他平台分别验收。
 
-## 示例产品
+[编译器前端规范](docs/spec/compiler-frontends-v1.md)定义产品构建接口；[能力库规范](docs/spec/capability-library-v1.md)定义运行时扩展。现有 `examples/hello` 和 manifest 教程描述旧构建 API。
 
-`examples/hello` 是依赖本仓库的独立 Zig 包，构建方式与其他产品仓库相同（[在其他仓库中使用 Niobium](docs/development/consuming.md)）。
-
-```sh
-zig build example                                        # 离线包：zig-out/example/
-zig-out/example/setup install --silent --scope user
-zig-out/example/setup status --json
-```
+[PoC 操作说明](docs/development/aot-poc.md)通过两个发布演示产品编写、组装、安装与显式状态迁移。
 
 ## 路线图
 
-✅ 0.1 中已提供 · 🚧 正在开发，按优先级排列 · 🔜 接下来 · 🗓️ 之后 · ⛔ 不在计划内。验证结果见[状态与平台](apps/user-docs/src/content/docs/zh/status.md)。
+🚧 当前交付 · 🔜 基线之后可并行实施 · 🗓️ 后续验收。这些标记表示工作优先级，执行结果使用验收状态词汇。
 
 | 状态 | 功能 |
 |---|---|
-| ✅ | 在线和离线安装 |
-| ✅ | 发布通道（`stable`、`beta`、`nightly`） |
-| ✅ | 以事务方式安装、更新、修复和卸载 |
-| ✅ | 安全回滚 |
-| ✅ | 便携运行 |
-| ✅ | 通过 C ABI 在应用内部更新 |
-| 🚧 1 | 内置功能模块 |
-| 🚧 2 | 用于快速构建安装程序的预设和主题 |
-| 🚧 3 | 在 macOS、Windows 和 Linux 上可用于生产环境：真实系统测试、整机范围安装、操作系统代码签名 |
-| 🚧 4 | 更容易上手：预构建的下载包和稳定的构建 API |
-| 🚧 5 | 更多系统集成：`myapp://` 链接、`PATH` 和环境变量 |
-| 🚧 6 | 适用于任何应用的应用内更新，首先提供 Electron 和 Node.js |
-| 🔜 | 在线、完整离线文件和 SFX 分发 |
-| 🔜 | 与发布一起签名的“新功能说明” |
-| 🔜 | 登录时启动 |
-| 🔜 | 通过 `nbpack` 轮换密钥 |
-| 🔜 | 带私密报告渠道的安全策略 |
-| 🗓️ | 屏幕阅读器支持 |
-| 🗓️ | Linux 上的原生文件夹选择器 |
-| 🗓️ | 以用户的语言显示安装程序窗口 |
-| 🗓️ | 更多平台：ARM 版 Windows、麒麟、统信 |
-| ⛔ | 安装脚本、自定义动作、插件和运行时扩展 |
-| ⛔ | 以管理员权限运行任意命令 |
-| ⛔ | 原生 Wayland 后端 |
+| 🚧 | 程序化产品构建与 AOT 编译器 |
+| 🚧 | 预编译 runtime 与固定的 Wasm 能力库 |
+| 🚧 | 事务化部署与显式状态迁移 |
+| 🔜 | 编译缓存、能力库 SDK 与更多宿主操作 |
+| 🔜 | Python、TypeScript、Go 与 Rust 产品 SDK |
+| 🔜 | 组件、SDK 与工具链预设 |
+| 🔜 | 分发、信任与通道能力库 |
+| 🔜 | 在线、完整离线文件与自解压安装程序 |
+| 🗓️ | 大容量原生封装与发布者签名 |
+| 🗓️ | 标准 UI、嵌入式维护与无障碍支持 |
+| 🗓️ | Windows/Linux 与整机范围验收 |
 
-每项功能对你意味着什么、为什么不做 ⛔ 项：[路线图](apps/user-docs/src/content/docs/zh/roadmap.md)。
+[用户路线图](apps/user-docs/src/content/docs/zh/roadmap.md)解释这些功能。[维护者路线图](docs/roadmap-v0.2.md)定义接口、负责人、依赖关系与验收。
 
 ## 背景
 
-Niobium 是一个独立的开源安装程序框架，由作者利用业余时间维护。它源于作者在同元软控工作时遇到的安装程序需求，并以通用框架为设计目标。本项目独立维护，不受同元软控的直接支持或方向指导。维护以尽力而为为原则，平台范围保持精简：参见 [About the project](apps/user-docs/src/content/docs/about.md) 与 [Platform support](apps/user-docs/src/content/docs/platforms.md)。
+Niobium 是作者在同元软控工作期间开发的业余项目，不属于同元软控的商业产品。它用于为包括内部、实验性及商业项目在内的产品制作安装程序。同元软控不提供直接支持或方向指导。参见[关于本项目](apps/user-docs/src/content/docs/zh/about.md)。
 
 ## 文档
 
-除用户文档网站外，其余文档均为英文。
-
-- 用户文档（中英文）：https://niobium-project.dev/zh/
-- 功能路线图：[路线图](apps/user-docs/src/content/docs/zh/roadmap.md)
-- 平台分级与路线图：[Platform support](apps/user-docs/src/content/docs/platforms.md)
-- 约定：[AGENTS.md](AGENTS.md)
-- 术语：[GLOSSARY.md](GLOSSARY.md)
-- 文档索引：[docs/README.md](docs/README.md)
-- 开发路线图与延后项：[docs/roadmap-v0.2.md](docs/roadmap-v0.2.md)
-- 验收状态：[docs/acceptance-plan-v0.1.md](docs/acceptance-plan-v0.1.md)
+- 用户文档：https://niobium-project.dev/zh/
+- 架构与契约：[文档索引](docs/README.md)
+- 工程设计：[编译器](docs/design/compiler-engineering.md)、[能力库 SDK](docs/design/wasm-library-sdk.md)、[宿主与标准库](docs/design/host-primitives-and-stdlib.md)
+- 开发约束：[AGENTS.md](AGENTS.md)
+- 领域术语：[GLOSSARY.md](GLOSSARY.md)
+- 验收证据：[N2 验收](docs/acceptance-plan-v0.2.md)、[历史 N1](docs/acceptance-plan-v0.1.md)
 
 ## 许可证
 

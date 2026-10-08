@@ -1,46 +1,27 @@
 ---
 title: 术语表
-description: Niobium 文档中使用的术语。
+description: Niobium 的产品构建、能力和部署术语。
 ---
 
-项目的权威术语表（包括内部术语）是 [GLOSSARY.md](https://github.com/niobium-project/niobium/blob/main/GLOSSARY.md)。本页列出用户文档所依赖的术语，括号中是英文原文。
+规范术语由 [GLOSSARY.md](https://github.com/niobium-project/niobium/blob/main/GLOSSARY.md) 维护。历史 v1 页面保留其 manifest 和 engine 接口的局部定义。
 
-**活动版本（Active version）。** 安装根目录的 `current` 指针所指向的版本。它只可能是某个事务的旧版本或新版本。
+| 术语 | 含义 |
+|---|---|
+| Author program（作者程序） | 在构建时生成类型化产品模型的源码 |
+| Compiler（编译器） | 校验模型、固定依赖并组装 setup 的工具链 |
+| Compiled program（编译后程序） | Runtime 消费的不可变产品表示 |
+| Runtime（运行时） | 独立构建的产品程序与能力库执行宿主 |
+| Setup（安装程序） | 包含 runtime、产品程序和固定依赖的产品安装程序 |
+| Capability contract（能力契约） | 领域能力的接口与生命周期义务 |
+| Capability library（能力库） | 固定的能力契约实现 |
+| Capability instance（能力实例） | 具有独立输入、资源和状态的一次库绑定 |
+| Host primitive（宿主原语） | 具有明确权限与副作用的版本化宿主机制 |
+| Standard library（标准库） | 与产品库使用相同契约的官方库 |
+| Preset（预设） | 构建时对库和产品约定的组合 |
+| Component / workload（组件/工作负载） | 产品定义的部署单元/面向任务的组件选择 |
+| Resource（资源） | 通过能力管理的具有稳定身份和所有权的实体 |
+| Frozen plan（冻结计划） | 用于执行与恢复的持久化操作和内容 |
+| Migration（迁移） | 产品或能力库状态版本之间的显式转换 |
+| Bridge release（桥接发布） | 产品声明的升级路径中间步骤 |
 
-**App Bootstrap（应用引导）。** 安装程序在提交之后或卸载之前，请你的应用执行它自己的迁移所用的协议。见[安装程序与 App Bootstrap](/zh/concepts/app-bootstrap/)。
-
-**制品（Artifact）。** 由其 SHA-256 摘要标识的不可变文件。组件制品是一个包含 `component.json` 和 `files/` 的 `tar.zst`。
-
-**能力（Capability）。** 安装程序可以对机器做的事情所构成的封闭集合中的一项：受管理的文件、目录、快捷方式、文件关联、服务和应用注册。
-
-**通道（Channel）。** 一个已签名的指针（`stable`、`beta` 或 `nightly`），从通道名指向一个发布。
-
-**提交（Commit）。** 把 `current` 原子地切换到新版本；事务的不可回头点。
-
-**组件（Component）。** 一个可部署的文件单元，带有具名入口点，每个平台构建为一个制品。它不携带脚本，也不包含绝对路径。
-
-**入口点（Entrypoint）。** 组件内的一个具名可执行文件，被系统集成、App Bootstrap 和便携运行以 `<component>.<name>` 的形式引用。
-
-**维护程序（Maintainer）。** 保存在安装根目录 `maintainer/` 中的 `setup` 副本，用于之后的更新、修复和卸载。
-
-**清单（Manifest）。** 一个发布的 JSON 描述：产品、组件、制品、系统集成、引导。
-
-**离线包（Offline bundle）。** 包含 `setup` 和完整仓库的目录，无需网络即可安装。
-
-**便携运行（Portable Run）。** 从经过验证、按内容寻址的缓存中运行组件而不安装它（`setup run`）。
-
-**产品（Product）。** 用户安装的对象：一组组件，带有 `com.example.hello` 这样的 id。
-
-**恢复（Recovery）。** `setup` 在做任何其他事情之前运行的步骤，它完成或回滚被中断的事务。
-
-**发布序号（Release sequence）。** `release_sequence`，为发布排序并防止回滚的整数，与应用版本无关。
-
-**仓库（Repository）。** 由 `nbpack` 写入、由 `setup` 读取的已签名 TUF 元数据和按内容寻址的文件。
-
-**作用域（Scope）。** `user`（为一个用户安装，无需提权）或 `machine`（为所有用户安装，需要管理员权限）。
-
-**暂存（Staging）。** 新版本在成为活动版本之前被解包到的目录。
-
-**事务（Transaction）。** 一次安装、更新、修复或卸载，记录在日志中，从而结束于旧版本或新版本。
-
-**TUF。** The Update Framework，Niobium 仓库签名所遵循的规范。见[信任模型](/zh/concepts/trust/)。
+[路线图](/zh/roadmap/)区分可执行基线和后续实施工作。

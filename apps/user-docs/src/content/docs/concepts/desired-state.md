@@ -3,6 +3,8 @@ title: Desired-state manifest
 description: Why a Niobium release is described as data, and what the installer derives from it.
 ---
 
+> Scope: this page describes the retained v1 implementation. See the [project overview](/) for DSL/AOT authoring and capability contracts, and [Status and platforms](/status/) for evidence.
+
 A Niobium release is a JSON document that states what should be on the machine, not how to put it there. The installer compares that desired state with what is installed and plans the operations itself. Nothing in the manifest is executed.
 
 ## What the manifest says

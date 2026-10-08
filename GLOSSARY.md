@@ -1,41 +1,76 @@
-# Glossary
+# Niobium glossary
 
-Terms match MVP v0.1 (see [docs/roadmap-v0.1.md](docs/roadmap-v0.1.md)); terms proposed for v0.2 ([docs/roadmap-v0.2.md](docs/roadmap-v0.2.md)) are listed separately. Code identifiers use the English names in parentheses.
+Canonical terms for the installation and distribution language defined by [ADR-0022](docs/adr/0022-installer-dsl-and-aot-toolchain.md). Historical v1 documents retain their local terminology.
 
-## Current MVP
+## Authoring and distribution
 
-- **Artifact (artifact)**: an immutable release object identified by SHA-256; one of PortableExecutable, PortableBundle, InstallableComponent.
-- **Component (component)**: a deployable unit delivered by a component developer, with metadata, files and named entrypoints; it carries no install scripts and owns no absolute machine paths.
-- **Product (product)**: a set of components, branding and OS integration declarations that a product packager composes in a declarative manifest.
-- **Release (release)**: one release decision pointing at a set of artifacts, ordered by `release_sequence`.
-- **release_sequence**: a monotonically increasing release number, separate from `app_version`, so an application version can be deliberately downgraded without tripping TUF rollback protection.
-- **Channel (channel)**: a mutable signed pointer such as `stable`/`beta`/`nightly` that names a release.
-- **Scope (scope)**: `user` or `machine`; decides the install root and whether elevation is needed.
-- **DesiredState**: the target state resolved from the manifest plus user choices.
-- **InstallationPlan (plan)**: the typed operation sequence the Planner compiles from DesiredState and InstalledState.
-- **Transaction (transaction)**: one execution of a plan, with a jsonl journal that can be replayed, rolled back or ignored.
-- **Staging**: the not-yet-active new version directory `versions/<seq>/`.
-- **Commit**: the atomic step that makes the new version the only Active one through a pointer swap.
-- **Active**: the version the `current` pointer names; the invariant is that it is only ever OLD or NEW.
-- **Recovery**: `RecoverIncompleteTransaction`, run first at startup.
-- **Capability (capability)**: a closed OS integration capability known to the framework: ManagedFiles, Directory, Shortcut, FileAssociation, Service, ApplicationRegistration.
-- **Privilege Broker / Helper**: the elevation channel that exists only for the duration of a transaction and accepts only closed ops; `setup --priv-helper-v1`.
-- **Maintainer (maintainer)**: the framework runtime kept after installation under the reserved component name `__installer_runtime`, used for update/repair/uninstall.
-- **App Bootstrap (bootstrap)**: after commit, the application is invoked with `--installer-bootstrap-v1` and performs business migration over stdin/stdout JSON.
-- **Profile**: one of three deployment capability boundaries, InstalledApplication, PortableRun and EmbeddedUpdate; security capabilities are not inherited between them.
-- **PortableExecutable**: a native executable that can be verified, cached and run without installation.
-- **RepositorySource**: one of three sources, Http / Directory / Embedded, each presenting the same TUF metadata + artifacts view to the resolver.
-- **VirtualPlatform**: a test platform implementation that can inject deterministic faults.
-- **UiTree / DisplayList / SemanticTree**: the three deterministic intermediate products of the UI pipeline, describing structure, drawing and accessibility semantics respectively.
+**Author program**: Build-time source that constructs a product model through a language SDK or Starlark.
+_Avoid_: installer script, manifest logic.
 
-## Proposed for v0.2
+**Product model**: The typed description of a product's inputs, resources, capability bindings and compatibility policy.
 
-- **Feature module**: one built-in owner directory holding everything a capability or distribution feature needs, from schema fragment to platform backends and conformance cases; the set is fixed at compile time ([ADR-0018](docs/adr/0018-built-in-feature-modules.md)).
-- **Preset**: versioned data that a scaffold command expands into ordinary product, component and branding files for one kind of product; never read at install time ([ADR-0019](docs/adr/0019-presets-and-themes.md)).
-- **Theme**: one of a closed set of named token sets for the installer window, selected in `branding` ([ADR-0019](docs/adr/0019-presets-and-themes.md)).
+**Compiler**: The toolchain that validates a product model, fixes its dependencies and produces a setup.
 
-## Deferred terms
+**Compiled program**: The immutable product representation consumed by the runtime.
+_Avoid_: author manifest.
 
-- **EmbeddedUpdate / distribution.node**: the Electron embedded-update profile and Node-API addon (not implemented in v0.1).
-- **Commit Activator (dist-activate)**: the short-lived handoff helper for embedded updates.
-- **External Compatibility Provider**: the abstraction over external compatibility-testing platforms.
+**Runtime**: The independently built execution host for compiled programs and capability libraries.
+
+**Runtime profile**: A published runtime's supported host contracts, target and resource limits.
+
+**Setup**: The final product installer containing a runtime, compiled program and fixed dependencies.
+
+**Artifact**: Immutable product content identified independently from the runtime and capability libraries.
+
+**Release**: A product publication with a fixed program and dependency set.
+
+**Release sequence**: Product release ordering independent of display version and state model versions.
+
+## Capabilities and policy
+
+**Capability contract**: The interface and lifecycle obligations for an installation or distribution capability.
+
+**Capability library**: An implementation of one or more capability contracts, bound into a product release.
+_Avoid_: native plugin, runtime extension discovery.
+
+**Capability instance**: One bound use of a library with its own inputs, resources and state.
+
+**Host primitive**: A versioned mechanism with explicit authority and effects provided by the runtime.
+
+**Standard library (stdlib)**: Official capability and authoring libraries using the same public contracts as product libraries.
+
+**Preset**: A build-time composition of libraries and product conventions.
+
+**Template**: A starting author project that a product developer can edit.
+
+**Component**: A product-defined selectable deployment unit.
+
+**Component family**: A product-defined group with common coexistence and selection rules.
+
+**Workload**: A product-defined selection of components for a user task.
+
+**Channel**: A product distribution policy that selects an authorized release.
+
+## Deployment and compatibility
+
+**Resource**: A stable, owned entity whose desired state is managed through a capability.
+
+**Deployment plan**: A result computed from the compiled program, selected inputs and observed machine state.
+
+**Frozen plan**: A durable deployment plan whose contents and host operations are fixed for transaction execution and recovery.
+
+**Transaction**: An attempt to move owned resources and state from one consistent installation to another.
+
+**Active**: The committed installation visible to product consumers.
+
+**Recovery**: Reconciliation of interrupted host operations to the old or new consistent installation.
+
+**Scope**: The authority boundary within which an installation manages resources.
+
+**Migration**: An explicitly identified conversion between compatible versions of product or capability state.
+
+**Bridge release**: A product-declared intermediate release required by an upgrade path.
+
+**App Bootstrap**: A product activation protocol for application-owned initialization and business migration.
+
+**Maintainer**: A retained runtime capable of managing an installed product and its recovery data.

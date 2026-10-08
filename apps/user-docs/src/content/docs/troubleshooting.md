@@ -3,6 +3,8 @@ title: Troubleshooting and FAQ
 description: Find logs, map exit codes to causes and fixes, and recover after an interruption.
 ---
 
+> Scope: the guidance and platform records below apply to the retained v1 implementation. New DSL/AOT interfaces and qualification have separate evidence on [Status and platforms](/status/).
+
 Start from the exit code: every `setup` and `nbpack` failure ends with one, and with `--json` also with an `error` event whose `code` names the cause.
 
 ## Logs and crash records

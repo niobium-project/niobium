@@ -1,5 +1,7 @@
 # Platform contract v1
 
+> Scope: retained v1 implementation. New DSL/AOT interfaces are indexed in [active contracts](../README.md#active-contracts); ADR-0022 governs reuse.
+
 - **Status:** Baseline
 
 Every platform backend (`libs/platform/{virtual,macos,windows,linux}`) implements `platform.api.Capabilities` and must pass the PlatformContract suite in `libs/conformance` before its target can be promoted above Tier 3 ([ADR-0014](../adr/0014-tier-based-platform-support.md)). "It compiles" does not mean it is supported.

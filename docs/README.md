@@ -1,46 +1,63 @@
 # Documentation index
 
-`docs/` holds maintainer documentation only: architecture, specifications, decisions, development process, runbooks and acceptance. The hard constraints live in the root [AGENTS.md](../AGENTS.md). Documentation for people who build installers with Niobium is the site at https://niobium-project.dev, built from [apps/user-docs](../apps/user-docs/README.md) ([ADR-0015](adr/0015-node-toolchain-for-user-docs.md)).
+Maintainer documents define the DSL/AOT toolchain under [ADR-0022](adr/0022-installer-dsl-and-aot-toolchain.md). [AGENTS.md](../AGENTS.md) owns development constraints. Product-author documentation lives in [apps/user-docs](../apps/user-docs/README.md).
 
-## Find by purpose
+## Active contracts
+
+These specifications own new interfaces. Normative targets and execution evidence are distinct; implementation status belongs to [N2 acceptance](acceptance-plan-v0.2.md).
+
+| Contract | Specification | Interface owner |
+|---|---|---|
+| Authoring and compiler | [compiler-frontends-v1](spec/compiler-frontends-v1.md) | `libs/compiler`, `api/c/compiler.h` |
+| Compiled program and carrier | [program-image-v1](spec/program-image-v1.md) | `libs/program`, [schema](../api/schema/compiled-program-v1.schema.json) |
+| Capability library | [capability-library-v1](spec/capability-library-v1.md) | `api/c/capability.h`, `libs/wasm_profile`, `libs/wasm_host` |
+| Host lifecycle | [runtime-lifecycle-v1](spec/runtime-lifecycle-v1.md) | `libs/runtime`, [state schema](../api/schema/runtime-state-v1.schema.json), [plan schema](../api/schema/runtime-plan-v1.schema.json) |
+| Compatibility and migration | [migration-v1](spec/migration-v1.md) | Program, library and host state owners |
+| Test execution and archived evidence | [test-system-v1](spec/test-system-v1.md) | `api/schema/test-report-v1.schema.json` |
+
+## Design and implementation
 
 | Purpose | Document |
 |---|---|
-| Original architecture input (read-only) | [architecture-v0.1](source/architecture-v0.1.md), [architecture-v0.2](source/architecture-v0.2.md) |
-| Current phase scope and deferred items | [roadmap-v0.2](roadmap-v0.2.md); previous phase [roadmap-v0.1](roadmap-v0.1.md) |
-| Feature coverage boundary and candidate acceptance questions | [feature-coverage](feature-coverage.md) |
-| Feature roadmap in user terms (user site) | [Roadmap](../apps/user-docs/src/content/docs/roadmap.md) |
-| Platform tiers: maintainer obligations; current tiers and platform roadmap (user site) | [ADR-0014](adr/0014-tier-based-platform-support.md), [Platform support](../apps/user-docs/src/content/docs/platforms.md) |
-| Acceptance IDs and actual status | [acceptance-plan-v0.1](acceptance-plan-v0.1.md) |
-| Decision records | [adr/README.md](adr/README.md) |
-| How each document kind changes and retires; replacing an ADR | [docs-management](development/docs-management.md) |
-| Architecture overview and module boundaries | [overview](architecture/overview.md), [module-boundaries](architecture/module-boundaries.md) |
-| Transactions, commit and recovery | [transaction-model](architecture/transaction-model.md) |
-| UI engine | [ui-engine](architecture/ui-engine.md) |
-| Directory and owner rules | [repository-layout](development/repository-layout.md) |
-| Test lanes, evidence, and continuous integration | [testing-lanes](development/testing-lanes.md) |
-| Checks, lint and rule iteration | [tooling-and-rules](development/tooling-and-rules.md) |
-| UI component lifecycle | [ui-component-lifecycle](development/ui-component-lifecycle.md) |
-| Commit conventions | [commits](development/commits.md) |
-| Using Niobium from another repository (build API) | [consuming](development/consuming.md) |
-| Online, offline-file and SFX design and verification tasks | [distribution backlog](development/distribution-backlog.md), [ADR-0020](adr/0020-distribution-delivery-milestones.md) |
-| Release signing, key rotation, offline bundles, VM smoke | [runbooks/](runbooks/) |
+| Compiler phases, dependencies, cache, diagnostics and SDKs | [Compiler engineering](design/compiler-engineering.md) |
+| Guest SDK, ABI, packages and conformance | [Wasm library SDK](design/wasm-library-sdk.md) |
+| Authority, host effects, stdlib and policy | [Host primitives and standard libraries](design/host-primitives-and-stdlib.md) |
+| Current architecture and code ownership | [Overview](architecture/overview.md), [module boundaries](architecture/module-boundaries.md) |
+| Transaction and recovery implementations | [Transaction model](architecture/transaction-model.md) |
+| Standard UI | [UI engine](architecture/ui-engine.md) |
+| Work packages and dependencies | [Roadmap v0.2](roadmap-v0.2.md) |
+| N2 execution evidence | [Acceptance plan v0.2](acceptance-plan-v0.2.md) |
+| Decisions and amendments | [ADR index](adr/README.md) |
 
-## Specifications (normative)
+## Development
 
-| Contract | Specification | Machine contract |
-|---|---|---|
-| Product manifest | [manifest-v1](spec/manifest-v1.md) | `api/schema/manifest-v1.schema.json` |
-| Component metadata and payload | [component-v1](spec/component-v1.md), [artifact-format-v1](spec/artifact-format-v1.md) | `api/schema/component-v1.schema.json` |
-| TUF profile | [tuf-profile-v1](spec/tuf-profile-v1.md) | `api/schema/tuf-profile-v1.schema.json` |
-| App Bootstrap | [bootstrap-v1](spec/bootstrap-v1.md) | `api/schema/bootstrap-v1.schema.json` |
-| CLI and events | [cli-v1](spec/cli-v1.md) | `api/schema/cli-events-v1.schema.json` |
-| Elevation IPC | [ipc-v1](spec/ipc-v1.md) | `api/schema/ipc-v1.schema.json` |
-| C ABI | [abi-v1](spec/abi-v1.md) | `api/c/distribution.h` |
-| UI IR | [ui-ir-v1](spec/ui-ir-v1.md) | `libs/ui/core` |
-| Platform contract | [platform-contract-v1](spec/platform-contract-v1.md) | `libs/conformance` |
-| Test execution and archived evidence | [test-system-v1](spec/test-system-v1.md) | `api/schema/test-report-v1.schema.json` |
+| Purpose | Document |
+|---|---|
+| Documentation lifecycle | [Documentation management](development/docs-management.md) |
+| Build and run the two-release PoC | [DSL/AOT workflow](development/aot-poc.md) |
+| Directory and owner rules | [Repository layout](development/repository-layout.md) |
+| Test lanes and evidence | [Testing lanes](development/testing-lanes.md), [construction state](roadmap-v0.2.md#test-system-construction) |
+| Online, complete offline-file and SFX delivery | [Distribution backlog](development/distribution-backlog.md), [ADR-0020](adr/0020-distribution-delivery-milestones.md) |
+| CI evidence transport | [ADR-0021](adr/0021-ci-evidence-transport.md), [deployment and recovery](development/testing-lanes.md#r2-deployment-and-recovery) |
+| Checks, lint and skills | [Tooling and rules](development/tooling-and-rules.md) |
+| UI component lifecycle | [UI lifecycle](development/ui-component-lifecycle.md) |
+| Commit conventions | [Commits](development/commits.md) |
+| Product consumer boundary and legacy API | [Consuming](development/consuming.md) |
+| Signing, key rotation, offline bundles and real OS testing | [Runbooks](runbooks/) |
+| Platform tier obligations | [ADR-0014](adr/0014-tier-based-platform-support.md) |
+| Feature coverage disposition | [Feature coverage](feature-coverage.md) |
 
-## Status vocabulary
+## Retained v1 contracts and records
 
-`PASS`, `FAIL`, `BLOCKED`, `NOT_RUN`, `DEFERRED`. Without actual evidence, do not use "supported", "passed" or "production-ready". Implementation traces are optional, for large multi-commit changes only, and go in `implementation/YYYY-MM-DD-<topic>.md`; they go stale and are not the source of truth.
+These documents apply to the legacy implementation and retained subsystems. Their product authoring and closed-extension assumptions do not constrain the active DSL contracts. Reuse requires the tests of the new owning contract.
+
+| Area | Documents |
+|---|---|
+| Product and artifact formats | [Manifest](spec/manifest-v1.md), [component](spec/component-v1.md), [artifact](spec/artifact-format-v1.md) |
+| Distribution trust and activation | [TUF](spec/tuf-profile-v1.md), [Bootstrap](spec/bootstrap-v1.md) |
+| Legacy process interfaces | [CLI](spec/cli-v1.md), [IPC](spec/ipc-v1.md), [C ABI](spec/abi-v1.md) |
+| Retained UI/platform contracts | [UI IR](spec/ui-ir-v1.md), [platform](spec/platform-contract-v1.md) |
+| Legacy product scope and shared testing evidence | [Roadmap v0.1](roadmap-v0.1.md), [N1 acceptance and test-system evidence](acceptance-plan-v0.1.md) |
+| Read-only architecture input | [Source v0.1](source/architecture-v0.1.md), [source v0.2](source/architecture-v0.2.md) |
+
+Status vocabulary is `PASS`, `FAIL`, `BLOCKED`, `NOT_RUN`, `DEFERRED`. Optional dated implementation traces are not sources of truth.

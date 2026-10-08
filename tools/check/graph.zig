@@ -13,6 +13,7 @@ fn isUi(layer: Layer) bool {
 
 /// Returns a reason when `from -> to` breaks the dependency direction, else null.
 pub fn edgeViolation(from: specs.ModuleSpec, to: specs.ModuleSpec) ?[]const u8 {
+    if (phaseViolation(from.phase, to.phase)) |reason| return reason;
     if (to.layer == .third_party) return null;
     if (from.layer == .third_party) return "third_party modules may not import project modules";
     if (isUi(from.layer)) {
@@ -29,7 +30,10 @@ pub fn edgeViolation(from: specs.ModuleSpec, to: specs.ModuleSpec) ?[]const u8 {
 }
 
 pub fn check(report: *repo.Report, io: std.Io, files: repo.Files) !void {
-    for (specs.specs) |spec| {
+    for (specs.specs, 0..) |spec, origin| {
+        if (phaseClosureViolation(specs.specs.len, &specs.specs, origin)) |name| {
+            try report.add("module {s} reaches forbidden phase at {s}", .{ spec.name, name });
+        }
         if (!spec.generated and !repo.exists(io, spec.root)) {
             try report.add("module '{s}': root '{s}' missing", .{ spec.name, spec.root });
         }
@@ -119,4 +123,75 @@ test "edge rules reject upward and UI leaks" {
     try std.testing.expect(edgeViolation(core, engine) != null);
     try std.testing.expect(edgeViolation(engine, ui_core) != null);
     try std.testing.expect(edgeViolation(ui_core, engine) != null);
+}
+
+test "install-time phase rejects compiler and policy dependencies" {
+    var runtime = specs.find("runtime").?;
+    const compiler = specs.find("compiler").?;
+    runtime.layer = compiler.layer;
+    try std.testing.expect(edgeViolation(runtime, compiler) != null);
+    var preset = compiler;
+    preset.phase = .policy;
+    try std.testing.expect(edgeViolation(runtime, preset) != null);
+}
+
+fn phaseViolation(from: specs.Phase, to: specs.Phase) ?[]const u8 {
+    if (from == .shared and to != .shared) return "shared contract depends on execution phase";
+    if (from == .install_time and (to == .build_time or to == .policy)) {
+        return "runtime depends on authoring or product policy";
+    }
+    if ((from == .build_time or from == .policy) and to == .install_time) {
+        return "authoring depends on install-time implementation";
+    }
+    return null;
+}
+
+/// Bounded reachability also catches phase leaks hidden behind shared intermediate modules.
+fn phaseClosureViolation(
+    comptime count: usize,
+    modules: *const [count]specs.ModuleSpec,
+    origin: usize,
+) ?[]const u8 {
+    std.debug.assert(origin < count);
+    var reachable: [count]bool = @splat(false);
+    reachable[origin] = true;
+    for (0..count) |_| {
+        for (modules, 0..) |module, index| {
+            if (!reachable[index]) continue;
+            for (module.imports) |name| {
+                for (modules, 0..) |target, target_index| {
+                    if (!std.mem.eql(u8, target.name, name)) continue;
+                    if (phaseViolation(modules[origin].phase, target.phase) != null) {
+                        return target.name;
+                    }
+                    reachable[target_index] = true;
+                }
+            }
+        }
+    }
+    return null;
+}
+
+test "runtime phase guard follows shared modules transitively" {
+    const modules = [_]specs.ModuleSpec{
+        .{
+            .name = "run",
+            .root = "",
+            .layer = .orchestration,
+            .phase = .install_time,
+            .imports = &.{"bridge"},
+        },
+        .{ .name = "bridge", .root = "", .layer = .contracts, .imports = &.{"author"} },
+        .{
+            .name = "author",
+            .root = "",
+            .layer = .contracts,
+            .phase = .build_time,
+            .imports = &.{},
+        },
+    };
+    try std.testing.expectEqualStrings("author", phaseClosureViolation(3, &modules, 0).?);
+    var valid = modules;
+    valid[2].phase = .shared;
+    try std.testing.expect(phaseClosureViolation(3, &valid, 0) == null);
 }

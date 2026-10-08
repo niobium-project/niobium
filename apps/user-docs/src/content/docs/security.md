@@ -3,6 +3,8 @@ title: Security
 description: What Niobium defends against, what it does not, and how to report a vulnerability.
 ---
 
+> Scope: the guidance and platform records below apply to the retained v1 implementation. New DSL/AOT interfaces and qualification have separate evidence on [Status and platforms](/status/).
+
 Niobium is designed so that a compromised download server, a tampered or replayed repository, a malicious archive or a crash cannot get software installed that the publisher did not authorize, or leave a machine half-updated. It does not protect against a compromised publisher, a compromised user session, or a malicious application that the publisher legitimately signed. Each defense below names where it is specified; whether it has been verified is on [Status and platforms](/status/).
 
 ## Threat model
