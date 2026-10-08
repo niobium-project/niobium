@@ -5,7 +5,7 @@
 const std = @import("std");
 const contracts = @import("contracts");
 
-pub const tar = @import("tar.zig");
+pub const tar = @import("tar");
 pub const path = @import("path.zig");
 pub const fixture = @import("fixture.zig");
 

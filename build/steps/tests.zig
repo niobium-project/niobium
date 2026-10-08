@@ -12,6 +12,7 @@ pub const suite_imports = [_][]const u8{
     "repository", "package",     "executor",    "resolver", "planner",
     "privilege",  "bootstrap",   "transaction", "portable", "engine",
     "packager",   "conformance", "zstd",        "program",  "wasm_profile",
+    "content",    "image",
 };
 
 /// One test binary per library module; each runs under std.testing.allocator (SafeAllocator).

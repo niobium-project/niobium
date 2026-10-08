@@ -1,5 +1,7 @@
 # Roadmap v0.2: DSL/AOT toolchain
 
+Historical Core Wasm v1 delivery plan. Current standard-core work is tracked in [roadmap v0.3](roadmap-v0.3.md); the linked design pages evolve with the current architecture.
+
 The delivery baseline is [ADR-0022](adr/0022-installer-dsl-and-aot-toolchain.md), its five active specifications, and the detailed compiler, library SDK and host/stdlib designs. This roadmap owns implementation sequencing and handoff; [N2 acceptance](acceptance-plan-v0.2.md) owns results.
 
 ## Current delivery

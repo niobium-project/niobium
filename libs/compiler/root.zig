@@ -1,9 +1,14 @@
 //! Build-time product authoring. Every frontend uses this typed, bounded builder.
 
 const std = @import("std");
+pub const pipeline = @import("pipeline.zig");
 const contracts = @import("contracts");
 pub const program = @import("program");
 const wasm_profile = @import("wasm_profile");
+pub const lock = @import("lock.zig");
+pub const cache = @import("cache.zig");
+pub const author = @import("author.zig");
+pub const runtime_package = @import("runtime_package.zig");
 
 pub const Error = program.Error || wasm_profile.Error || error{
     AuthoringLimit,
@@ -11,6 +16,14 @@ pub const Error = program.Error || wasm_profile.Error || error{
 };
 
 pub const Binding = enum { input, asset, resource };
+
+test {
+    _ = pipeline;
+    _ = lock;
+    _ = cache;
+    _ = author;
+    _ = runtime_package;
+}
 
 pub const Builder = struct {
     arena: std.mem.Allocator,

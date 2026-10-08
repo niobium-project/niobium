@@ -1,6 +1,6 @@
 # Niobium glossary
 
-Canonical terms for the installation and distribution language defined by [ADR-0022](docs/adr/0022-installer-dsl-and-aot-toolchain.md). Historical v1 documents retain their local terminology.
+Canonical terms for the installation and distribution language defined by [ADR-0022](docs/adr/0022-installer-dsl-and-aot-toolchain.md). [ADR-0023](docs/adr/0023-standard-content-and-component-contracts.md) defines standard content and Component execution. Retained documents keep their local terminology.
 
 ## Authoring and distribution
 
@@ -11,7 +11,7 @@ _Avoid_: installer script, manifest logic.
 
 **Compiler**: The toolchain that validates a product model, fixes its dependencies and produces a setup.
 
-**Compiled program**: The immutable product representation consumed by the runtime.
+**Compiled product / compiled program**: The immutable bound product graph consumed by the runtime, including resolved input types and fixed library/content references.
 _Avoid_: author manifest.
 
 **Runtime**: The independently built execution host for compiled programs and capability libraries.
@@ -20,7 +20,17 @@ _Avoid_: author manifest.
 
 **Setup**: The final product installer containing a runtime, compiled program and fixed dependencies.
 
-**Artifact**: Immutable product content identified independently from the runtime and capability libraries.
+**Artifact**: Immutable source or product bytes identified independently from the runtime and capability libraries.
+
+**Content container**: A bounded hierarchical content snapshot with a canonical POSIX pax identity.
+
+**Content tree**: The logical files, directories, explicit symbolic links and metadata in a container.
+
+**Source identity**: The digest/length of acquired bytes, separate from normalized logical content.
+
+**Derivation**: A fixed transformation or bounded guest computation producing new content; the host assigns the resulting canonical identity.
+
+**Native prefix measurement**: A hash binding the native runtime prefix while normalizing only carrier fields permitted to change during assembly/signing. It does not authenticate a publisher.
 
 **Release**: A product publication with a fixed program and dependency set.
 
@@ -33,7 +43,17 @@ _Avoid_: author manifest.
 **Capability library**: An implementation of one or more capability contracts, bound into a product release.
 _Avoid_: native plugin, runtime extension discovery.
 
-**Capability instance**: One bound use of a library with its own inputs, resources and state.
+**Capability instance / call**: One stable bound invocation in the product graph with its own inputs, grants, selector and state lineage.
+
+**Wasm Component**: A standard Component Model binary with WIT-typed interfaces. This differs from a product's selectable component.
+
+**WIT**: The standard interface type language used for capability contracts.
+
+**Observation**: A typed machine fact with an explicit meaning; absence or unsupported capability does not decide product policy.
+
+**Grant**: A bounded authorization naming a root, primitive/version, prefix, budgets and access ceilings. A content reference grants no authority.
+
+**Access policy**: Explicit owner/everyone rights interpreted through the portable access contract and native adapter.
 
 **Host primitive**: A versioned mechanism with explicit authority and effects provided by the runtime.
 
@@ -57,7 +77,11 @@ _Avoid_: native plugin, runtime extension discovery.
 
 **Deployment plan**: A result computed from the compiled program, selected inputs and observed machine state.
 
-**Frozen plan**: A durable deployment plan whose contents and host operations are fixed for transaction execution and recovery.
+**Frozen plan**: A durable host plan whose contents, resource identities and operations are fixed for execution and recovery; it contains no process-local handles.
+
+**Generation**: A prepared complete set of resources for one owned root.
+
+**Coordinator decision**: The durable OLD/NEW choice governing recovery across all roots; root visibility can change at different instants.
 
 **Transaction**: An attempt to move owned resources and state from one consistent installation to another.
 

@@ -1,0 +1,18 @@
+package niobium:files@1.0.0;
+interface installer {
+    use niobium:runtime/proposal@1.0.0.{container-ref, plan, policy};
+    record request {
+        root: string,
+        grant: string,
+        prefix: string,
+        content: container-ref,
+        enabled: bool,
+        file-access: policy,
+        directory-access: policy,
+    }
+    // Pure identity selection. Resolution and content verification belong to the host.
+    select-content: func(primary: container-ref, fallback: container-ref,
+                         use-primary: bool) -> container-ref;
+    build: func(input: request) -> result<plan, string>;
+}
+world files { export installer; }

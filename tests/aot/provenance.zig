@@ -32,19 +32,35 @@ pub const Run = struct {
     report: Report,
 
     pub fn start(arena: std.mem.Allocator, io: std.Io, argv: []const []const u8) !Run {
+        return startForSuite(arena, io, argv, "aot");
+    }
+
+    pub fn startForSuite(
+        arena: std.mem.Allocator,
+        io: std.Io,
+        argv: []const []const u8,
+        suite: []const u8,
+    ) !Run {
+        if (suite.len == 0 or suite.len > 32) return error.EvidenceSuite;
+        for (suite) |byte| {
+            if (!std.ascii.isLower(byte) and !std.ascii.isDigit(byte) and byte != '-') {
+                return error.EvidenceSuite;
+            }
+        }
         const now = std.Io.Clock.real.now(io).toMilliseconds();
         var stamp: std.Io.Writer.Allocating = .init(arena);
         try core.crash.writeUtc(&stamp.writer, @divTrunc(now, 1000));
         var random: [8]u8 = undefined; // SAFETY: random fills the suffix.
         io.random(&random);
         const repo = try Dir.cwd().realPathFileAlloc(io, ".", arena);
-        const base = try arena.print("{s}/.evidence/aot", .{repo});
+        const base = try arena.print("{s}/.evidence/{s}", .{ repo, suite });
         try Dir.cwd().createDirPath(io, base);
         const evidence = try arena.print("{s}/{s}-{s}", .{
             base, stamp.written(), std.fmt.bytesToHex(random, .lower),
         });
         try Dir.cwd().createDir(io, evidence, .default_dir);
         var run: Run = .{ .arena = arena, .io = io, .repo = repo, .evidence = evidence, .report = .{
+            .suite = suite,
             .argv = argv,
             .target = @tagName(builtin.target.cpu.arch) ++ "-" ++ @tagName(builtin.target.os.tag),
             .started_ms = now,
@@ -84,9 +100,13 @@ pub const Run = struct {
             .files = files.items,
         }, .{});
         run.report.source_identity_sha256 = try digest(run.arena, identity);
-        const executable = try run.source(run.report.argv[0]);
-        run.report.executable_sha256 = executable.sha256 orelse
-            return error.SourceIdentityUnavailable;
+        const executable = try Dir.cwd().readFileAlloc(
+            run.io,
+            run.report.argv[0],
+            run.arena,
+            .limited(30 << 20),
+        );
+        run.report.executable_sha256 = try digest(run.arena, executable);
         try run.save();
     }
 

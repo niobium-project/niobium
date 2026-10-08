@@ -16,6 +16,7 @@ const vm = @import("build/steps/vm.zig");
 const example = @import("build/steps/example.zig");
 const sdk = @import("build/sdk.zig");
 const aot = @import("build/aot.zig");
+const vnext = @import("build/vnext.zig");
 
 pub const version = "0.1.0";
 
@@ -141,6 +142,7 @@ fn addTestGates(
     c_smoke.dependOn(e2e.addCSmoke(b, graph, binaries.static_lib, config));
     const example_step = addExampleSteps(b, graph.config.target, tools.vm_smoke);
     const aot_step = aot.add(b, graph.config.inputs, tools.check_binary);
+    const core_step = vnext.add(b, graph.config.inputs, tools.fetch_deps);
 
     addRunSteps(b, binaries.setup, workbench);
 
@@ -155,6 +157,7 @@ fn addTestGates(
         verify.dependOn(&b.addFail("verify rejects -Dsuite and -Dcase narrowing").step);
         return;
     }
+    verify.dependOn(core_step);
     for ([_]*std.Build.Step{
         steps.check,
         steps.unit,

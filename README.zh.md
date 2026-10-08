@@ -4,50 +4,53 @@
 
 [English](README.md) | 简体中文
 
-Niobium 是面向安装与分发的 DSL，包含 AOT 编译器、预编译原生 runtime 和由宿主管理权限的 Wasm 能力库。产品作者通过语言 SDK 或 Starlark 组合安装程序。编译器固定依赖并封装 runtime，产品通过库与预设定义分发和升级策略。
+Niobium 是面向安装与分发的 DSL，包含 AOT 编译器、预编译原生 runtime 和由宿主管理权限的 Wasm 能力库。产品作者使用原生 Zig/C API 或 Starlark，各语言 SDK 共享编译后端。产品选择、分发和升级策略由能力库与预设定义。
 
-架构基线见 [ADR-0022](docs/adr/0022-installer-dsl-and-aot-toolchain.md)。新接口处于发布前阶段，仍可能变更。[N2 验收](docs/acceptance-plan-v0.2.md)记录实际结果；历史 N1 证据仅适用于保留的旧实现。
+[ADR-0023](docs/adr/0023-standard-content-and-component-contracts.md)确立了当前的标准内容容器与 WIT 架构基线。接口仍处于实验性、发布前阶段。[验收计划 v0.3](docs/acceptance-plan-v0.3.md)记录当前结果；旧验收计划继续保留各自的实现及平台范围。
 
 ## 构建与验证
 
-原生工具链需要 Zig 0.17.0。Starlark 构建端 worker 还需要 Go 1.25 或更高版本，以及用于 cgo 的主机 C 编译器。首个原生产品验收目标为 macOS arm64、用户范围和 CLI。
+源码构建需要 Zig 0.17.0、Rust 1.96.1 及其 `wasm32-unknown-unknown` target，以及 Go 1.25 或更高版本和用于 Starlark worker 的主机 C 编译器。构建图获取固定版本的 Wasm 工具；产品组装消费预编译的 runtime 字节。还需安装与 Zig 主机 ABI 匹配的 Rust 原生 target，见[跨主机构建前置要求](docs/development/cross-host-builds.md#build-the-host-sdk-and-a-runtime-template)。
 
 ```sh
-zig build aot             # 编译器、作者 ABI、能力库示例和 runtime 模板
-zig build aot-test        # 产品模型、Wasm profile 与宿主契约检查
-zig build aot-e2e         # 原生产品、迁移、恢复与最终封装检查
-zig build verify          # 新架构验收与保留的回归门禁
+zig build compiler-v2 runtime-v2  # 主机编译器与完整 runtime 模板
+zig build author-v2-test         # 原生 Zig、C 与 Starlark 作者入口一致性
+zig build component-test         # 标准 WIT、Canonical ABI 与隔离 worker
+zig build core-test              # 内容、权限、类型和编译器基础契约
+zig build core-e2e               # 最终 setup、生命周期、迁移和恢复
+zig build verify                # 当前门禁与保留的回归测试
 ```
 
-产品组装使用完整的 runtime 模板，并保留其可执行代码段。PoC 填充预留的 1 MiB 产品段，再进行 ad-hoc 签名。资源名称使用可打印 ASCII，安装根目录允许 Unicode。发布者签名、更大容量的封装和其他平台分别验收。
+当前 runtime 是无界面的用户范围方案。标准 WIT 与社区 bindgen 接入 Wasmtime/Pulley；能力库接收类型化输入和预先绑定的观察结果，不获得隐式 WASI 或机器操作权限。规范化 POSIX pax 容器保存文件、目录和链接的逻辑结构，部署权限通过独立策略明确表达。PE、ELF 与 Mach-O 组装保留模板的可执行代码，并绑定原生前缀、产品及载荷身份。
 
-[编译器前端规范](docs/spec/compiler-frontends-v1.md)定义产品构建接口；[能力库规范](docs/spec/capability-library-v1.md)定义运行时扩展。现有 `examples/hello` 和 manifest 教程描述旧构建 API。
+本地原生或模拟目标的执行分别记录，不能据此宣称原生 Windows/Linux CI、整机范围、完整原生应用元数据、发布者身份认证或公证已经验收。最终资格确认仍在进行。1 MiB 预留段、ASCII 资源名称和 WAMR profile 属于保留的 v1 PoC，不是当前内容与 Component 契约的限制。
 
-[PoC 操作说明](docs/development/aot-poc.md)通过两个发布演示产品编写、组装、安装与显式状态迁移。
+从[作者接口 v2](docs/development/authoring-v2.md)、[Component SDK](docs/development/component-library-sdk.md)和[跨主机构建](docs/development/cross-host-builds.md)开始。[当前契约](docs/README.md)定义共享编译器及 runtime 的边界。`examples/hello`、manifest 教程和旧 [PoC 操作说明](docs/development/aot-poc.md)保留原有 API 范围。
 
 ## 路线图
 
-🚧 当前交付 · 🔜 基线之后可并行实施 · 🗓️ 后续验收。这些标记表示工作优先级，执行结果使用验收状态词汇。
+🚧 当前交付 · 🔜 基线之后可并行实施 · 🗓️ 后续验收。这些标记表示优先级，不代表全部功能完成或平台支持声明。
 
 | 状态 | 功能 |
 |---|---|
 | 🚧 | 程序化产品构建与 AOT 编译器 |
 | 🚧 | 预编译 runtime 与固定的 Wasm 能力库 |
+| 🚧 | 标准内容容器、权限与跨主机原生封装 |
 | 🚧 | 事务化部署与显式状态迁移 |
-| 🔜 | 编译缓存、能力库 SDK 与更多宿主操作 |
+| 🔜 | 增量编译工具、SDK 发布与更多宿主操作 |
 | 🔜 | Python、TypeScript、Go 与 Rust 产品 SDK |
 | 🔜 | 组件、SDK 与工具链预设 |
 | 🔜 | 分发、信任与通道能力库 |
-| 🔜 | 在线、完整离线文件与自解压安装程序 |
-| 🗓️ | 大容量原生封装与发布者签名 |
+| 🔜 | 在线、离线文件与自解压产品方案 |
+| 🗓️ | 发布者签名与公证验收 |
 | 🗓️ | 标准 UI、嵌入式维护与无障碍支持 |
-| 🗓️ | Windows/Linux 与整机范围验收 |
+| 🗓️ | 原生平台 CI 与整机范围验收 |
 
-[用户路线图](apps/user-docs/src/content/docs/zh/roadmap.md)解释这些功能。[维护者路线图](docs/roadmap-v0.2.md)定义接口、负责人、依赖关系与验收。
+[用户路线图](apps/user-docs/src/content/docs/zh/roadmap.md)解释这些项目。[维护者路线图](docs/roadmap-v0.3.md)、[功能归属目录](docs/feature-coverage.md)与[产品旅程](docs/design/product-journeys.md)定义接口、负责人、依赖关系和验收。
 
 ## 背景
 
-Niobium 是作者在同元软控工作期间开发的业余项目，不属于同元软控的商业产品。它用于为包括内部、实验性及商业项目在内的产品制作安装程序。同元软控不提供直接支持或方向指导。参见[关于本项目](apps/user-docs/src/content/docs/zh/about.md)。
+Niobium 是作者在同元软控工作期间开发的业余项目，不属于同元软控的商业产品。它用于为内部、实验性及商业产品制作安装程序。同元软控不提供直接支持或方向指导。参见[关于本项目](apps/user-docs/src/content/docs/zh/about.md)。
 
 ## 文档
 
@@ -56,7 +59,7 @@ Niobium 是作者在同元软控工作期间开发的业余项目，不属于同
 - 工程设计：[编译器](docs/design/compiler-engineering.md)、[能力库 SDK](docs/design/wasm-library-sdk.md)、[宿主与标准库](docs/design/host-primitives-and-stdlib.md)
 - 开发约束：[AGENTS.md](AGENTS.md)
 - 领域术语：[GLOSSARY.md](GLOSSARY.md)
-- 验收证据：[N2 验收](docs/acceptance-plan-v0.2.md)、[历史 N1](docs/acceptance-plan-v0.1.md)
+- 验收证据：[当前 v0.3](docs/acceptance-plan-v0.3.md)、[保留的 v0.2](docs/acceptance-plan-v0.2.md)、[历史 N1](docs/acceptance-plan-v0.1.md)
 
 ## 许可证
 

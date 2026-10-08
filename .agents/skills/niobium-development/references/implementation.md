@@ -31,7 +31,7 @@ The libc hooks for `stb_truetype` are `export`ed by `bindings.zig`. Any artifact
 
 ## Phases and side effects
 
-The active DSL flow freezes guest outputs and host operations under [runtime-lifecycle-v1](../../../../docs/spec/runtime-lifecycle-v1.md). The following phase names describe the retained manifest/engine profile.
+The active Component flow freezes guest outputs and host operations under [runtime-lifecycle-v2](../../../../docs/spec/runtime-lifecycle-v2.md). The following phase names describe the retained manifest/engine profile.
 
 - `Prepare` downloads, verifies through TUF, and unpacks into staging before `Execute` starts.
 - `Execute` writes only `versions/<seq>` and never touches `current`; `Commit` is the pointer swap ([ADR-0006](../../../../docs/adr/0006-transaction-and-pointer-swap-commit.md)).

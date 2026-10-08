@@ -1,75 +1,110 @@
 # Host primitives and standard libraries
 
-- **Kind:** Architecture and interface design under [ADR-0022](../adr/0022-installer-dsl-and-aot-toolchain.md).
-- **Audience:** Runtime, platform, capability and product-library maintainers.
-- **Implementation boundary:** The PoC provides user-scope generation files and fixed facts. Other primitives and standard-library modules require their own implementation evidence.
+- **Kind:** Layering and extension design under [ADR-0023](../adr/0023-standard-content-and-component-contracts.md).
+- **Owners:** Runtime kernel, primitive maintainers and independent library publishers.
+- **Current boundary:** Content trees, user-scope generation deployment, access receipts,
+  machine facts and explicit maintenance/migration are implemented. Other platform
+  integrations retain their old owners until their new contracts are qualified.
 
 ## Responsibility boundary
 
-The kernel owns identity, authority, resource collision checks, budgets and transaction integrity. A host primitive gives a checked mechanism a versioned effect and recovery contract. A capability library combines those mechanisms into a domain capability.
+| Layer | Responsibility | Extension boundary |
+|---|---|---|
+| Runtime kernel | Identity, grants, budgets, conflict checks, plan freezing, commit and recovery | Mechanisms common to every product |
+| Host primitives | Bounded observations and machine operations with native adapters | Versioned authority, preconditions, receipts and recovery |
+| Capability libraries / stdlib | Compose mechanisms into capabilities and product models | Public WIT contracts; fixed implementations |
+| Author libraries / presets | Component families, workloads, layout, coexistence and distribution choices | Build-time SDK composition |
 
-Standard libraries express common installation and distribution models. Presets select conventions such as component selection, SDK coexistence and update policy. Product libraries may choose different conventions while respecting the same host contracts.
+A library declaration requests a compatible primitive; a signed/authorized product
+binding grants scope. Neither a WIT import nor a digest grants authority by itself.
+The current Component profile supplies observations as typed values and accepts
+declarative plans. Callable imports require a future qualified profile.
 
-| Layer | Inputs | Outputs | Prohibited dependency |
+## Four primitive families
+
+| Family | Objects and operations | Current slice | Further operations |
 |---|---|---|---|
-| Author library/preset | Product build options | Typed model and capability bindings | Runtime evaluation of author source |
-| Capability library | Bound inputs, facts, assets and prior state | Desired resources and resulting state | Native platform modules or ambient OS authority |
-| Kernel | Compiled program and observed state | Validated frozen transaction | Specific component/channel policy |
-| Host primitive | Authorized frozen operation | Durable effect and receipt | New guest decisions during recovery |
-| Platform backend | Primitive operation and explicit IO | Platform result or explicit unsupported error | Product selection policy |
+| Content | Immutable container, tree, member, source and derivation; inspect, select, remap, merge, generate, freeze | Canonical pax trees, build-time transforms, fixed references and bounded generated entries | Additional transport adapters, streaming guest content access and derivation tooling |
+| Machine state | Typed observation with scope, provenance and freshness; inspect and compare | `machine.facts@1` reports OS and runtime/process architecture | Filesystem capabilities, prerequisites, integrations, running processes and hardware observations |
+| Authority and ownership | Root, scoped grant, resource identity, access intent and native receipt; authorize, claim, verify, release | Exclusive product roots, per-call grants, private scaffolding, access application/restoration | Shared-object coordination and machine-scope broker contracts |
+| Execution and maintenance | Frozen plan, generation, decision, installed state and migration; prepare, commit, recover, repair, remove | User-scope generations, multi-root coordinator, explicit state conversion and guest-free recovery | Services, application activation, restart continuation and embedded maintenance |
 
-The current profile validates printable-ASCII resource paths and file outputs, stages a generation and switches its active pointer. Installation roots may use Unicode. That deployment profile is not a requirement that every future primitive uses file generations.
+A missing prerequisite is an observation. Product libraries decide whether to
+continue, disable a component, request another installation or fail. Detecting an
+independent shared prerequisite never grants ownership of it or authorizes its
+installation/removal.
 
-## Primitive contract
+`machine.facts.architecture` means the running runtime's architecture. An x64
+runtime under OS emulation reports x64; this is not physical CPU detection.
+More detailed machine facts need explicit contracts and provenance.
 
-Every new primitive defines identity/version, request and result types, permitted scope, ownership key, preconditions, limits and error categories. It also defines observable state, conflict detection, durable undo data and post-crash reconciliation.
+## Content and access
 
-A contract distinguishes observation from mutation. Observation returns a bounded snapshot with provenance and freshness requirements. Planning consumes the snapshot and proposes effects. Commit checks any preconditions that could have changed since observation.
+[Content container v1](../spec/content-container-v1.md) owns logical naming,
+metadata and canonical pax. Target name restrictions belong to native deployment:
+Windows reserved names cannot become a global Linux/macOS naming policy.
+Native exclusive creation detects filesystem aliases before commit. Symbolic link
+text remains exact; native traversal and target-kind requirements are checked
+before staging. Windows creation privilege is a separate runtime observation.
 
-The guest receives scoped handles. The host derives grants from the compiled binding, runtime profile and actual privilege context. An import or package declaration cannot enlarge those grants. Handles expire after their evaluation and never enter a persistent plan.
+[Access policy v1](../spec/access-policy-v1.md) defines the portable discretionary
+subset. POSIX modes and Windows DACLs are separate representations. The host
+verifies the requested policy and preserves native identity/metadata for recovery;
+it refuses unsupported ACLs, filesystems or rules.
 
-Persistent operations use resource identities and validated root-relative references. OS handles are reopened and checked during recovery. Link traversal and parent replacement must not redirect a write outside the owned root. Unsupported operations return a typed refusal before mutation.
+Archive mode never becomes authority automatically. A current desired container
+has uniform file and directory policies. Authors can partition executable and
+data content into distinct references with explicit policies. More granular
+per-entry intent requires a bounded, versioned proposal and conformance vectors.
 
-## Resource lifecycle
+Strict ancestors above a granted prefix are private host scaffolding. Guest policy
+applies only at or below its grant. Scaffolding is counted in resource budgets and
+persisted with the actual private policy; it cannot widen rights above a grant.
 
-A resource owner is the product instance plus a stable resource ID. Library implementation updates do not implicitly transfer ownership. Two proposed resources that collide on a physical location are rejected before either is written.
+## Lifecycle and durable identity
 
-The host freezes contents, identities, preconditions, migration receipts and operations before staging. Each primitive defines prepare, apply, verify, rollback and recovery behavior where applicable. A resource may require a narrower supported lifecycle; the compiler rejects a requested lifecycle that the runtime cannot provide.
+The [lifecycle specification](../spec/runtime-lifecycle-v2.md) owns the detailed
+state machine. The host checks grants and resource budgets before publishing
+content into durable storage, then validates the captured inventory again. A
+frozen plan contains stable identities, relative paths, hashes and versions.
+Process handles and guest resources never enter it.
 
-Uninstall reconciles ownership with current state. A product cannot delete unowned data because it shares a directory. A library cannot promise rollback for arbitrary external side effects; introducing such a primitive requires an explicit lifecycle decision and failure semantics.
+Every plan-producing call retains its owner/selector/version record even when its
+private state is absent. Version changes require applicable conversion rules.
+The current converter ABI consumes a value; changing a state version from absent
+private state is an explicit unsupported transition, not an inferred conversion.
 
-Transaction compatibility includes primitives referenced by unfinished plans and installed resource receipts. A smaller runtime profile must refuse maintenance if it lacks required recovery or cleanup implementations. Removing a capability from the new product model does not remove this obligation.
+Each root prepares a complete generation. One coordinator decision determines
+whether recovery retains OLD or completes NEW across all roots. There is no
+simultaneous cross-root visibility guarantee. Recovery uses durable plans and
+content, without guest or author execution. Repair and uninstall preserve changed
+or unrecorded user data and refuse foreign publication pointers.
 
-## Primitive and library catalog
+A new primitive must define observation, authority, ownership, idempotence,
+verification, interruption, restoration and recovery. Operations without complete
+rollback must declare their actual commit/reconciliation boundary. Removing a
+library from a new product does not remove the need to recover an old frozen plan.
 
-The table assigns design ownership. Only the first row is part of the executable PoC.
+## Module ownership and platform matrix
 
-| Capability area | Host mechanism | Standard-library policy | Platform/scope design |
-|---|---|---|---|
-| Managed files | Bound assets, desired byte outputs, owned generation activation | Layout and deployment grouping | macOS arm64 user PoC; other combinations need qualification |
-| Directories/archives | Bounded extraction, metadata and safe path operations | Artifact packaging and layout | Per-platform permissions and link semantics |
-| Shortcuts/protocols/file associations | Typed registration, ownership receipts and restoration | Naming, associations and optionality | macOS/Windows/Linux, user/machine assessed separately |
-| Services/autostart | Closed service-manager operations | Start policy and product integration | Explicit supported manager and scope; no arbitrary command import |
-| Environment/PATH | Typed entry identity, read/compare/write and removal | Stable path selection and precedence | Preserve unrelated entries and user edits |
-| Sources/cache | Authorized bounded byte acquisition and content storage | HTTP/offline selection, caching and mirrors | Network authority independently granted |
-| Release trust/channels | Signature/hash and metadata verification | TUF profile, channels, promotion and release authorization | Trust requirements cannot be bypassed by guest declarations |
-| Activation | Typed product activation protocol with timeout | Business compatibility and pending/retry policy | Separate process authority; no implicit deployment rollback promise |
-| UI | Input/state contract and read-only progress | Screens, themes and workflow | Shared renderer per ADR-0008; CLI shares semantics |
+| Module or capability | Owner and dependency direction | Qualification rule |
+|---|---|---|
+| `stdlib.files` | Public WIT and content references; no native module import | Same contract tests as independent product libraries |
+| Content transport | Acquisition/trust mechanisms beneath source/distribution libraries | Exact bytes, bounded IO, authorization and offline failure cases |
+| Channels, repositories, updates | Distribution libraries and presets | Product policy plus retained cryptographic mechanisms |
+| Environment, shortcuts, services | New host primitive contracts and platform adapters | Ownership, drift and restoration for each OS/scope |
+| UI and bootstrap | Typed inputs/progress or an explicit activation protocol | No implicit mutation authority; shared renderer boundary remains |
+| SDK/workload/coexistence | Author/product libraries | Different policies through the same kernel and resource contracts |
 
-Every platform/scope cell starts without an N2 support claim. The implementation owner must supply backend conformance, failure tests and real-OS evidence before changing its qualification status.
+The implemented runtime targets are macOS arm64, Windows x64 and Linux x64 in user
+scope. This is an implementation matrix; actual execution, filesystem, emulation
+and identity contexts are recorded separately in acceptance. Machine scope,
+additional architectures, publisher trust and unsupported filesystem/ACL features
+remain unqualified. No cell inherits a PASS from another OS or from compilation.
 
-## Standard-library dependency design
-
-`stdlib.files` depends on file primitives and the capability ABI. Artifact libraries may depend on files and extraction. Distribution libraries compose sources, trust and artifact identities. Product composition libraries bind capabilities and own component families, workloads and selection migration.
-
-Presets depend on standard or product libraries. They never become dependencies of the kernel. A preset's version and evaluated output are fixed by the build; modifying a preset does not change an existing setup.
-
-SDK coexistence is represented through stable resource identity and library state. Single-version and multi-version policies are separate author-library choices. Upgrade paths and migration mappings remain explicit product declarations.
-
-## Introducing an operation
-
-The primitive owner updates the owning contract, platform/scope matrix and negative tests before implementation. The runtime profile advertises the new versioned operation. The compiler checks the required grant and target before assembly.
-
-A library can use a new primitive only with a compatible published runtime. Host bindings validate request shape and authorization again at execution. Privileged implementations require a closed helper operation and authenticated session; granting a generic execution import is not an extension mechanism.
-
-Acceptance covers apply, interruption before and after each durable boundary, repeated recovery, conflicting ownership and unsupported targets. The [module transition table](../architecture/module-boundaries.md) records reuse of current modules. [The roadmap](../roadmap-v0.2.md) assigns parallel owners.
+To add a primitive, first specify the interface, capability/profile version,
+unsupported outcomes and failure vectors. Then implement the native adapter and
+recovery path, qualify real effects on each claimed target, and publish a runtime
+profile containing that version. Libraries and presets can evolve independently
+once those contracts are fixed. [Product journeys](product-journeys.md) and
+[roadmap v0.3](../roadmap-v0.3.md) provide the parallel work packages.

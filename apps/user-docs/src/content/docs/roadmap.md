@@ -1,35 +1,51 @@
 ---
 title: Roadmap
-description: The DSL/AOT baseline and subsequent parallel implementation work.
+description: The standard-content/WIT foundation and parallel product work.
 ---
 
-The architecture is an installation/distribution DSL, an AOT compiler, a precompiled runtime and contract-based capability libraries. 🚧 marks current delivery, 🔜 parallel implementation after the baseline, and 🗓️ later qualification. Priority is separate from execution evidence on [Status and platforms](/status/).
+Niobium is an installation/distribution DSL with an AOT compiler, precompiled
+runtime and standard WIT capability contracts. 🚧 marks current delivery, 🔜
+parallel work after the baseline, and 🗓️ later qualification. Priority is separate
+from the evidence on [Status and platforms](/status/).
 
 | Status | Feature |
 |---|---|
 | 🚧 | Programmable authoring and the AOT compiler |
 | 🚧 | Precompiled runtime and fixed Wasm capability libraries |
+| 🚧 | Standard content, access and cross-host native assembly |
 | 🚧 | Transactional deployment and explicit state migration |
-| 🔜 | Compiler caching, library SDK and additional host primitives |
+| 🔜 | Incremental compiler tooling, SDK packaging and additional host primitives |
 | 🔜 | Python, TypeScript, Go and Rust author SDKs |
 | 🔜 | Component, SDK and toolchain presets |
 | 🔜 | Distribution, trust and channels as libraries |
-| 🔜 | Online, offline-file and SFX delivery |
-| 🗓️ | Large native images and publisher signing |
+| 🔜 | Online, offline-file and SFX product profiles |
+| 🗓️ | Publisher signing and notarization qualification |
 | 🗓️ | Standard UI, embedded maintenance and accessibility |
-| 🗓️ | Windows/Linux and machine-scope qualification |
+| 🗓️ | Native-platform CI and machine-scope qualification |
 
-Current delivery includes detailed designs for compiler engineering, the Wasm library SDK, host primitives and stdlib. The PoC connects three authoring entrypoints, two products, an independent library, migration and recovery. A completed design does not imply every engineering feature is implemented.
+Current work establishes shared typed authoring, compiler binding/cache/diagnostics,
+standard Component execution, content/access contracts and recoverable native
+maintenance. The official files library and independent generated-content consumer
+use the same contract. A design baseline and passing local slices do not establish
+completion of every product feature or platform.
 
-Products extend behavior through capability libraries. Machine effects still require corresponding host authority and transactional operations. Runtime provides no arbitrary shell or ambient authority. Single-file setup is part of the current carrier; larger payloads and publisher signing qualify separately.
+Optional modules, workloads, SDK coexistence and missing-prerequisite handling
+belong to product libraries and presets. Detection does not adopt shared resources.
+Native mechanisms remain bounded and authorized; adding a Wasm library does not
+add an OS primitive or arbitrary process authority.
 
-The retained N1 implementations of online/offline installation, channels, Portable Run and embedded updates provide reusable foundations. They need new contract integration and N2 evidence before becoming new-architecture features.
+The [work packages](https://github.com/niobium-project/niobium/blob/main/docs/roadmap-v0.3.md),
+[feature ownership catalog](https://github.com/niobium-project/niobium/blob/main/docs/feature-coverage.md)
+and [product journeys](https://github.com/niobium-project/niobium/blob/main/docs/design/product-journeys.md)
+provide interfaces, dependencies, negative vectors and acceptance responsibilities.
 
-The maintainer [work packages and dependencies](https://github.com/niobium-project/niobium/blob/main/docs/roadmap-v0.2.md) include acceptance by package. Platform obligations are on [Platform support](/platforms/); native Wayland remains outside the current plan.
+Online/offline distribution, channels, Portable Run and embedded updates in the
+retained implementations require current-contract integration and new evidence.
+[Delivery milestones](https://github.com/niobium-project/niobium/blob/main/docs/adr/0020-distribution-delivery-milestones.md)
+and the [distribution backlog](https://github.com/niobium-project/niobium/blob/main/docs/development/distribution-backlog.md)
+keep their original scope. A single-file Component setup does not by itself qualify
+all online/offline/SFX policies, publisher signing or native application metadata.
 
-The [delivery milestones](https://github.com/niobium-project/niobium/blob/main/docs/adr/0020-distribution-delivery-milestones.md)
-cover an online installer, a complete offline file opened or unpacked before
-installation, and an SFX that starts installation without a separate unpacking
-step. The [distribution backlog](https://github.com/niobium-project/niobium/blob/main/docs/development/distribution-backlog.md)
-retains signing, scan, resource-budget, offline-validity and maintainer-lifetime
-work. The bounded macOS PoC does not qualify these complete release forms.
+[Platform support](/platforms/) retains the project's tier obligations. Local
+emulated runs cannot replace native-target CI; machine scope and the standard v2
+UI remain separate qualification work.

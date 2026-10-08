@@ -2,6 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-10-08
+- **Amended by:** [ADR-0023](0023-standard-content-and-component-contracts.md) (standard content, Component contracts and cross-host compilation)
 - **Supersedes:** [ADR-0018](0018-built-in-feature-modules.md), [ADR-0019](0019-presets-and-themes.md)
 - **Amends:** [ADR-0001](0001-repository-baseline-and-zig-only-toolchain.md) (toolchain scope), [ADR-0002](0002-library-first-core-and-c-abi.md) (public facade scope), [ADR-0003](0003-strict-json-manifest.md) (authoring interface), [ADR-0004](0004-tuf-profile-v1.md) (distribution policy ownership), [ADR-0006](0006-transaction-and-pointer-swap-commit.md) (deployment profile scope), [ADR-0007](0007-same-binary-privilege-helper.md) (capability implementation boundary), [ADR-0008](0008-shared-software-renderer.md) (standard UI scope), [ADR-0020](0020-distribution-delivery-milestones.md) (distribution implementation model)
 

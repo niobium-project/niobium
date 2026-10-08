@@ -8,8 +8,10 @@ const links = @import("links.zig");
 const locales = @import("locales.zig");
 const targets = @import("targets.zig");
 
-pub const acceptance_path = "docs/acceptance-plan-v0.2.md";
-const acceptance_paths = [_][]const u8{ "docs/acceptance-plan-v0.1.md", acceptance_path };
+pub const acceptance_path = "docs/acceptance-plan-v0.3.md";
+const acceptance_paths = [_][]const u8{
+    "docs/acceptance-plan-v0.1.md", "docs/acceptance-plan-v0.2.md", acceptance_path,
+};
 
 /// Public hosts the repository may reference; adding one is a reviewed change.
 /// `example.com` and its subdomains are always allowed for fixtures.
@@ -18,13 +20,17 @@ pub const allowed_hosts = [_][]const u8{
     "cdn.jsdelivr.net",
     "cmake.org",
     "developers.cloudflare.com",
+    "developer.apple.com", // Primary macOS filesystem and signing API documentation.
     "awscli.amazonaws.com",
     "codecov.io",
     "codeload.github.com",
     "discourse.cmake.org",
     "docs.virustotal.com",
+    "docs.wasmtime.dev", // Upstream Component C API and Pulley profile documentation.
     "github.com",
     "json-schema.org",
+    "learn.microsoft.com", // Primary Windows native format and access contracts.
+    "man7.org", // Linux man-pages ACL semantics.
     "niobium-project.dev",
     "niobium.dev",
     "nsis.sourceforge.io",
@@ -33,7 +39,9 @@ pub const allowed_hosts = [_][]const u8{
     "registry.npmjs.org",
     "schemas.microsoft.com",
     "sourceforge.net",
+    "support.apple.com", // Apple platform signing requirements.
     "www.apple.com",
+    "www.gnu.org", // Primary tar reproducibility documentation.
     "www.freedesktop.org",
 };
 
@@ -234,19 +242,29 @@ pub fn collectIds(arena: std.mem.Allocator, bytes: []const u8, set: *IdSet) !voi
         if (!legacy and bytes[start + 1] != '2') continue;
         if (start > 0 and std.ascii.isAlphanumeric(bytes[start - 1])) continue;
         var end = start + 3;
-        while (end < bytes.len and std.ascii.isUpper(bytes[end])) end += 1;
-        const family = bytes[start + 3 .. end];
-        if (family.len == 0 or family.len > 16) continue;
+        while (end < bytes.len and
+            (std.ascii.isAlphanumeric(bytes[end]) or bytes[end] == '-')) end += 1;
+        if (end - start > 40 or end - start < 7) continue;
+        if (bytes[end - 3] != '-' or !std.ascii.isDigit(bytes[end - 2]) or
+            !std.ascii.isDigit(bytes[end - 1])) continue;
+        const family = bytes[start + 3 .. end - 3];
+        if (!validFamily(family)) continue;
         if (legacy and !std.mem.eql(u8, family, "UJ") and
             !std.mem.eql(u8, family, "INV") and !std.mem.eql(u8, family, "AC")) continue;
-        if (end + 3 > bytes.len or bytes[end] != '-') continue;
-        if (!std.ascii.isDigit(bytes[end + 1]) or !std.ascii.isDigit(bytes[end + 2])) continue;
-        end += 3;
-        if (end < bytes.len and (std.ascii.isAlphanumeric(bytes[end]) or bytes[end] == '-')) {
-            continue;
-        }
         try set.put(arena, bytes[start..end], {});
     }
+}
+
+fn validFamily(family: []const u8) bool {
+    if (family.len == 0 or family.len > 32) return false;
+    var parts = std.mem.splitScalar(u8, family, '-');
+    while (parts.next()) |part| {
+        if (part.len == 0 or !std.ascii.isUpper(part[0])) return false;
+        for (part[1..]) |byte| {
+            if (!std.ascii.isUpper(byte) and !std.ascii.isDigit(byte)) return false;
+        }
+    }
+    return true;
 }
 
 /// Historical test requirements remain active; new plans have independent status/evidence.
@@ -486,10 +504,11 @@ test "acceptance IDs include N2 and reject malformed suffixes" {
     defer set.deinit(std.testing.allocator);
     try collectIds(
         std.testing.allocator,
-        "N1-UJ-01 N2-AUTH-01 N2-SAFE-01 N2-WSDK-01 N2-AUTH-010 N2--01",
+        "N1-UJ-01 N2-AUTH-01 N2-SAFE-01 N2-WSDK-01 N2-AUTH-010 N2--01 " ++
+            "N2-CORE-E2E-01 N2-KERNEL-RECOVERY-01 N2-AUTH-01-extra N2-CORE--01",
         &set,
     );
-    try std.testing.expectEqual(@as(usize, 4), set.count());
+    try std.testing.expectEqual(@as(usize, 6), set.count());
     try std.testing.expect(set.contains("N2-WSDK-01"));
 }
 

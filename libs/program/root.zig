@@ -6,6 +6,11 @@ const contracts = @import("contracts");
 
 pub const validation = @import("validate.zig");
 pub const image = @import("image.zig");
+pub const profile = @import("profile.zig");
+pub const value = @import("value.zig");
+pub const model = @import("model.zig");
+pub const wit = @import("wit.zig");
+pub const worker = @import("worker.zig");
 pub const Error = contracts.json.DecodeError || error{
     ProgramInvalid,
     ProgramLimit,
@@ -49,41 +54,41 @@ pub const Program = struct {
     upgrades: []const Migration = &.{},
 };
 
-pub fn validate(value: Program) Error!void {
-    return validation.program(value, .{});
+pub fn validate(product: Program) Error!void {
+    return validation.program(product, .{});
 }
 
 pub fn decode(arena: std.mem.Allocator, bytes: []const u8) Error!Program {
     const limits: contracts.Limits = .{};
-    const value = try contracts.json.decode(Program, arena, bytes, .{
+    const product = try contracts.json.decode(Program, arena, bytes, .{
         .max_bytes = limits.program_bytes,
         .max_schema = 1,
         .limits = .{ .json_string_bytes = limits.program_blob_bytes * 2 },
     });
-    try validate(value);
-    return value;
+    try validate(product);
+    return product;
 }
 
-pub fn encode(arena: std.mem.Allocator, value: Program) Error![]const u8 {
-    const normalized = try normalize(arena, value);
+pub fn encode(arena: std.mem.Allocator, product: Program) Error![]const u8 {
+    const normalized = try normalize(arena, product);
     const bytes = try std.json.Stringify.valueAlloc(arena, normalized, .{});
     if (bytes.len > (contracts.Limits{}).program_bytes) return error.ProgramLimit;
     return bytes;
 }
 
-pub fn normalize(arena: std.mem.Allocator, value: Program) Error!Program {
-    try validate(value);
-    var result = value;
-    result.inputs = try sorted(Input, arena, value.inputs);
-    result.libraries = try sorted(Library, arena, value.libraries);
-    result.assets = try sorted(Asset, arena, value.assets);
-    result.resources = try sorted(Resource, arena, value.resources);
-    const instances = try sorted(Instance, arena, value.instances);
+pub fn normalize(arena: std.mem.Allocator, product: Program) Error!Program {
+    try validate(product);
+    var result = product;
+    result.inputs = try sorted(Input, arena, product.inputs);
+    result.libraries = try sorted(Library, arena, product.libraries);
+    result.assets = try sorted(Asset, arena, product.assets);
+    result.resources = try sorted(Resource, arena, product.resources);
+    const instances = try sorted(Instance, arena, product.instances);
     for (instances) |*instance| {
         instance.migrations = try sorted(Migration, arena, instance.migrations);
     }
     result.instances = instances;
-    result.upgrades = try sorted(Migration, arena, value.upgrades);
+    result.upgrades = try sorted(Migration, arena, product.upgrades);
     return result;
 }
 
@@ -140,6 +145,9 @@ pub fn find(comptime T: type, items: []const T, id: []const u8) ?T {
 }
 
 test {
+    _ = model;
+    _ = profile;
+    _ = value;
     _ = validation;
     _ = image;
     _ = @import("program_test.zig");

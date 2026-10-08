@@ -42,8 +42,7 @@ pub fn decode(
     bytes: []const u8,
     options: Options,
 ) DecodeError!T {
-    if (bytes.len > options.max_bytes) return error.JsonTooLarge;
-    try prescan(arena, bytes, options);
+    try validate(arena, bytes, options);
     return std.json.parseFromSliceLeaky(T, arena, bytes, .{
         .duplicate_field_behavior = .@"error",
         .ignore_unknown_fields = false,
@@ -52,14 +51,23 @@ pub fn decode(
     }) catch |err| return mapError(err);
 }
 
+/// Validate the same bounded wire envelope used by every decoder without allocating a DOM.
+pub fn validate(
+    arena: std.mem.Allocator,
+    bytes: []const u8,
+    options: Options,
+) DecodeError!void {
+    if (bytes.len > options.max_bytes) return error.JsonTooLarge;
+    try prescan(arena, bytes, options);
+}
+
 /// Parse into a dynamic value (TUF canonicalization) with the same prescan guarantees.
 pub fn decodeValue(
     arena: std.mem.Allocator,
     bytes: []const u8,
     options: Options,
 ) DecodeError!std.json.Value {
-    if (bytes.len > options.max_bytes) return error.JsonTooLarge;
-    try prescan(arena, bytes, options);
+    try validate(arena, bytes, options);
     return std.json.parseFromSliceLeaky(std.json.Value, arena, bytes, .{
         .duplicate_field_behavior = .@"error",
         .allocate = .alloc_always,
@@ -109,11 +117,16 @@ fn prescan(arena: std.mem.Allocator, bytes: []const u8, options: Options) Decode
                 continue;
             },
             .object_end, .array_end => depth -= 1,
-            .string, .allocated_string => |text| if (is_key) {
-                try checkKey(text);
-                schema_next = depth == 1 and std.mem.eql(u8, text, options.schema_field);
-                expect_key = false;
-                continue;
+            .string, .allocated_string => |text| {
+                // Complete-input scanners can borrow a token without allocating, so their
+                // allocation limit alone does not bound an unescaped string token.
+                if (text.len > options.limits.json_string_bytes) return error.JsonStringTooLong;
+                if (is_key) {
+                    try checkKey(text);
+                    schema_next = depth == 1 and std.mem.eql(u8, text, options.schema_field);
+                    expect_key = false;
+                    continue;
+                }
             },
             .number, .allocated_number => |text| if (schema_next) try checkSchema(
                 text,
@@ -144,6 +157,18 @@ const Sample = struct {
     nested: struct { value: u8 } = .{ .value = 0 },
     tags: []const []const u8 = &.{},
 };
+
+test "wire envelope bounds borrowed and allocated string tokens equally" {
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+    const options: Options = .{ .max_bytes = 64, .limits = .{ .json_string_bytes = 4 } };
+    for ([_][]const u8{ "\"12345\"", "\"1234\\u0035\"" }) |text| {
+        try std.testing.expectError(
+            error.JsonStringTooLong,
+            validate(arena.allocator(), text, options),
+        );
+    }
+}
 
 fn decodeSample(bytes: []const u8) DecodeError!Sample {
     var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);

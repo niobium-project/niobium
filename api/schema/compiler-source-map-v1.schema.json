@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://niobium.dev/schema/compiler-source-map-v1.schema.json",
+  "title": "compiler-source-map-v1",
+  "$comment": "Wire shape only. Native validation also enforces UTF-8 byte limits, aggregate depth and budgets, references, authority, WIT compatibility and canonical identities.",
+  "type": "object",
+  "properties": {
+    "schema": {
+      "const": 1
+    },
+    "locations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "object": {
+            "type": "string",
+            "pattern": "^(product|library|container|call|observation|input|root|grant|author-input):[a-z0-9._-]{1,128}$"
+          },
+          "source": {
+            "type": "object",
+            "properties": {
+              "file": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "line": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 4294967295
+              },
+              "column": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 4294967295
+              }
+            },
+            "required": [
+              "file",
+              "line",
+              "column"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "object",
+          "source"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 4096
+    }
+  },
+  "required": [
+    "locations"
+  ],
+  "additionalProperties": false
+}

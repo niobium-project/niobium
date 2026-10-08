@@ -1,0 +1,26 @@
+package niobium:reference@1.0.0;
+
+interface installer {
+    use niobium:runtime/proposal@1.0.0.{container-ref, plan};
+    record request {
+        root: string,
+        grant: string,
+        prefix: string,
+        content: container-ref,
+        label: string,
+        platform: string,
+        enabled: bool,
+        previous: option<string>,
+    }
+    build: func(input: request) -> result<plan, string>;
+    upgrade-state: func(previous: string) -> string;
+    exact: func(value: u64) -> u64;
+    amplify: func(count: u32) -> list<u8>;
+    encoded-output: func(count: u32) -> string;
+    resource token {
+        constructor(value: u32);
+        value: func() -> u32;
+    }
+}
+
+world reference { export installer; }

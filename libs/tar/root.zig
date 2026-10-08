@@ -1,6 +1,7 @@
 //! Pure ustar / pax header parsing. No IO; fuzzed directly (tests/fuzz).
 
 const std = @import("std");
+pub const fixture = @import("fixture.zig");
 
 pub const block_len = 512;
 

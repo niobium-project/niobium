@@ -1,0 +1,35 @@
+package niobium:qualification@0.1.0;
+
+interface host {
+    fact: func() -> string;
+}
+
+interface guest {
+    record request {
+        name: string,
+        values: list<u32>,
+        enabled: option<bool>,
+    }
+    record response {
+        name: string,
+        total: u64,
+    }
+    variant failure {
+        invalid-input(string),
+    }
+    resource counter {
+        constructor(value: u32);
+        value: func() -> u32;
+    }
+    evaluate: func(input: request) -> result<response, failure>;
+    burn: func();
+    allocate: func(bytes: u32) -> u32;
+    output: func(bytes: u32) -> string;
+    amplify: func(bytes: u32) -> list<u8>;
+    many: func(calls: u32);
+}
+
+world qualification {
+    import host;
+    export guest;
+}

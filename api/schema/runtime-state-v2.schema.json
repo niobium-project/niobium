@@ -1,0 +1,289 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://niobium.dev/schema/runtime-state-v2.schema.json",
+  "title": "runtime-state-v2",
+  "type": "object",
+  "properties": {
+    "schema": {
+      "const": 2,
+      "default": 2
+    },
+    "instance": { "$ref": "#/$defs/nonce" },
+    "product_id": { "$ref": "#/$defs/id" },
+    "release_sequence": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 18446744073709551615
+    },
+    "model_version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4294967295
+    },
+    "program_sha256": { "$ref": "#/$defs/digest" },
+    "inputs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/input" },
+      "minItems": 0,
+      "maxItems": 64
+    },
+    "calls": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/call_state" },
+      "minItems": 0,
+      "maxItems": 64
+    },
+    "migrations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/migration" },
+      "minItems": 0,
+      "maxItems": 200000
+    },
+    "model_migrations": {
+      "type": "array",
+      "items": { "$ref": "https://niobium.dev/schema/compiled-program-v2.schema.json#/$defs/upgrade" },
+      "minItems": 0,
+      "maxItems": 200000
+    },
+    "roots": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/root_state" },
+      "minItems": 1,
+      "maxItems": 64
+    }
+  },
+  "required": [
+    "instance",
+    "product_id",
+    "release_sequence",
+    "model_version",
+    "program_sha256",
+    "inputs",
+    "calls",
+    "migrations",
+    "roots"
+  ],
+  "additionalProperties": false,
+  "$comment": "Snapshot wire shape; supplementary $defs also describe owner and prepared receipt files. Strict native decoding limits the complete JSON to 16 MiB, wrapper depth to 144, strings to 131072 UTF-8 bytes and each Value to its semantic budgets. Validation additionally binds installation/root identity, target paths, resource policy, aggregate bytes and immutable contiguous migration history before recovery mutations. Character counts here do not replace native UTF-8 byte limits.",
+  "$defs": {
+    "nonce": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$"
+    },
+    "id": { "$ref": "https://niobium.dev/schema/compiled-program-v2.schema.json#/$defs/id" },
+    "digest": { "$ref": "https://niobium.dev/schema/compiled-program-v2.schema.json#/$defs/digest" },
+    "digest_bytes": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 255
+      },
+      "minItems": 32,
+      "maxItems": 32
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^[^\\u0000]*$"
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^[^\\u0000]*$"
+    },
+    "value": { "$ref": "https://niobium.dev/schema/component-value-v1.schema.json" },
+    "policy": { "$ref": "https://niobium.dev/schema/compiled-program-v2.schema.json#/$defs/policy" },
+    "root_binding": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^[^\\u0000]*$"
+        }
+      },
+      "required": ["id", "path"],
+      "additionalProperties": false
+    },
+    "input": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "value": { "$ref": "#/$defs/value" }
+      },
+      "required": ["id", "value"],
+      "additionalProperties": false
+    },
+    "call_state": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "library": { "$ref": "#/$defs/id" },
+        "interface": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 1024,
+          "pattern": "^[^\\u0000]*$"
+        },
+        "function": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^[^\\u0000]*$"
+        },
+        "implementation_sha256": { "$ref": "#/$defs/digest" },
+        "version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        },
+        "value": {
+          "anyOf": [
+            { "$ref": "#/$defs/value" },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "library",
+        "interface",
+        "function",
+        "implementation_sha256",
+        "version",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "migration": {
+      "type": "object",
+      "properties": {
+        "call": { "$ref": "#/$defs/id" },
+        "rule": { "$ref": "https://niobium.dev/schema/compiled-program-v2.schema.json#/$defs/migration" }
+      },
+      "required": ["call", "rule"],
+      "additionalProperties": false
+    },
+    "resource": {
+      "type": "object",
+      "properties": {
+        "path": { "$ref": "#/$defs/path" },
+        "kind": {
+          "enum": [
+            "file",
+            "directory",
+            "symlink"
+          ]
+        },
+        "sha256": { "$ref": "#/$defs/digest_bytes" },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483648
+        },
+        "link_target": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 1024,
+          "pattern": "^[^\\u0000]*$"
+        },
+        "link_directory": {
+          "type": "boolean",
+          "default": false
+        },
+        "policy": { "$ref": "#/$defs/policy" }
+      },
+      "required": ["path", "kind", "sha256", "bytes", "policy"],
+      "additionalProperties": false,
+      "$comment": "Native validation requires zero byte length for nonfiles, link fields only on symlinks, matching policy kind, target-native path rules and exact ordered unique paths."
+    },
+    "root_state": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "generation": { "$ref": "#/$defs/nonce" },
+        "resources": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/resource" },
+          "minItems": 0,
+          "maxItems": 65536
+        }
+      },
+      "required": ["id", "generation", "resources"],
+      "additionalProperties": false
+    },
+    "owner": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "const": 2,
+          "default": 2
+        },
+        "instance": { "$ref": "#/$defs/nonce" },
+        "product_id": { "$ref": "#/$defs/id" },
+        "root": { "$ref": "#/$defs/id" },
+        "state_root": { "$ref": "#/$defs/id" },
+        "roots": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/root_binding" },
+          "minItems": 1,
+          "maxItems": 64
+        }
+      },
+      "required": ["instance", "product_id", "root", "state_root", "roots"],
+      "additionalProperties": false
+    },
+    "native_receipt": {
+      "type": "object",
+      "properties": {
+        "path": { "$ref": "#/$defs/path" },
+        "access_hex": {
+          "type": "string",
+          "maxLength": 131072,
+          "pattern": "^(?:[0-9a-f]{2})*$",
+          "default": ""
+        },
+        "link_inode": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 340282366920938463463374607431768211455
+        },
+        "link_target": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 1024,
+          "pattern": "^[^\\u0000]*$"
+        }
+      },
+      "required": ["path"],
+      "additionalProperties": false,
+      "$comment": "access_hex is the bounded access-policy-v1 binary receipt envelope encoded as lowercase hex; native decoding validates its version, owner, object identity, policy and platform bytes. u128 link identity must be parsed losslessly."
+    },
+    "prepared": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "const": 2,
+          "default": 2
+        },
+        "plan_sha256": { "$ref": "#/$defs/digest" },
+        "root": { "$ref": "#/$defs/id" },
+        "receipts": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/native_receipt" },
+          "minItems": 0,
+          "maxItems": 65536
+        }
+      },
+      "required": ["plan_sha256", "root", "receipts"],
+      "additionalProperties": false
+    }
+  }
+}

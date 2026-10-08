@@ -31,7 +31,7 @@ All checks are Zig programs, driven by `zig build check`.
 | `no-global-var`, `no-page-allocator` (libs/) | error |
 | `no-anyerror-pub`, `no-usize-contracts`, `no-debug-print`, `no-sleep-in-tests` | error |
 
-The new parser roots `program`, `compiler`, `runtime`, `wasm_profile` and `wasm_host` join the integer-narrowing rule; serialized guest/host input does not bypass trust-boundary checks.
+The parser roots `program`, `compiler`, `runtime`, `wasm_profile` and `wasm_host` join the integer-narrowing rule; serialized guest/host input does not bypass trust-boundary checks.
 
 Suppression: `// lint-allow(<rule>): <reason>`, the reason is required; `tools/lint` reports the total number of suppressions.
 
@@ -66,3 +66,19 @@ External skills are installed into `.agents/skills/` and `.claude/skills/` with 
 When GitHub is not directly reachable, you can temporarily point git at a mirror with a URL rewrite (`GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0='url.<mirror>/https://github.com/.insteadOf' GIT_CONFIG_VALUE_0='https://github.com/'`); the sources in `skills-lock.json` stay recorded as GitHub repositories.
 
 External GUI skills only provide values and checklists and do not change [ADR-0008](../adr/0008-shared-software-renderer.md): no SwiftUI, XAML, GTK or C# dependencies are introduced. Values land in `platforms.*` of `libs/ui/tokens/tokens.json`; the mapping rules are in the `niobium-native-look` skill.
+
+## Component and authoring tools
+
+`component-test` builds pinned Wasmtime/Pulley and independent standard C/Rust
+guests. `author-v2-test` builds the typed authoring C ABI, its independent C
+consumer and the pinned Starlark worker, then checks native/C/Starlark model
+parity. Tool source archives and digests live in
+[the Component toolchain manifest](../../third_party/wasmtime/toolchain.zon);
+Rust transitive dependencies are locked by Cargo.lock. The graph uses the existing
+bounded dependency fetcher, with an explicit source allowance for the larger
+WASI sysroot. Build-tool ZIP/tar extraction does not change runtime content rules.
+
+The native CGO launcher passes the graph-owned static author archive to Go without
+a shell or a platform-specific `env` executable. The archive bundles Zig's compiler
+runtime for exact-width numeric parsing. SDK contracts and commands are in
+[authoring v2](authoring-v2.md) and [Component SDK](component-library-sdk.md).

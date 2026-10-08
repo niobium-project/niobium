@@ -4,11 +4,11 @@ Numbers are assigned once and never reused or renumbered. Template: title `# ADR
 
 | Number | Title | Status |
 |---|---|---|
-| [0001](0001-repository-baseline-and-zig-only-toolchain.md) | Repository baseline and Zig-only toolchain | Accepted; amended by 0021 and 0022 |
+| [0001](0001-repository-baseline-and-zig-only-toolchain.md) | Repository baseline and Zig-only toolchain | Accepted; amended by 0021, 0022 and 0023 |
 | [0002](0002-library-first-core-and-c-abi.md) | Library-first core and C ABI | Accepted; amended by 0022 |
 | [0003](0003-strict-json-manifest.md) | Strict JSON product manifest | Accepted; amended by 0022 |
 | [0004](0004-tuf-profile-v1.md) | Installer TUF profile v1 | Accepted; amended by 0022 |
-| [0005](0005-tar-zst-artifact-format.md) | tar.zst component payload format | Accepted |
+| [0005](0005-tar-zst-artifact-format.md) | tar.zst component payload format | Accepted; amended by 0023 |
 | [0006](0006-transaction-and-pointer-swap-commit.md) | Transaction journal and pointer-swap commit | Accepted; amended by 0022 |
 | [0007](0007-same-binary-privilege-helper.md) | Same-binary closed-capability privilege helper | Accepted; amended by 0022 |
 | [0008](0008-shared-software-renderer.md) | Shared software renderer | Accepted; amended by 0022 |
@@ -25,4 +25,5 @@ Numbers are assigned once and never reused or renumbered. Template: title `# ADR
 | [0019](0019-presets-and-themes.md) | Presets and themes | Superseded by 0022 |
 | [0020](0020-distribution-delivery-milestones.md) | Distribution delivery milestones | Accepted; amended by 0022 |
 | [0021](0021-ci-evidence-transport.md) | CI evidence transport | Accepted |
-| [0022](0022-installer-dsl-and-aot-toolchain.md) | Installer DSL and AOT toolchain | Accepted |
+| [0022](0022-installer-dsl-and-aot-toolchain.md) | Installer DSL and AOT toolchain | Accepted; amended by 0023 |
+| [0023](0023-standard-content-and-component-contracts.md) | Standard content, component contracts and cross-host compilation | Accepted |
