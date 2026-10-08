@@ -58,6 +58,16 @@ These IDs are reserved for the work packages in [roadmap-v0.2](roadmap-v0.2.md).
 
 Each `.evidence/<suite>/<UTC>/` record includes command, target, start/end time, exit code, source revision and dirty-tree identity. Include final executable, template, program, library and asset digests. Preserve process logs and filesystem/state observations, including the first failing case.
 
+AOT runs create `metadata.json` before source capture and argument validation.
+It records the suite argv, native target, UTC start/end milliseconds, exit code,
+result and failure name. Git revision, dirty status and a sorted SHA-256 inventory
+of tracked/nonignored working-tree files identify the source snapshot; deleted
+files and symlink targets are explicit. The combined source identity and executed
+suite binary digest bind those records. Capture uses fixed file/count/byte and
+subprocess limits. Interrupted runs remain NOT_RUN; caught setup or execution
+failures save FAIL. These local producer records do not replace trusted CI
+provenance under the test-system contract.
+
 Isolation evidence records exactly which artifacts entered product assembly and which tools ran. Recovery evidence identifies each kill point and both the pre-recovery and recovered state. A PASS entry names its actual evidence directory; placeholder paths and unexecuted commands do not qualify.
 
 The `verify` result and individual N2 results are separate: a failed legacy gate does not erase a successful N2 run, and a successful legacy gate cannot fill a missing N2 row. Report both, including all unrun targets.

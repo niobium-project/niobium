@@ -6,23 +6,34 @@ const authoring = @import("authoring.zig");
 const packaging = @import("packaging.zig");
 const lifecycle = @import("lifecycle.zig");
 const recovery = @import("recovery.zig");
+const provenance = @import("provenance.zig");
 
 pub fn main(init: std.process.Init) !void {
     const args = try init.minimal.args.toSlice(init.arena.allocator());
-    var world = try World.init(init, args);
+    var record = try provenance.Run.start(init.arena.allocator(), init.io, args);
+    qualify(init, args, &record) catch |err| {
+        try record.finish(@errorName(err));
+        std.log.err("AOT acceptance failed: {s}; evidence {s}", .{
+            @errorName(err), record.evidence,
+        });
+        return err;
+    };
+    try record.finish(null);
+    std.log.info("AOT acceptance PASS: {s}", .{record.evidence});
+}
+
+fn qualify(init: std.process.Init, args: []const []const u8, record: *provenance.Run) !void {
+    try record.capture();
+    var world = try World.init(init, args, record.evidence);
     execute(&world) catch |err| {
         try world.write(try world.path("summary.json"), try std.json.Stringify.valueAlloc(
             world.arena,
             .{ .status = "FAIL", .failure = @errorName(err) },
             .{},
         ));
-        std.log.err("AOT acceptance failed: {s}; evidence {s}", .{
-            @errorName(err), world.evidence,
-        });
         return err;
     };
     try world.write(try world.path("summary.json"), "{\"status\":\"PASS\"}\n");
-    std.log.info("AOT acceptance PASS: {s}", .{world.evidence});
 }
 
 fn execute(w: *World) !void {

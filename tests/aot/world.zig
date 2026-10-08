@@ -1,7 +1,6 @@
 //! Evidence and process boundary for the real macOS AOT acceptance suite.
 
 const std = @import("std");
-const core = @import("core");
 const program = @import("program");
 const runtime = @import("runtime");
 const Dir = std.Io.Dir;
@@ -29,7 +28,11 @@ pub const World = struct {
     env: std.process.Environ.Map,
     index: u32 = 0,
 
-    pub fn init(process: std.process.Init, argv: []const []const u8) !World {
+    pub fn init(
+        process: std.process.Init,
+        argv: []const []const u8,
+        evidence: []const u8,
+    ) !World {
         if (argv.len != 11) return error.Usage;
         const arena = process.arena.allocator();
         const io = process.io;
@@ -38,12 +41,6 @@ pub const World = struct {
             @field(tools, field) = try Dir.cwd().realPathFileAlloc(io, argv[index], arena);
         }
         const repo = try Dir.cwd().realPathFileAlloc(io, ".", arena);
-        var stamp: std.Io.Writer.Allocating = .init(arena);
-        try core.crash.writeUtc(&stamp.writer, std.Io.Clock.real.now(io).toSeconds());
-        const base = try arena.print("{s}/.evidence/aot", .{repo});
-        try Dir.cwd().createDirPath(io, base);
-        const evidence = try arena.print("{s}/{s}", .{ base, stamp.written() });
-        try Dir.cwd().createDir(io, evidence, .default_dir);
         var random: [8]u8 = undefined; // SAFETY: random initializes every byte.
         io.random(&random);
         const isolated = try arena.print("/private/tmp/niobium-aot-{s}", .{

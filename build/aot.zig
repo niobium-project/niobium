@@ -57,6 +57,7 @@ pub fn add(
         .name = "niobium-aot-e2e",
         .root_module = suite_module,
     });
+    addProvenanceCheck(b, &graph, tests, suite);
     const run = b.addRunArtifact(suite);
     run.setCwd(b.path("."));
     run.has_side_effects = true;
@@ -142,4 +143,21 @@ fn addTests(
         if (std.mem.eql(u8, name, "runtime")) run.has_side_effects = true;
         step.dependOn(&run.step);
     }
+}
+
+fn addProvenanceCheck(
+    b: *std.Build,
+    graph: *const graph_mod.Graph,
+    step: *std.Build.Step,
+    suite: *std.Build.Step.Compile,
+) void {
+    const provenance_check = b.addExecutable(.{
+        .name = "aot-provenance-check",
+        .root_module = graph.root("tests/aot/provenance_check.zig", &.{}),
+    });
+    const provenance_run = b.addRunArtifact(provenance_check);
+    provenance_run.setCwd(b.path("."));
+    provenance_run.addArtifactArg(suite);
+    provenance_run.has_side_effects = true;
+    step.dependOn(&provenance_run.step);
 }
