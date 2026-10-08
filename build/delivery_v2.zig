@@ -3,6 +3,7 @@ const std = @import("std");
 pub const Inputs = struct {
     compiler: *std.Build.Step.Compile,
     runtime: *std.Build.Step.Compile,
+    binary_check: *std.Build.Step,
     worker: *std.Build.Step.Compile,
     author_library: *std.Build.Step.Compile,
     starlark: std.Build.LazyPath,
@@ -17,6 +18,7 @@ pub fn add(b: *std.Build, inputs: Inputs) void {
         "core-sdk",
         "Publish the host compiler/SDK and precompiled runtime profile",
     );
+    step.dependOn(inputs.binary_check);
     for ([_]*std.Build.Step.Compile{
         inputs.compiler, inputs.runtime, inputs.worker, inputs.author_library,
     }) |artifact| step.dependOn(&b.addInstallArtifact(artifact, .{}).step);

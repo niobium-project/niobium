@@ -3,6 +3,7 @@ const std = @import("std");
 const graph_mod = @import("graph.zig");
 pub const Inputs = struct {
     runtime: *std.Build.Step.Compile,
+    binary_check: *std.Build.Step,
     worker: *std.Build.Step.Compile,
     compiler: *std.Build.Step.Compile,
     files: std.Build.LazyPath,
@@ -37,6 +38,7 @@ pub fn add(b: *std.Build, graph: *const graph_mod.Graph, inputs: Inputs) *std.Bu
     run.addFileArg(inputs.consumer_v2);
     run.addFileInput(b.path("tests/author/types.star"));
     const step = b.step("core-e2e", "Delivered setup lifecycle, content and migration acceptance");
+    step.dependOn(inputs.binary_check);
     step.dependOn(&run.step);
     return step;
 }

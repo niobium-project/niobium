@@ -142,7 +142,7 @@ fn addTestGates(
     c_smoke.dependOn(e2e.addCSmoke(b, graph, binaries.static_lib, config));
     const example_step = addExampleSteps(b, graph.config.target, tools.vm_smoke);
     const aot_step = aot.add(b, graph.config.inputs, tools.check_binary);
-    const core_step = vnext.add(b, graph.config.inputs, tools.fetch_deps);
+    const core_step = vnext.add(b, graph.config.inputs, tools.fetch_deps, tools.check_binary);
 
     addRunSteps(b, binaries.setup, workbench);
 

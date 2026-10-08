@@ -34,6 +34,22 @@ for Starlark's CGO build. The native CI checks the compiler target and records i
 resolved path/version. A Zig MSVC host instead selects the matching Rust MSVC
 archive; it must not consume a GNU archive.
 
+Runtime publication runs the `component` binary policy under
+[ADR-0024](../adr/0024-native-runtime-dependency-qualification.md). It checks exact
+system dependencies and executable hardening using native ABI selectors. Linux
+musl requires no dynamic loader or dependencies; the measured GNU template uses
+the system glibc loader and requires GLIBC_2.36 symbols. Windows GNU uses the
+declared system UCRT and synchronization API sets. These are target prerequisites,
+independent of the product assembly host. An unqualified ABI, including MSVC,
+fails publication until its own rule and execution evidence are provided.
+
+Current native SDK/runtime builds use the detected host CPU target. Qualification
+records the actual host and its Zig target, so these artifacts are not claimed to
+run on every CPU of the same architecture. Generic CPU publication requires the
+coordinated Zig, Rust and C-helper controls in
+[proposed ADR-0025](../adr/0025-baseline-cpu-runtime-publication.md); it is a separate
+publisher work package. Product assembly continues to consume fixed bytes.
+
 The build graph fetches hash-pinned `wasm-tools`, `wit-bindgen` and portable guest
 libc headers/libraries. `core-sdk` installs the compiler, authoring C library/header,
 Starlark and Component workers, complete host runtime template, runtime-package

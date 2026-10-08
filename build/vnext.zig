@@ -9,8 +9,9 @@ pub fn add(
     b: *std.Build,
     inputs: graph_mod.Inputs,
     fetcher: *std.Build.Step.Compile,
+    checker: *std.Build.Step.Compile,
 ) *std.Build.Step {
-    @import("runtime_v2.zig").cross(b, inputs);
+    @import("runtime_v2.zig").cross(b, inputs, checker);
     const step = b.step("core-test", "Content, access and compiler foundation conformance");
     const graph = graph_mod.create(b, .{
         .target = b.graph.host,
@@ -36,11 +37,14 @@ pub fn add(
             .contracts = graph.get("contracts"),
         });
         authors.parity.addFileArg(qualified.reference_guest);
-        const runtime = @import("runtime_v2.zig").add(b, &graph, qualified.library);
+        const publication = @import("runtime_v2.zig").add(b, &graph, qualified.library, checker);
+        const runtime = publication.runtime;
+        step.dependOn(publication.binary_check);
         const signer = @import("signing.zig").add(b, fetcher);
         @import("delivery_v2.zig").add(b, .{
             .compiler = compiler.compiler,
             .runtime = runtime,
+            .binary_check = publication.binary_check,
             .worker = qualified.caller,
             .author_library = authors.library,
             .starlark = authors.starlark,
@@ -51,6 +55,7 @@ pub fn add(
         });
         step.dependOn(@import("core_e2e.zig").add(b, &graph, .{
             .runtime = runtime,
+            .binary_check = publication.binary_check,
             .worker = qualified.caller,
             .compiler = compiler.compiler,
             .files = qualified.files_guest,

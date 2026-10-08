@@ -30,6 +30,7 @@ pub const allowed_hosts = [_][]const u8{
     "github.com",
     "json-schema.org",
     "learn.microsoft.com", // Primary Windows native format and access contracts.
+    "doc.rust-lang.org", // Primary native CRT linkage reference.
     "man7.org", // Linux man-pages ACL semantics.
     "niobium-project.dev",
     "niobium.dev",

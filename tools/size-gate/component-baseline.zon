@@ -1,0 +1,10 @@
+// Initial ReleaseSafe Component runtime templates, measured by OS and native ABI.
+// Runtime publication checks the 30 MiB ceiling and the retained 5% growth rule.
+.{
+    .targets = .{
+        .{ .name = "aarch64-macos", .bytes = 9485040 },
+        .{ .name = "x86_64-windows-gnu", .bytes = 8894464 },
+        .{ .name = "x86_64-linux-musl", .bytes = 9131952 },
+        .{ .name = "x86_64-linux-gnu", .bytes = 8993872 },
+    },
+}

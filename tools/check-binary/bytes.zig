@@ -35,6 +35,7 @@ pub const Image = struct {
 pub const Facts = struct {
     format: Format,
     dependencies: []const []const u8,
+    interpreter: ?[]const u8 = null,
     writable_executable: []const []const u8,
     executable_stack: bool = false,
     /// PE only.

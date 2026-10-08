@@ -2,16 +2,52 @@
 const std = @import("std");
 const graph_mod = @import("graph.zig");
 const component = @import("component.zig");
+pub const Publication = struct {
+    runtime: *std.Build.Step.Compile,
+    binary_check: *std.Build.Step,
+};
 
 pub fn add(
     b: *std.Build,
     graph: *const graph_mod.Graph,
     library: std.Build.LazyPath,
-) *std.Build.Step.Compile {
+    checker: *std.Build.Step.Compile,
+) Publication {
     const runtime = executable(b, graph, library, "niobium-runtime-v2");
+    const binary_check = checkBinary(b, runtime, checker);
     const step = b.step("runtime-v2", "Build the complete Component runtime template");
     step.dependOn(&b.addInstallArtifact(runtime, .{}).step);
-    return runtime;
+    step.dependOn(binary_check);
+    return .{ .runtime = runtime, .binary_check = binary_check };
+}
+
+fn checkBinary(
+    b: *std.Build,
+    runtime: *std.Build.Step.Compile,
+    checker: *std.Build.Step.Compile,
+) *std.Build.Step {
+    const target = runtime.root_module.resolved_target.?.result;
+    const selector = if (target.os.tag == .macos)
+        b.fmt("{s}-macos", .{@tagName(target.cpu.arch)})
+    else
+        b.fmt("{s}-{s}-{s}", .{
+            @tagName(target.cpu.arch), @tagName(target.os.tag), @tagName(target.abi),
+        });
+    const run = b.addRunArtifact(checker);
+    run.addArgs(&.{ "lint", "--profile", "component", "--target", selector, "--kind", "exe" });
+    run.addArtifactArg(runtime);
+    run.has_side_effects = true;
+    const size = b.addRunArtifact(checker);
+    size.setCwd(b.path("."));
+    size.addArgs(&.{
+        "size", "--baseline", "tools/size-gate/component-baseline.zon", "--limit", "31457280",
+    });
+    size.addArg(selector);
+    size.addArtifactArg(runtime);
+    size.addFileInput(b.path("tools/size-gate/component-baseline.zon"));
+    size.has_side_effects = true;
+    run.step.dependOn(&size.step);
+    return &run.step;
 }
 
 fn executable(
@@ -44,7 +80,11 @@ fn addWindowsManifest(b: *std.Build, binary: *std.Build.Step.Compile) void {
 }
 
 /// Runtime publishers supply the pinned engine built for each target. Product builds use templates.
-pub fn cross(b: *std.Build, inputs: graph_mod.Inputs) void {
+pub fn cross(
+    b: *std.Build,
+    inputs: graph_mod.Inputs,
+    checker: *std.Build.Step.Compile,
+) void {
     const targets = .{
         .{ "linux-x64", std.Target.Query{ .cpu_arch = .x86_64, .os_tag = .linux, .abi = .musl } },
         .{
@@ -68,6 +108,7 @@ pub fn cross(b: *std.Build, inputs: graph_mod.Inputs) void {
                 "niobium-runtime-v2-" ++ target[0],
             );
             step.dependOn(&b.addInstallArtifact(binary, .{}).step);
+            step.dependOn(checkBinary(b, binary, checker));
             const worker = b.addExecutable(.{
                 .name = "niobium-component-worker-" ++ target[0],
                 .root_module = graph.root("apps/component-worker/main.zig", &.{"component_worker"}),

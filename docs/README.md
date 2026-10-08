@@ -7,6 +7,9 @@ content, WIT Components and cross-host assembly. [AGENTS.md](../AGENTS.md) owns
 hard development constraints. Product-author documentation lives in
 [apps/user-docs](../apps/user-docs/README.md).
 
+[ADR-0024](adr/0024-native-runtime-dependency-qualification.md) defines native
+runtime dependency qualification by OS and ABI, separately from retained binaries.
+
 ## Active contracts
 
 Normative requirements, current implementation and execution evidence are distinct.
