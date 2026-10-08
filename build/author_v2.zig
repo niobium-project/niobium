@@ -68,6 +68,13 @@ fn goCommand(
             minimum.major, minimum.minor, minimum.patch,
         }));
     }
+    if (target.os.tag == .windows) {
+        // The pinned linker handles compiler_rt's COFF weak aliases correctly.
+        run.setEnvironmentVariable("CC", b.fmt(
+            "\"{s}\" cc -target x86_64-windows-gnu",
+            .{b.graph.zig_exe},
+        ));
+    }
     run.addFileArg(library.getEmittedBin());
     run.addFileInput(b.path("api/c/compiler_v2.h"));
     for ([_][]const u8{

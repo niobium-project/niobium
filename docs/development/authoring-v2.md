@@ -20,7 +20,8 @@ The [C example](../../tests/author/author.c) constructs the same model through
 context-owned typed object handles and separately owned output buffers. Follow
 the header's lifetime and numeric-tag rules when implementing a language SDK.
 
-For a GNU Windows consumer of `zig build core-sdk`, link the published archive
+For a GNU Windows consumer of `zig build core-sdk`, use GNU ld 2.47 or newer
+(or the pinned Zig/LLD toolchain) and link the published archive
 with its [native system dependency](../spec/authoring-c-abi-v2.md#native-static-linkage):
 
 ```sh
@@ -28,7 +29,10 @@ gcc -Izig-out/include tests/author/author.c -Lzig-out/lib \
   -lniobium_compiler_v2 -lntdll -o author.exe
 ```
 
-The Starlark CGO binding declares the same Windows link dependency.
+The Starlark CGO binding declares the same Windows link dependency. Its internal
+Windows build uses the already-required Zig C compiler/linker through a
+build-owned `CC` setting. Other builds keep their normal C compiler settings.
+Installed Starlark binaries and product assembly do not require that C toolchain.
 
 Public operations do not accept an author-supplied JSON program. The backend's
 bounded internal cloning and serialized compiler output are implementation

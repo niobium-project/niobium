@@ -130,9 +130,7 @@ pub const Run = struct {
     }
 
     fn git(run: *Run, arguments: []const []const u8) ![]const u8 {
-        const argv = try std.mem.concat(run.arena, []const u8, &.{
-            &.{ "/usr/bin/git", "-C", run.repo }, arguments,
-        });
+        const argv = try gitArguments(run.arena, builtin.target.os.tag, run.repo, arguments);
         const result = try std.process.run(run.arena, run.io, .{
             .argv = argv,
             .stdout_limit = .limited(4 << 20),
@@ -169,6 +167,31 @@ pub const Run = struct {
         };
     }
 };
+
+fn gitArguments(
+    arena: std.mem.Allocator,
+    os: std.Target.Os.Tag,
+    repo: []const u8,
+    arguments: []const []const u8,
+) std.mem.Allocator.Error![]const []const u8 {
+    const executable = if (os == .windows) "git.exe" else "/usr/bin/git";
+    return std.mem.concat(arena, []const u8, &.{
+        &.{ executable, "-C", repo }, arguments,
+    });
+}
+
+test "provenance selects the platform Git executable and preserves argument boundaries" {
+    for ([_]std.Target.Os.Tag{ .windows, .linux, .macos }) |os| {
+        const repo = "repository with spaces & literal";
+        const argv = try gitArguments(std.testing.allocator, os, repo, &.{ "rev-parse", "HEAD" });
+        defer std.testing.allocator.free(argv);
+        const executable = if (os == .windows) "git.exe" else "/usr/bin/git";
+        try std.testing.expectEqualDeep(
+            @as([]const []const u8, &.{ executable, "-C", repo, "rev-parse", "HEAD" }),
+            argv,
+        );
+    }
+}
 
 fn regularBytes(arena: std.mem.Allocator, io: std.Io, path: []const u8) ![]const u8 {
     const file = try Dir.cwd().openFile(io, path, .{ .follow_symlinks = false });

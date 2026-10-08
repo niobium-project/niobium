@@ -29,9 +29,11 @@ MSVC, add the GNU target before running the build:
 rustup target add --toolchain 1.96.1 x86_64-pc-windows-gnu
 ```
 
-GNU Windows also needs an x64 MinGW C compiler and `dlltool`; set `CC` explicitly
-for Starlark's CGO build. The native CI checks the compiler target and records its
-resolved path/version. A Zig MSVC host instead selects the matching Rust MSVC
+GNU Windows also needs an x64 MinGW C toolchain and `dlltool` for the native
+publisher. CI checks and records its target and version. The internal Starlark
+CGO build selects the already-required Zig CC/LLD, independently of that compiler;
+external static SDK consumers use the linker requirements in the
+[authoring guide](authoring-v2.md). A Zig MSVC host instead selects the matching Rust MSVC
 archive; it must not consume a GNU archive.
 
 Runtime publication runs the `component` binary policy under

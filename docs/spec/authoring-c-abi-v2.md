@@ -26,6 +26,15 @@ author archive. SDK packages and language bindings MUST carry this link requirem
 Zig's C linker supplies that platform import library automatically; external
 C/CGO linkers need the explicit dependency.
 
+The linker MUST support COFF weak externals with defined fallback symbols.
+The qualified choices are the pinned Zig 0.17.0 LLVM/LLD toolchain or GNU ld
+2.47 or newer; a GCC version alone does not establish linker compatibility.
+Earlier GNU ld versions can leave `roundf128` unresolved even when the archive
+contains its compiler-runtime definition. The upstream
+[weak-alias resolution fix](https://sourceware.org/pipermail/binutils-cvs/2026-June/070697.html)
+and [archive indexing fix](https://sourceware.org/pipermail/binutils-cvs/2026-June/070699.html)
+are separate changes. Whole-archive selection does not replace the resolution fix.
+
 ## Ownership and memory
 
 A builder is owned by one thread. Destroy it exactly once after all operations.
