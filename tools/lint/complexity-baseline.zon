@@ -31,7 +31,7 @@
         .{ .path = "apps/setup/gui_test.zig", .tokens = 1435, .nodes = 696 },
         .{ .path = "apps/setup/helper_mode.zig", .tokens = 434, .nodes = 205 },
         .{ .path = "apps/setup/main.zig", .tokens = 525, .nodes = 259 },
-        .{ .path = "apps/starlark/build.zig", .tokens = 384, .nodes = 193 },
+        .{ .path = "apps/starlark/build.zig", .tokens = 658, .nodes = 322 },
         .{ .path = "apps/ui-workbench/main.zig", .tokens = 1214, .nodes = 600 },
         .{ .path = "apps/ui-workbench/window.zig", .tokens = 1403, .nodes = 654 },
         .{ .path = "build.zig", .tokens = 2989, .nodes = 1417 },
