@@ -19,9 +19,9 @@ pub fn main(init: std.process.Init) !void {
     std.log.info("Component IPC evidence: {s}", .{run.evidence});
 }
 
-fn qualify(run: *provenance.Run, args: []const []const u8) !void {
+fn qualify(run: *provenance.Run, supplied: []const []const u8) !void {
     try run.capture();
-    if (args.len != 9) return error.Usage;
+    const args = try absoluteInputs(run, supplied);
     const source = try sourceFile(run, args[2]);
     var request: protocol.Request = .{ .action = .inspect, .source = .{ .file = source } };
     const inspection = try invoke(run, args[1], "inspect", request);
@@ -62,6 +62,17 @@ fn qualify(run: *provenance.Run, args: []const []const u8) !void {
     request.args = &.{.{ .uint64 = std.math.maxInt(u64) }};
     const direct = try invoke(run, args[1], "direct-world", request);
     try std.testing.expectEqual(std.math.maxInt(u64), direct.result.?.uint64);
+}
+
+/// Build runners may supply relative paths; the production client requires fixed absolute paths.
+fn absoluteInputs(run: *provenance.Run, supplied: []const []const u8) ![9][]const u8 {
+    if (supplied.len != 9) return error.Usage;
+    var result: [9][]const u8 = undefined; // SAFETY: every entry is initialized below.
+    result[0] = supplied[0];
+    for (supplied[1..], result[1..]) |path, *absolute| {
+        absolute.* = try Dir.cwd().realPathFileAlloc(run.io, path, run.arena);
+    }
+    return result;
 }
 
 fn plans(run: *provenance.Run, worker: []const u8, base: protocol.Request, version: u32) !void {

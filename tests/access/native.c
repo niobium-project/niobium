@@ -1,4 +1,7 @@
 /* Test-only native fixtures. They deliberately install ACLs outside the portable subset. */
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 #include <stdint.h>
 #include <stddef.h>
 #ifdef _WIN32

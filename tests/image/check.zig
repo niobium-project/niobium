@@ -57,29 +57,32 @@ fn check(
     const original = try source(io, template);
     const layout = try image.native.inspect(a, io, original, .{});
     const name = try a.print("setup-{d}{s}", .{ index, if (layout.format == .pe) ".exe" else "" });
-    const output = try dir.createFile(io, name, .{ .exclusive = true, .read = true });
-    defer output.close(io);
-    const payload_source = try source(io, payload);
-    const assembled = try image.assemble(a, io, original, .bytes("NIOBIUM_IMAGE_V2_OK"), .{
-        .source = payload_source,
-        .length = payload_source.size(),
-    }, output, .{});
-    if (std.Io.File.Permissions.has_executable_bit) {
-        try output.setPermissions(io, .fromMode(0o755));
-    }
-    try output.sync(io);
-    const product = try source(io, output);
-    const verified = try image.verify(a, io, product, .{});
-    try std.testing.expectEqualDeep(assembled.descriptor, verified);
-    try sameCode(io, original, product, layout.code);
-    try tamper(a, io, output, verified.payload.offset);
-    try tamper(a, io, output, layout.code[0].offset);
-    if (try layout.slot.end() < verified.prefix_bytes) {
-        try tamper(a, io, output, try layout.slot.end());
-    }
-    const header_byte: u64 = if (layout.format == .pe) layout.pe_checksum - 80 else 24;
-    try tamper(a, io, output, header_byte);
-    if (layout.format == .macho) try maskedVmSize(a, io, output, layout);
+    const verified = assembled: {
+        const output = try dir.createFile(io, name, .{ .exclusive = true, .read = true });
+        defer output.close(io);
+        const payload_source = try source(io, payload);
+        const assembled = try image.assemble(a, io, original, .bytes("NIOBIUM_IMAGE_V2_OK"), .{
+            .source = payload_source,
+            .length = payload_source.size(),
+        }, output, .{});
+        if (std.Io.File.Permissions.has_executable_bit) {
+            try output.setPermissions(io, .fromMode(0o755));
+        }
+        try output.sync(io);
+        const product = try source(io, output);
+        const verified = try image.verify(a, io, product, .{});
+        try std.testing.expectEqualDeep(assembled.descriptor, verified);
+        try sameCode(io, original, product, layout.code);
+        try tamper(a, io, output, verified.payload.offset);
+        try tamper(a, io, output, layout.code[0].offset);
+        if (try layout.slot.end() < verified.prefix_bytes) {
+            try tamper(a, io, output, try layout.slot.end());
+        }
+        const header_byte: u64 = if (layout.format == .pe) layout.pe_checksum - 80 else 24;
+        try tamper(a, io, output, header_byte);
+        if (layout.format == .macho) try maskedVmSize(a, io, output, layout);
+        break :assembled verified;
+    };
     const path = try a.print("{s}/{s}", .{ evidence, name });
     const native_run = try execute(a, io, path, layout);
     const final = try Dir.cwd().openFile(io, path, .{});
