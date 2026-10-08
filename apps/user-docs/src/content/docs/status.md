@@ -7,15 +7,20 @@ description: Current Component qualification boundaries and historical results w
 
 [Acceptance v0.3](https://github.com/niobium-project/niobium/blob/main/docs/acceptance-plan-v0.3.md)
 records actual commands, source/artifact identities and evidence for the compiler,
-standard WIT libraries, content/access, native assembly and maintenance. Final
-qualification is not yet closed; current interfaces remain experimental.
+standard WIT libraries, content/access, native assembly and maintenance. The
+foundational CLI slice passed its native publishing, isolated assembly and final-byte
+matrix in [CI run 37830364529](https://github.com/niobium-project/niobium/actions/runs/37830364529).
+Current interfaces remain experimental.
 
 Author parity, standard ABI/worker isolation and foundation tests are distinct
 from final setup lifecycle, permissions, signing and crash-recovery evidence.
 Compilation is not final-byte execution, and local emulated-target results do not
-replace native-target CI. Existing local slices do not establish native
-Windows/Linux CI, machine scope, Developer ID, notarization, Authenticode or a
-standard v2 UI.
+replace native-target CI. The recorded native environments are macOS 15.7.9 arm64,
+Ubuntu 24.04 x64 and Windows Server 2025 x64. Hosted runner operations do not
+establish a native Windows standard-user token claim or generic CPU portability.
+Machine scope, Developer ID, notarization, Authenticode and a standard v2 UI remain
+separate work packages. The recorded Windows private worker-copy cleanup limitation
+also remains open.
 
 Run `zig build author-v2-test component-test core-test` for foundation checks and
 `zig build core-e2e` for delivered-artifact scenarios. `zig build verify` is the
