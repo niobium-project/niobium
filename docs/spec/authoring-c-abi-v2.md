@@ -18,6 +18,14 @@ Emission produces normalized machine IR for the common compiler backend. Every
 frontend MUST use the same semantic validation and normalization. Emission does
 not bypass later checks against locked runtime, Component and content bytes.
 
+## Native static linkage
+
+The published static archive includes Zig's compiler runtime support. GNU Windows
+consumers MUST also link the system `ntdll` import library (`-lntdll`) after the
+author archive. SDK packages and language bindings MUST carry this link requirement.
+Zig's C linker supplies that platform import library automatically; external
+C/CGO linkers need the explicit dependency.
+
 ## Ownership and memory
 
 A builder is owned by one thread. Destroy it exactly once after all operations.

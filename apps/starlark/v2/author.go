@@ -4,6 +4,7 @@ package main
 /*
 #cgo CFLAGS: -I${SRCDIR}/../../../api/c
 #cgo LDFLAGS: -lniobium_compiler_v2
+#cgo windows LDFLAGS: -lntdll
 #include "compiler_v2.h"
 #include <stdlib.h>
 */
