@@ -89,6 +89,10 @@ jobs:
           root = pathlib.Path.cwd()
           evidence = root / '.evidence/core-ci'
           evidence.mkdir(parents=True, exist_ok=True)
+          (evidence / 'started.json').write_text(json.dumps({
+              'commit': os.environ['GITHUB_SHA'], 'target': os.environ['NIOBIUM_CI_TARGET'],
+              'stage': 'source and toolchain provenance', 'status': 'NOT_RUN',
+          }) + '\n')
           def command(*args):
               return subprocess.check_output(args, text=True, timeout=60).strip()
           assert os.environ['RUNNER_ARCH'] == os.environ['NIOBIUM_CI_ARCH']
@@ -97,9 +101,17 @@ jobs:
           assert machine in expected[os.environ['NIOBIUM_CI_ARCH']], machine
           assert command('git', 'status', '--porcelain', '--untracked-files=no') == ''
           assert command('git', 'rev-parse', 'HEAD') == os.environ['GITHUB_SHA']
-          tracked = subprocess.check_output(['git', 'ls-files', '-z']).decode().split('\0')[:-1]
-          source = [{'path': p, 'sha256': hashlib.sha256((root / p).read_bytes()).hexdigest()}
-                    for p in sorted(tracked)]
+          tracked = subprocess.check_output(['git', 'ls-files', '--stage', '-z'])
+          source = []
+          for entry in sorted(tracked.decode().split('\0')[:-1]):
+              metadata, name = entry.split('\t', 1)
+              mode, blob, stage = metadata.split()
+              assert stage == '0' and mode in {'100644', '100755', '120000'}, entry
+              path = root / name
+              # Hash the tracked link itself, including Windows text-link checkouts.
+              data = os.fsencode(os.readlink(path)) if path.is_symlink() else path.read_bytes()
+              source.append({'path': name, 'git_mode': mode, 'git_blob': blob,
+                             'sha256': hashlib.sha256(data).hexdigest()})
           report = {
               'schema': 1, 'commit': command('git', 'rev-parse', 'HEAD'),
               'tree': command('git', 'rev-parse', 'HEAD^{tree}'), 'dirty': False,
@@ -108,7 +120,8 @@ jobs:
               'attempt': os.environ['GITHUB_RUN_ATTEMPT'],
               'target': os.environ['NIOBIUM_CI_TARGET'], 'machine': machine,
               'os': platform.platform(), 'runner_image': os.environ.get('ImageVersion'),
-              'zig': json.loads(command('zig', 'env')),
+              'zig_version': command('zig', 'version'),
+              'zig_env_zon': command('zig', 'env'),
               'rustc': command('rustc', '+1.96.1', '-Vv'),
               'cargo': command('cargo', '+1.96.1', '-V'), 'go': command('go', 'version'),
               'c_compiler': command(os.environ.get('CC', 'cc'), '--version'),
