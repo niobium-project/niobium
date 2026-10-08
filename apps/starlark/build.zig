@@ -15,14 +15,20 @@ pub fn main(init: std.process.Init) !void {
     const argv = try arena.alloc([]const u8, args.len - 1);
     argv[0] = "go";
     @memcpy(argv[1..], args[2..]);
-    const result = try std.process.run(arena, init.io, .{
+    const result = std.process.run(arena, init.io, .{
         .argv = argv,
         .environ_map = init.environ_map,
         .stdout_limit = .limited(1 << 20),
         .stderr_limit = .limited(1 << 20),
         .timeout = .{ .duration = .{ .raw = .fromSeconds(300), .clock = .awake } },
-    });
+    }) catch |err| {
+        std.log.err("Go invocation failed: {s}", .{@errorName(err)});
+        return err;
+    };
     try std.Io.File.stdout().writeStreamingAll(init.io, result.stdout);
     try std.Io.File.stderr().writeStreamingAll(init.io, result.stderr);
-    if (!result.term.success()) return error.GoFailed;
+    if (!result.term.success()) {
+        std.log.err("Go command failed: {any}", .{result.term});
+        return error.GoFailed;
+    }
 }
