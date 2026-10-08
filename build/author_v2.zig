@@ -31,15 +31,22 @@ pub fn add(b: *std.Build, graph: *const graph_mod.Graph) Artifacts {
             .optimize = .safe,
         }),
     });
+    const go_flags = &.{ "-trimpath", "-buildvcs=false", "-mod=readonly" };
     const go_build = goCommand(b, launcher, library);
-    go_build.addArgs(&.{ "build", "-trimpath", "-buildvcs=false", "-mod=readonly", "-o" });
+    go_build.addArg("build");
+    go_build.addArgs(go_flags);
+    go_build.addArg("-o");
     const starlark = go_build.addOutputFileArg(if (b.graph.host.result.os.tag == .windows)
         "niobium-starlark-v2.exe"
     else
         "niobium-starlark-v2");
     go_build.addArg("./v2");
     const go_test = goCommand(b, launcher, library);
-    go_test.addArgs(&.{ "test", "-mod=readonly", "-count=1", "./v2" });
+    // Share the completed cold CGO build; tests still execute on every invocation.
+    go_test.step.dependOn(&go_build.step);
+    go_test.addArg("test");
+    go_test.addArgs(go_flags);
+    go_test.addArgs(&.{ "-count=1", "-timeout=60s", "-v", "./v2" });
     tests.dependOn(&go_test.step);
     tests.dependOn(&go_build.step);
     const parity = paritySuite(b, graph, library, starlark);
