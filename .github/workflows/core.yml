@@ -1,4 +1,7 @@
-# Native execution is required separately from source-free cross-platform assembly.
+# Pull requests compile the Linux SDK against a cached engine. Pushes to main and
+# manual runs qualify published bytes on Linux, macOS and Windows from source.
+# A documentation-only change skips both paths. The pull-request compile is not
+# native qualification and must not publish core-sdk-* artifacts.
 name: Core qualification
 
 on:
@@ -19,8 +22,93 @@ env:
   CARGO_INCREMENTAL: "0"
 
 jobs:
+  changes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      code: ${{ steps.paths.outputs.code }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: paths
+        env:
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: sh .github/ci/changed-paths.sh
+
+  fast:
+    name: Linux SDK compile
+    needs: changes
+    if: needs.changes.outputs.code == 'true' && github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/zig
+        with:
+          mode: restore
+          build-cache: "false"
+      - id: engine-cache
+        uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: ci-prebuilt
+          key: engine-v1-1.96.1-x86_64-unknown-linux-gnu-${{ hashFiles('third_party/wasmtime/adapter/Cargo.lock', 'third_party/wasmtime/adapter/Cargo.toml', 'third_party/wasmtime/adapter/*.rs', 'tests/component/reference/Cargo.toml', 'tests/component/reference/Cargo.lock', 'tests/component/reference/guest.rs', 'tests/component/rust/Cargo.toml', 'tests/component/rust/Cargo.lock', 'tests/component/rust/guest.rs', 'libs/stdlib/files/Cargo.toml', 'libs/stdlib/files/Cargo.lock', 'libs/stdlib/files/guest.rs', 'api/wit/reference/reference.wit', 'api/wit/files/files.wit', 'api/wit/qualification/qualification.wit', 'api/wit/runtime/proposal.wit', 'build/component.zig', 'build/component_cpu.zig', 'build/component_prebuilt.zig', 'build/commands.zig') }}
+      - id: engine
+        env:
+          CACHE_HIT: ${{ steps.engine-cache.outputs.cache-hit }}
+        run: |
+          set -eu
+          use=false
+          if [ "$CACHE_HIT" = true ]; then
+            use=true
+            for name in \
+              libniobium_wasmtime.a \
+              niobium_stdlib_files.wasm \
+              niobium_reference_library.wasm \
+              niobium_reference_library-revision-two.wasm \
+              niobium_component_consumer.wasm
+            do
+              if [ ! -f "ci-prebuilt/$name" ]; then
+                use=false
+              fi
+            done
+          fi
+          echo "use=$use" >> "$GITHUB_OUTPUT"
+      - name: Compile the Linux SDK with the cached engine
+        if: success() && steps.engine.outputs.use == 'true'
+        run: |
+          set -euo pipefail
+          zig build sdk:build --cache-poison=disallowed --summary all \
+            -Dprebuilt-engine=ci-prebuilt/libniobium_wasmtime.a \
+            -Dprebuilt-guests=ci-prebuilt
+      - name: Compile the Linux SDK from source
+        if: success() && steps.engine.outputs.use != 'true'
+        run: |
+          set -euo pipefail
+          zig build sdk:build --cache-poison=disallowed --summary all
+      - name: Export the engine and wasm32 guests
+        if: >-
+          success() && steps.engine.outputs.use != 'true' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        run: zig build core:prebuilt-export
+      - name: Save the engine and wasm32 guests
+        if: >-
+          success() && steps.engine.outputs.use != 'true' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: ci-prebuilt
+          key: engine-v1-1.96.1-x86_64-unknown-linux-gnu-${{ hashFiles('third_party/wasmtime/adapter/Cargo.lock', 'third_party/wasmtime/adapter/Cargo.toml', 'third_party/wasmtime/adapter/*.rs', 'tests/component/reference/Cargo.toml', 'tests/component/reference/Cargo.lock', 'tests/component/reference/guest.rs', 'tests/component/rust/Cargo.toml', 'tests/component/rust/Cargo.lock', 'tests/component/rust/guest.rs', 'libs/stdlib/files/Cargo.toml', 'libs/stdlib/files/Cargo.lock', 'libs/stdlib/files/guest.rs', 'api/wit/reference/reference.wit', 'api/wit/files/files.wit', 'api/wit/qualification/qualification.wit', 'api/wit/runtime/proposal.wit', 'build/component.zig', 'build/component_cpu.zig', 'build/component_prebuilt.zig', 'build/commands.zig') }}
+
   native:
     name: Native ${{ matrix.target }}
+    needs: changes
+    if: needs.changes.outputs.code == 'true' && github.event_name != 'pull_request'
     strategy:
       fail-fast: false
       matrix:
@@ -126,6 +214,24 @@ jobs:
           set -euo pipefail
           zig build test:core sdk:build core:cross-tools --cache-poison=disallowed --summary all \
             2>&1 | tee .evidence/core-ci/build.log
+      - name: Restore the Linux engine cache marker
+        id: engine-cache
+        if: success() && matrix.target == 'x86_64-linux'
+        uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: ci-prebuilt
+          key: engine-v1-1.96.1-x86_64-unknown-linux-gnu-${{ hashFiles('third_party/wasmtime/adapter/Cargo.lock', 'third_party/wasmtime/adapter/Cargo.toml', 'third_party/wasmtime/adapter/*.rs', 'tests/component/reference/Cargo.toml', 'tests/component/reference/Cargo.lock', 'tests/component/reference/guest.rs', 'tests/component/rust/Cargo.toml', 'tests/component/rust/Cargo.lock', 'tests/component/rust/guest.rs', 'libs/stdlib/files/Cargo.toml', 'libs/stdlib/files/Cargo.lock', 'libs/stdlib/files/guest.rs', 'api/wit/reference/reference.wit', 'api/wit/files/files.wit', 'api/wit/qualification/qualification.wit', 'api/wit/runtime/proposal.wit', 'build/component.zig', 'build/component_cpu.zig', 'build/component_prebuilt.zig', 'build/commands.zig') }}
+      - name: Export the Linux engine and wasm32 guests
+        if: success() && matrix.target == 'x86_64-linux'
+        run: zig build core:prebuilt-export
+      - name: Save the Linux engine and wasm32 guests
+        if: >-
+          success() && matrix.target == 'x86_64-linux' &&
+          steps.engine-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: ci-prebuilt
+          key: engine-v1-1.96.1-x86_64-unknown-linux-gnu-${{ hashFiles('third_party/wasmtime/adapter/Cargo.lock', 'third_party/wasmtime/adapter/Cargo.toml', 'third_party/wasmtime/adapter/*.rs', 'tests/component/reference/Cargo.toml', 'tests/component/reference/Cargo.lock', 'tests/component/reference/guest.rs', 'tests/component/rust/Cargo.toml', 'tests/component/rust/Cargo.lock', 'tests/component/rust/guest.rs', 'libs/stdlib/files/Cargo.toml', 'libs/stdlib/files/Cargo.lock', 'libs/stdlib/files/guest.rs', 'api/wit/reference/reference.wit', 'api/wit/files/files.wit', 'api/wit/qualification/qualification.wit', 'api/wit/runtime/proposal.wit', 'build/component.zig', 'build/component_cpu.zig', 'build/component_prebuilt.zig', 'build/commands.zig') }}
       - name: Package the qualified SDK and final executable inventory
         run: |
           python3 - <<'PY'
@@ -407,16 +513,35 @@ jobs:
   required:
     name: Core v2 required
     if: always()
-    needs: [native, assemble, delivered]
+    needs: [changes, fast, native, assemble, delivered]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Require every native and transferred-byte gate
+      - name: Require the selected gate
         env:
+          CHANGES: ${{ needs.changes.result }}
+          CODE: ${{ needs.changes.outputs.code }}
+          EVENT: ${{ github.event_name }}
+          FAST: ${{ needs.fast.result }}
           NATIVE: ${{ needs.native.result }}
           ASSEMBLE: ${{ needs.assemble.result }}
           DELIVERED: ${{ needs.delivered.result }}
         run: |
-          test "$NATIVE" = success
-          test "$ASSEMBLE" = success
-          test "$DELIVERED" = success
+          set -eu
+          test "$CHANGES" = success
+          if [ "$CODE" = true ] && [ "$EVENT" = pull_request ]; then
+            test "$FAST" = success
+            test "$NATIVE" = skipped
+            test "$ASSEMBLE" = skipped
+            test "$DELIVERED" = skipped
+          elif [ "$CODE" = true ]; then
+            test "$FAST" = skipped
+            test "$NATIVE" = success
+            test "$ASSEMBLE" = success
+            test "$DELIVERED" = success
+          else
+            test "$FAST" = skipped
+            test "$NATIVE" = skipped
+            test "$ASSEMBLE" = skipped
+            test "$DELIVERED" = skipped
+          fi

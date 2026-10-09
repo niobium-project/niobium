@@ -43,11 +43,14 @@ GitHub Actions on the public repository. The required check is `CI / linux`. A n
 | UI implementation or golden inputs | `linux-tests` | `zig build test:golden` |
 | Code inputs above, manual dispatch, or `ci:hosts` | `windows`, `macos` | Selected native unit/conformance/e2e; macOS also ThreadSanitizer |
 | Every CI run, even when a selected job failed or was cancelled | `linux` | Aggregate: changes and Linux must succeed; selected Windows/macOS must succeed; unselected jobs must be skipped |
+| Code pull request | `Linux SDK compile` | `zig build sdk:build` on Linux, using a cached engine archive and wasm32 guests when that cache hits. This compile is not native qualification and does not publish `core-sdk-*` artifacts. A cache miss builds those Rust outputs from source; a same-repository pull request then stores them |
+| Documentation-only pull request or push to `main` | Core v2 required | The native, assembly and pull-request compile jobs stay skipped and the aggregate check succeeds |
+| Push to `main`, or manual dispatch, when code changed | Native matrix, then assembly | From-source `zig build test:core sdk:build core:cross-tools` on Linux, macOS and Windows, then source-free assembly and delivered-byte execution. Linux also fills the engine cache when that key is new |
 | Daily or `ci:verify` | `verify` | `zig build verify --cache-poison=disallowed` on a fresh build cache |
 | Weekly or `ci:hosts` | `windows`, `macos`, `arm-golden` | Existing host lanes and Linux arm64 golden |
 | Every completed CI, Hosts or Nightly run, including forks and failures | `Evidence / publish` | Trusted default-branch Zig publisher, saved artifacts only |
 
-`vm-smoke` and `fuzz` stay local. Copilot code review and the Codecov status are advisory. The debug `.zig-cache` is restored by OS and CPU architecture, saved only after a successful same-repository build, and is not used by the nightly verify. Fork pull requests restore that cache and do not write a new one.
+`vm-smoke` and `fuzz` stay local. Copilot code review and the Codecov status are advisory. The debug `.zig-cache` is restored by OS and CPU architecture, saved only after a successful same-repository build, and is not used by the nightly verify. Fork pull requests restore that cache and do not write a new one. The Core pull-request compile checks that Linux can link `sdk:build` with a cached engine. A same-repository miss stores that engine for the next run. Three-OS execution and delivered bytes remain on the `main` qualification.
 
 ## Evidence
 
