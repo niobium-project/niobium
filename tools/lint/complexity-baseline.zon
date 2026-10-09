@@ -404,7 +404,7 @@
         .{ .path = "tools/fetch-deps/patch.zig", .tokens = 1825, .nodes = 923 },
         .{ .path = "tools/fetch-deps/toolchain.zig", .tokens = 3499, .nodes = 1741 },
         .{ .path = "tools/fetch-deps/toolchain_archive.zig", .tokens = 1729, .nodes = 868 },
-        .{ .path = "tools/fetch-deps/toolchain_layout.zig", .tokens = 1053, .nodes = 594 },
+        .{ .path = "tools/fetch-deps/toolchain_layout.zig", .tokens = 1177, .nodes = 668 },
         .{ .path = "tools/fetch-deps/zip.zig", .tokens = 804, .nodes = 408 },
         .{ .path = "tools/gen-tokens/main.zig", .tokens = 1996, .nodes = 956 },
         .{ .path = "tools/lint/ast_rules.zig", .tokens = 1026, .nodes = 525 },

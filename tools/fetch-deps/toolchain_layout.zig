@@ -55,8 +55,12 @@ pub fn destination(role: Role, path: []const u8) ?[]const u8 {
     }
 }
 
+/// Official archives keep real binaries under `bin/`, `lib/rustlib/<triple>/bin/`,
+/// and Go's `pkg/tool/<host>/`. `bin/` entries are often symlinks to those files.
 pub fn executable(path: []const u8) bool {
-    return std.mem.startsWith(u8, path, "bin/");
+    if (std.mem.startsWith(u8, path, "bin/")) return true;
+    if (std.mem.startsWith(u8, path, "pkg/tool/")) return true;
+    return std.mem.indexOf(u8, path, "/bin/") != null;
 }
 
 /// `target` is the symlink text. It may use `..` only when the result stays in the prefix.
@@ -118,4 +122,13 @@ test "symlink targets stay inside the prefix" {
     try std.testing.expect(!linkStaysInside("bin/rustc", "C:/rustc"));
     try std.testing.expect(!safe("../x"));
     try std.testing.expect(safe("bin/cargo"));
+}
+
+test "toolchain binaries outside bin stay executable" {
+    try std.testing.expect(executable("bin/rustc"));
+    try std.testing.expect(executable("lib/rustlib/aarch64-apple-darwin/bin/rustc"));
+    try std.testing.expect(executable("pkg/tool/darwin_arm64/compile"));
+    try std.testing.expect(executable("pkg/tool/windows_amd64/asm.exe"));
+    try std.testing.expect(!executable("src/runtime/proc.go"));
+    try std.testing.expect(!executable("lib/librustc_driver.dylib"));
 }

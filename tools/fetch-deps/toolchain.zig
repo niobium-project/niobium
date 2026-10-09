@@ -222,6 +222,12 @@ fn run(init: std.process.Init, arena: std.mem.Allocator, flags: Flags) !u8 {
     try prependPath(arena, &env, try std.fs.path.join(arena, &.{ prefix, "bin" }));
     if (std.mem.eql(u8, resolved.tool.id, "rust")) {
         try env.put("CARGO_HOME", try std.fs.path.join(arena, &.{ flags.root, "cargo-home" }));
+        // An inherited `RUSTC=rustc` plus `RUSTUP_TOOLCHAIN` makes Cargo execute rustup.
+        try env.put("RUSTC", try binary(arena, prefix, "rustc"));
+        const removed_toolchain = env.swapRemove("RUSTUP_TOOLCHAIN");
+        const removed_home = env.swapRemove("RUSTUP_HOME");
+        _ = removed_toolchain;
+        _ = removed_home;
     } else {
         try env.put("GOROOT", prefix);
         try env.put("GOTOOLCHAIN", "local");

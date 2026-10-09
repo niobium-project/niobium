@@ -23,7 +23,7 @@ pub fn execute(init: std.process.Init, tracing: bool) !void {
     try init.environ_map.put("CGO_ENABLED", "1");
     try init.environ_map.put("GOPROXY", "https://proxy.golang.org,direct");
     try init.environ_map.put("GOTOOLCHAIN", "local");
-    try prependGo(arena, init.environ_map, args[2]);
+    try prependGo(arena, init.io, init.environ_map, args[2]);
     const argv = try arena.alloc([]const u8, args.len - 2);
     argv[0] = args[2];
     @memcpy(argv[1..], args[3..]);
@@ -63,13 +63,29 @@ pub fn execute(init: std.process.Init, tracing: bool) !void {
     diagnostic(tracing, "complete", .{});
 }
 
-fn prependGo(arena: std.mem.Allocator, env: *std.process.Environ.Map, go_bin: []const u8) !void {
+fn prependGo(
+    arena: std.mem.Allocator,
+    io: std.Io,
+    env: *std.process.Environ.Map,
+    go_bin: []const u8,
+) !void {
     const bin = std.fs.path.dirname(go_bin) orelse return error.Usage;
-    const goroot = std.fs.path.dirname(bin) orelse return error.Usage;
+    const relative = std.fs.path.dirname(bin) orelse return error.Usage;
+    // Go looks up pkg/tool from GOROOT. A relative value keeps `..` in the tool
+    // path, which Windows CreateProcess does not resolve.
+    const cwd = try std.process.currentPathAlloc(io, arena);
+    const goroot = if (std.fs.path.isAbsolute(relative))
+        relative
+    else
+        try std.fs.path.resolveAlloc(arena, &.{ cwd, relative });
+    const path_bin = if (std.fs.path.isAbsolute(bin))
+        bin
+    else
+        try std.fs.path.resolveAlloc(arena, &.{ cwd, bin });
     try env.put("GOROOT", goroot);
     const old = env.get("PATH") orelse "";
     const sep: u8 = if (@import("builtin").os.tag == .windows) ';' else ':';
-    try env.put("PATH", try std.fmt.allocPrint(arena, "{s}{c}{s}", .{ bin, sep, old }));
+    try env.put("PATH", try std.fmt.allocPrint(arena, "{s}{c}{s}", .{ path_bin, sep, old }));
 }
 
 fn diagnostic(enabled: bool, comptime format: []const u8, args: anytype) void {
