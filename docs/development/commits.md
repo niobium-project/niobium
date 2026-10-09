@@ -41,7 +41,7 @@ Two labels select a pull request for landing. The procedure is the [`merge-prs` 
 | `merge-me:squash` | One commit. The subject is the pull request title and the body is the pull request body. |
 | `merge-me:no-squash` | The commits stay. A branch already on `main` fast-forwards. The skill rebases any other branch and resolves each conflict in the commit that hit it. |
 
-A pull request with both labels keeps its commits. Drafts are not eligible. The base branch is `main`.
+A pull request with both labels keeps its commits. Drafts are not eligible. A pull request based on another open pull request lands after that one. The [`merge-prs` skill](../../.agents/skills/merge-prs/SKILL.md) decides the order.
 
 A maintainer is a collaborator with `admin` or `maintain` permission. Approval is an approving review from a maintainer. On a maintainer's own pull request, the merge-me label added by a maintainer is the approval, because GitHub has no self-approval.
 

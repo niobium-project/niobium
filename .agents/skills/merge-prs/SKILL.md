@@ -1,6 +1,6 @@
 ---
 name: merge-prs
-description: Land labeled GitHub pull requests onto main as a linear signed history. Use when asked to merge, land, or scan merge-me pull requests. Requires maintainer approval plus merge-me:squash or merge-me:no-squash. Resolves conflicts, checks every landed commit, pushes once, and comments on each pull request.
+description: Land labeled GitHub pull requests onto main as a linear signed history. Use when asked to merge, land, or scan merge-me pull requests. Requires maintainer approval plus merge-me:squash or merge-me:no-squash. Orders a stack by branch dependency, resolves conflicts, checks every landed commit, pushes once, and comments on each pull request.
 ---
 
 # Merge pull requests
@@ -22,16 +22,33 @@ Check out `main` and fast-forward it: `git switch main` and `git merge --ff-only
 
 ## Which pull requests
 
-List both labels, then drop duplicate numbers. A pull request with both labels keeps its commits (`merge-me:no-squash` wins). Skip drafts. Handle the rest in ascending pull request number.
+List both labels, then drop duplicate numbers. A pull request with both labels keeps its commits (`merge-me:no-squash` wins). Skip drafts.
 
 ```sh
 gh pr list --state open --label merge-me:squash --limit 100 \
-  --json number,title,body,isDraft,author,baseRefName,headRefOid
+  --json number,title,body,isDraft,author,baseRefName,headRefName,headRefOid
 gh pr list --state open --label merge-me:no-squash --limit 100 \
-  --json number,title,body,isDraft,author,baseRefName,headRefOid
+  --json number,title,body,isDraft,author,baseRefName,headRefName,headRefOid
+gh pr list --state open --limit 100 --json number,headRefName,baseRefName,isDraft
 ```
 
-The base branch must be `main`. Any other base is a failure for that pull request.
+The third command is the open-pull-request index. Use it to resolve base branches. Do not land a pull request just because it appears there.
+
+## Queue order
+
+Write the landing order before the first landing. The report uses that order.
+
+A pull request depends on another when its base branch is that other pull request's head branch. The dependency lands first. A pull request whose base is `main` has no dependency. Independent pull requests go in ascending number.
+
+Walk the chain. A pull request stacked on a pull request stacked on `main` lands after both, nearest base first.
+
+A cycle fails every pull request in the cycle. Remove those labels. The comment names the cycle.
+
+When the base branch is not `main` and no open pull request has that head branch, fail this pull request and remove its label. The comment names the missing base branch.
+
+When the base pull request is open but not in this batch, leave this label in place. Comment that it waits for that number. Skip it. If that comment is already the latest comment, do not comment again.
+
+When a pull request fails its own checks, leave the label on every pull request that depends on it. Comment that it waits for the failed number. Continue with pull requests that do not depend on the failure.
 
 ## Maintainer approval
 
@@ -57,9 +74,9 @@ Use the latest `labeled` event whose label name is the merge-me label still on t
 
 ## One batch, one push
 
-Record `origin/main`. For each approved pull request, land it on local `main`, then check only the commits just added. After every pull request in the batch has landed, run the test suite once, then push once.
+Record `origin/main`. For each approved pull request, in queue order, land it on local `main`, then check only the commits just added. After every pull request in the batch has landed, run the test suite once, then push once.
 
-On a per-pull-request check failure, reset only that pull request (`git reset --hard` to the `main` sha from before it) and continue with the others. On a test-suite failure, reset local `main` to `origin/main`, so nothing from the batch is left, and fail every pull request in the batch. Never reset commits this run did not create.
+On a per-pull-request check failure, reset only that pull request (`git reset --hard` to the `main` sha from before it). Skip pull requests that depend on it. Continue with the rest of the queue. On a test-suite failure, reset local `main` to `origin/main`, so nothing from the batch is left, and fail every pull request in the batch. Never reset commits this run did not create.
 
 `git reset --hard` is allowed only before the push, and only to a sha this run recorded.
 
@@ -73,6 +90,8 @@ git fetch origin pull/N/head
 
 The fetched sha is `FETCH_HEAD`. Remember it as the source sha.
 
+Remember each landed pull request's source sha. A dependent pull request needs that sha as the cut, so the dependency's commits are not replayed.
+
 ### Keep commits
 
 When `git merge-base --is-ancestor main SOURCE` succeeds, the pull request is already on top of local `main`. Fast-forward:
@@ -83,28 +102,34 @@ git merge --ff-only SOURCE
 
 Those commits keep their authors and their signatures.
 
-Otherwise rebase onto local `main`. Author names stay. The landing maintainer signs every rewritten commit, because a rebase creates new commit objects. `commit.gpgsign=true` makes `git rebase` sign them.
+Otherwise rebase the unique commits onto local `main`. Author names stay. The landing maintainer signs every rewritten commit, because a rebase creates new commit objects. `commit.gpgsign=true` makes `git rebase` sign them.
+
+The cut is the dependency's source sha when this pull request has a dependency. Otherwise the cut is `git merge-base main SOURCE`. After a squash of the dependency, that source sha is not on `main`. A merge-base with `main` would replay the dependency's commits.
 
 ```sh
-base=$(git merge-base main SOURCE)
 git switch --detach SOURCE
-git rebase --onto main "$base"
+git rebase --onto main "$cut"
 new=$(git rev-parse HEAD)
 git switch main
 git merge --ff-only "$new"
 ```
 
+The cut must be an ancestor of `SOURCE`. When it is not, fail this pull request. The branch no longer contains the base it declared.
+
 When rebase stops on a conflict, resolve it inside the commit that stopped. Each commit must still build on its own. Continue with `git add` and `git rebase --continue`. Do not use `--reset-author`.
 
-When the conflict cannot be resolved, run `git rebase --abort`, switch back to `main`, and fail this pull request. Record `git range-diff "$base..SOURCE" "main~count..main"` for the closing comment. `count` is the number of commits this pull request added.
+When the conflict cannot be resolved, run `git rebase --abort`, switch back to `main`, and fail this pull request. Record `git range-diff "$cut..SOURCE" "main~count..main"` for the closing comment. `count` is the number of commits this pull request added.
 
 ### Squash
 
-Build one commit. The subject is the pull request title. The body is the pull request body. The title must already be a valid subject; do not invent a replacement.
+Rebase onto local `main` with the same cut as above, so only this pull request's commits remain. Then fold those commits into one. The subject is the pull request title. The body is the pull request body. The title must already be a valid subject; do not invent a replacement.
 
 ```sh
-git merge --squash SOURCE
+git reset --soft main
+git commit
 ```
+
+When `main` is already an ancestor of `SOURCE` and the label is squash, skip the rebase and run `git merge --squash SOURCE` from `main`.
 
 Resolve conflicts in that single commit when there are any. When they cannot be resolved, `git reset --hard` to the `main` sha from before this pull request and fail it.
 
@@ -162,4 +187,4 @@ When the source sha is now on `origin/main`, GitHub marks the pull request merge
 
 ## Report
 
-End the run with one row per pull request: number, strategy, result (`landed` or the failure reason), and landed shas.
+End the run with one row per pull request, in queue order: number, the dependency it waited on, strategy, result (`landed`, `waiting`, or the failure reason), and landed shas.
