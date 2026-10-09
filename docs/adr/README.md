@@ -26,6 +26,7 @@ Numbers are assigned once and never reused or renumbered. Template: title `# ADR
 | [0020](0020-distribution-delivery-milestones.md) | Distribution delivery milestones | Accepted; amended by 0022 |
 | [0021](0021-ci-evidence-transport.md) | CI evidence transport | Accepted |
 | [0022](0022-installer-dsl-and-aot-toolchain.md) | Installer DSL and AOT toolchain | Accepted; amended by 0023 |
-| [0023](0023-standard-content-and-component-contracts.md) | Standard content, component contracts and cross-host compilation | Accepted; amended by 0024 and 0025 |
+| [0023](0023-standard-content-and-component-contracts.md) | Standard content, component contracts and cross-host compilation | Accepted; amended by 0024, 0025 and 0026 |
 | [0024](0024-native-runtime-dependency-qualification.md) | Native runtime dependency qualification | Accepted; amended by 0025 |
 | [0025](0025-baseline-cpu-runtime-publication.md) | Baseline CPU targets for runtime publication | Accepted |
+| [0026](0026-pinned-rust-component-wasm.md) | Pinned Rust for Component Wasm | Accepted |

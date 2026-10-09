@@ -27,7 +27,8 @@ runtimes. The exact outputs must execute on their target OS before qualification
 Content, access and native image work can proceed independently after their
 interfaces are fixed. Component qualification precedes replacement of the old
 engine. Failure of that gate must name the missing guarantee; it does not authorize
-a custom Canonical ABI or reduced safety coverage.
+a custom Canonical ABI or reduced safety coverage
+([ADR-0026](adr/0026-pinned-rust-component-wasm.md)).
 
 ## Reference scenarios
 

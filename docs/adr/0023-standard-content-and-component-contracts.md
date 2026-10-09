@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-10-08
-- **Amended by:** [ADR-0024](0024-native-runtime-dependency-qualification.md) (native runtime publication qualification), [ADR-0025](0025-baseline-cpu-runtime-publication.md) (CPU publication contracts)
+- **Amended by:** [ADR-0024](0024-native-runtime-dependency-qualification.md) (native runtime publication qualification), [ADR-0025](0025-baseline-cpu-runtime-publication.md) (CPU publication contracts), [ADR-0026](0026-pinned-rust-component-wasm.md) (Component implementation language)
 - **Amends:** [ADR-0022](0022-installer-dsl-and-aot-toolchain.md) (contract representation and runtime qualification), [ADR-0005](0005-tar-zst-artifact-format.md) (new content profile), [ADR-0001](0001-repository-baseline-and-zig-only-toolchain.md) (pinned external toolchains)
 
 ## Context
