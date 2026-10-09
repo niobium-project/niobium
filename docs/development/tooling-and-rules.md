@@ -2,6 +2,8 @@
 
 All checks are Zig programs, driven by `zig build check`.
 
+`zig build hooks:install` copies [`.githooks/posix`](../../.githooks/posix/pre-commit) or [`.githooks/windows`](../../.githooks/windows/commit-msg.cmd) into `.git/hooks`. Pre-commit checks staged Zig formatting. The commit-message hook and pre-push check `<type>(<scope>): summary` through `check-commits`. New hook behavior goes through these steps. The platform scripts do not grow a second policy.
+
 | Tool | Checks |
 |---|---|
 | `zig fmt --check`, `zig ast-check` | Formatting and syntax |

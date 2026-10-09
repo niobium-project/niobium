@@ -1,5 +1,6 @@
 //! Commit message lint (zig build check-commits [-- <range>]): `<type>(<scope>): summary`.
-//! Default range: origin/main..HEAD. Merge commits are skipped.
+//! Default range: origin/main..HEAD. `--message-file` checks one commit message.
+//! Merge commits are skipped.
 
 const std = @import("std");
 const repo = @import("repo");
@@ -12,9 +13,14 @@ pub const max_subject_bytes = 200;
 
 pub fn main(init: std.process.Init) !void {
     const arena = init.arena.allocator();
-    const io = init.io;
     const args = try init.minimal.args.toSlice(arena);
-    const range = if (args.len > 1) args[1] else "origin/main..HEAD";
+    if (option(args, "--message-file")) |path| return checkMessage(init, path);
+    return checkRange(init, if (args.len > 1) args[1] else "origin/main..HEAD");
+}
+
+fn checkRange(init: std.process.Init, range: []const u8) !void {
+    const arena = init.arena.allocator();
+    const io = init.io;
     const result = try std.process.run(arena, io, .{
         .argv = &.{ "git", "log", "--no-merges", "--format=%h %s", range },
         .stdout_limit = .limited(4 << 20),
@@ -36,6 +42,43 @@ pub fn main(init: std.process.Init) !void {
         );
     }
     try report.finish(io);
+}
+
+fn checkMessage(init: std.process.Init, path: []const u8) !void {
+    const arena = init.arena.allocator();
+    const io = init.io;
+    const text = try std.Io.Dir.cwd().readFileAlloc(io, path, arena, .limited(1 << 20));
+    var report: repo.Report = .{ .arena = arena, .tool = "check-commits" };
+    if (acceptMessage(text)) |reason| {
+        const subject = messageSubject(text) orelse "";
+        try report.add("{s}: '{s}'", .{ reason, subject });
+    }
+    try report.finish(io);
+}
+
+fn option(args: []const []const u8, name: []const u8) ?[]const u8 {
+    var index: usize = 1;
+    while (index + 1 < args.len) : (index += 1) {
+        if (std.mem.eql(u8, args[index], name)) return args[index + 1];
+    }
+    return null;
+}
+
+/// Null when the message may be committed: empty, comments only, a merge, or a valid subject.
+pub fn acceptMessage(text: []const u8) ?[]const u8 {
+    const subject = messageSubject(text) orelse return null;
+    if (std.mem.startsWith(u8, subject, "Merge ")) return null;
+    return validate(subject);
+}
+
+fn messageSubject(text: []const u8) ?[]const u8 {
+    var lines = std.mem.splitScalar(u8, text, '\n');
+    while (lines.next()) |raw| {
+        const line = std.mem.trimEnd(u8, raw, "\r");
+        if (line.len == 0 or line[0] == '#') continue;
+        return line;
+    }
+    return null;
 }
 
 /// Returns null when the subject is valid, else the reason.
@@ -67,4 +110,11 @@ test "commit subjects" {
     try std.testing.expect(validate("feat: missing scope") != null);
     try std.testing.expect(validate("wip(core): x") != null);
     try std.testing.expect(validate("fix(Core): x") != null);
+}
+
+test "message files skip comments, empty text, and merges" {
+    try std.testing.expect(acceptMessage("feat(repo): add hooks\n\nbody\n") == null);
+    try std.testing.expect(acceptMessage("\n# comment\n") == null);
+    try std.testing.expect(acceptMessage("Merge branch 'main'\n") == null);
+    try std.testing.expect(acceptMessage("# note\n\nfix: no scope\n") != null);
 }

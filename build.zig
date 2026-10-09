@@ -2,6 +2,7 @@
 //! below are the build API for products that depend on Niobium (docs/development/consuming.md).
 
 const std = @import("std");
+const hooks = @import("build/hooks.zig");
 const graph_mod = @import("build/graph.zig");
 const artifacts = @import("build/steps/artifacts.zig");
 const checks = @import("build/steps/checks.zig");
@@ -230,6 +231,7 @@ fn addQualitySteps(
     const commit_run = checks.addRepoRun(b, tools.check_commits, &.{});
     commit_run.addPassthruArgs();
     commits.dependOn(&commit_run.step);
+    hooks.add(b, tools.check_commits);
 
     const check = b.step("check", "fmt + lint + repository checks + docs");
     check.dependOn(fmt);
@@ -241,6 +243,7 @@ fn addQualitySteps(
     const conformance = privateStep(b, "host conformance");
     addAllTests(b, graph, test_step, conformance, coverage, config);
     checks.addToolTests(b, tools, test_step, config);
+    hooks.addTests(b, test_step);
     const tsan_step: ?*std.Build.Step = if (tsan or hostSupportsTsan(b)) addTsan(
         b,
         graph,
