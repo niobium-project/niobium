@@ -44,6 +44,15 @@ runs:
         key: deps-v2-${{ runner.os }}-${{ runner.arch }}-0.17-${{ hashFiles('third_party/deps.zon') }}
 
     - if: inputs.mode == 'save' && inputs.build-cache == 'true'
+      shell: bash
+      run: |
+        set -eu
+        if [ -d .zig-cache/o ]; then
+          find .zig-cache/o -depth -type d \
+            \( -name wasmtime-target -o -name guest-target \) -exec rm -rf {} +
+        fi
+
+    - if: inputs.mode == 'save' && inputs.build-cache == 'true'
       uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
       with:
         path: .zig-cache

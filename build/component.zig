@@ -5,6 +5,7 @@ const Compile = std.Build.Step.Compile;
 const toolchain = @import("component_tools.zig");
 const graph_mod = @import("graph.zig");
 const cpu = @import("component_cpu.zig");
+const prebuilt = @import("component_prebuilt.zig");
 pub const Inputs = struct {
     host: @import("host_tools.zig").Tools,
     wasm_tools: std.Build.LazyPath,
@@ -31,7 +32,9 @@ pub const Artifacts = struct {
 };
 
 pub fn add(b: *std.Build, inputs: Inputs) Artifacts {
-    const native_build = native(b, inputs.host);
+    const cache = prebuilt.fromBuild(b);
+    const exported = prebuilt.createExport(b);
+    const native_build = selectEngine(b, inputs, cache, exported);
     const library = native_build.library;
     const engine = b.createModule(.{
         .root_source_file = b.path("third_party/wasmtime/session.zig"),
@@ -51,7 +54,7 @@ pub fn add(b: *std.Build, inputs: Inputs) Artifacts {
     const worker = b.addExecutable(.{ .name = "component-worker", .root_module = worker_module });
     const c_build = cGuest(b, inputs);
     const c_guest = c_build.binary;
-    const rust_guest = rustGuest(b, inputs.host, inputs.wasm_tools);
+    const rust_guest = rustGuest(b, inputs.host, inputs.wasm_tools, cache, exported);
     const provenance = b.createModule(.{
         .root_source_file = b.path("tests/component/provenance.zig"),
         .target = b.graph.host,
@@ -70,22 +73,16 @@ pub fn add(b: *std.Build, inputs: Inputs) Artifacts {
     run.addArtifactArg(worker);
     run.addFileArg(c_guest);
     run.addFileArg(rust_guest);
-    for ([_][]const u8{
-        "start",         "unauthorized", "wasi",       "threads", "memories",
-        "grouped-types", "nested-types", "deep-types",
-    }) |name| {
-        const parse = std.Build.Step.Run.create(b, b.fmt("parse component {s}", .{name}));
-        parse.addFileArg(toolchain.executable(b, inputs.wasm_tools, "wasm-tools"));
-        parse.addArg("parse");
-        parse.addFileArg(b.path(b.fmt("tests/component/{s}.wat", .{name})));
-        parse.addArg("-o");
-        run.addFileArg(parse.addOutputFileArg(b.fmt("{s}.wasm", .{name})));
-    }
+    addParsedFixtures(b, run, inputs.wasm_tools);
     run.addFileArg(c_build.log);
     const step = commands.step(b, "test:component", "WIT, Canonical ABI, and Pulley qualification");
     step.dependOn(&run.step);
+    if (cache.mismatch) |fail| {
+        step.dependOn(fail);
+        worker.step.dependOn(fail);
+    }
     failureProvenance(b, inputs, suite, step);
-    const production = ipc(b, inputs, engine, provenance, worker, rust_guest);
+    const production = ipc(b, inputs, engine, provenance, worker, rust_guest, cache, exported);
     step.dependOn(production.step);
     return .{
         .step = step,
@@ -127,7 +124,35 @@ const Native = struct {
     log: std.Build.LazyPath,
 };
 
-fn native(b: *std.Build, tools: @import("host_tools.zig").Tools) Native {
+fn selectEngine(
+    b: *std.Build,
+    inputs: Inputs,
+    cache: prebuilt.Cache,
+    exported: prebuilt.Export,
+) Native {
+    const compiled = compileEngine(b, inputs.host);
+    prebuilt.exportFile(b, exported, compiled.library, prebuilt.engine_archive);
+    if (cache.mismatch) |fail| return cachedEngine(b, failedArchive(b, fail));
+    if (cache.engine) |library| return cachedEngine(b, library);
+    return compiled;
+}
+
+fn cachedEngine(b: *std.Build, library: std.Build.LazyPath) Native {
+    const host = @import("publication.zig").baselineTarget(b).result;
+    return .{
+        .library = library,
+        .provenance = cpu.provenance(b, host, rustTarget(host)),
+        .log = prebuilt.engineLog(b),
+    };
+}
+
+fn failedArchive(b: *std.Build, fail: *std.Build.Step) std.Build.LazyPath {
+    const bytes = b.addWriteFiles();
+    bytes.step.dependOn(fail);
+    return bytes.add(prebuilt.engine_archive, "");
+}
+
+fn compileEngine(b: *std.Build, tools: @import("host_tools.zig").Tools) Native {
     const host = @import("publication.zig").baselineTarget(b).result;
     const triple = rustTarget(host);
     const cargo = tools.cargo(b);
@@ -209,6 +234,18 @@ fn rustGuest(
     b: *std.Build,
     tools: @import("host_tools.zig").Tools,
     tool: std.Build.LazyPath,
+    cache: prebuilt.Cache,
+    exported: prebuilt.Export,
+) std.Build.LazyPath {
+    const compiled = compileRustGuest(b, tools);
+    const guest = prebuilt.Guest.qualification;
+    prebuilt.exportFile(b, exported, compiled, guest.fileName());
+    return componentize(b, tool, cachedGuest(b, cache, guest, compiled));
+}
+
+fn compileRustGuest(
+    b: *std.Build,
+    tools: @import("host_tools.zig").Tools,
 ) std.Build.LazyPath {
     const cargo = tools.cargo(b);
     cargo.addArgs(&.{
@@ -223,7 +260,25 @@ fn rustGuest(
     cargo.addArg("--target-dir");
     const target = cargo.addOutputDirectoryArg("guest-target");
     const binary = "wasm32-unknown-unknown/release/niobium_component_consumer.wasm";
-    return componentize(b, tool, target.path(b, binary));
+    return target.path(b, binary);
+}
+
+fn addParsedFixtures(
+    b: *std.Build,
+    run: *std.Build.Step.Run,
+    wasm_tools: std.Build.LazyPath,
+) void {
+    for ([_][]const u8{
+        "start",         "unauthorized", "wasi",       "threads", "memories",
+        "grouped-types", "nested-types", "deep-types",
+    }) |name| {
+        const parse = std.Build.Step.Run.create(b, b.fmt("parse component {s}", .{name}));
+        parse.addFileArg(toolchain.executable(b, wasm_tools, "wasm-tools"));
+        parse.addArg("parse");
+        parse.addFileArg(b.path(b.fmt("tests/component/{s}.wat", .{name})));
+        parse.addArg("-o");
+        run.addFileArg(parse.addOutputFileArg(b.fmt("{s}.wasm", .{name})));
+    }
 }
 
 fn componentize(
@@ -281,6 +336,8 @@ fn ipc(
     provenance: *std.Build.Module,
     qualifier: *Compile,
     qualifier_guest: std.Build.LazyPath,
+    cache: prebuilt.Cache,
+    exported: prebuilt.Export,
 ) Production {
     const caller = productionWorker(b, inputs, engine);
     const module = b.createModule(.{
@@ -308,7 +365,7 @@ fn ipc(
         .source = "tests/component/reference",
         .wit = "api/wit/reference/reference.wit",
         .binary = "niobium_reference_library.wasm",
-    });
+    }, cache, exported);
     run.addFileArg(reference);
     const parse = std.Build.Step.Run.create(b, "parse direct world component");
     parse.addFileArg(toolchain.executable(b, inputs.wasm_tools, "wasm-tools"));
@@ -320,7 +377,7 @@ fn ipc(
         .source = "libs/stdlib/files",
         .wit = "api/wit/files/files.wit",
         .binary = "niobium_stdlib_files.wasm",
-    });
+    }, cache, exported);
     run.addFileArg(files);
     const probe = b.addExecutable(.{
         .name = "component-client-probe",
@@ -338,7 +395,7 @@ fn ipc(
         .wit = "api/wit/reference/reference.wit",
         .binary = "niobium_reference_library.wasm",
         .feature = "revision-two",
-    });
+    }, cache, exported);
     run.addFileArg(reference_v2);
     return .{
         .step = &run.step,
@@ -379,6 +436,46 @@ fn packageGuest(
     tools: @import("host_tools.zig").Tools,
     tool: std.Build.LazyPath,
     package: Package,
+    cache: prebuilt.Cache,
+    exported: prebuilt.Export,
+) std.Build.LazyPath {
+    const guest = guestOf(package);
+    const compiled = compilePackage(b, tools, package);
+    prebuilt.exportFile(b, exported, compiled, guest.fileName());
+    return componentize(b, tool, cachedGuest(b, cache, guest, compiled));
+}
+
+fn guestOf(package: Package) prebuilt.Guest {
+    if (std.mem.eql(u8, package.source, "libs/stdlib/files")) {
+        std.debug.assert(package.feature == null);
+        return .files;
+    }
+    std.debug.assert(std.mem.eql(u8, package.source, "tests/component/reference"));
+    if (package.feature) |feature| {
+        std.debug.assert(std.mem.eql(u8, feature, "revision-two"));
+        return .reference_revision_two;
+    }
+    return .reference;
+}
+
+fn cachedGuest(
+    b: *std.Build,
+    cache: prebuilt.Cache,
+    guest: prebuilt.Guest,
+    compiled: std.Build.LazyPath,
+) std.Build.LazyPath {
+    if (cache.mismatch) |fail| {
+        const bytes = b.addWriteFiles();
+        bytes.step.dependOn(fail);
+        return bytes.add(guest.fileName(), "");
+    }
+    return prebuilt.guestSource(cache, b, guest, compiled);
+}
+
+fn compilePackage(
+    b: *std.Build,
+    tools: @import("host_tools.zig").Tools,
+    package: Package,
 ) std.Build.LazyPath {
     // Standard bindgen reads an isolated WIT package with its versioned dependency closure.
     const workspace = b.addWriteFiles();
@@ -406,9 +503,5 @@ fn packageGuest(
     for (sources) |source| cargo.addFileInput(source);
     cargo.addArg("--target-dir");
     const target = cargo.addOutputDirectoryArg("guest-target");
-    return componentize(
-        b,
-        tool,
-        target.path(b, b.fmt("wasm32-unknown-unknown/release/{s}", .{package.binary})),
-    );
+    return target.path(b, b.fmt("wasm32-unknown-unknown/release/{s}", .{package.binary}));
 }

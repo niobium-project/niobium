@@ -1,6 +1,7 @@
 .zig-cache/
 .cache/
 zig-out/
+ci-prebuilt/
 .evidence/
 .local/
 *.key.json

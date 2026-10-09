@@ -39,6 +39,7 @@ pub const names = [_][]const u8{
     "sdk:build",
     "core:e2e",
     "core:cross-tools",
+    "core:prebuilt-export",
     "ui:gallery",
     "ui:run",
     "sdk:c",
