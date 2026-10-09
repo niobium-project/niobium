@@ -231,6 +231,11 @@ fn addQualitySteps(
     const commit_run = checks.addRepoRun(b, tools.check_commits, &.{});
     commit_run.addPassthruArgs();
     commits.dependOn(&commit_run.step);
+    const each = b.step("check-each", "Build check and the default build for every commit");
+    const each_run = checks.addRepoRun(b, tools.check_each, &.{});
+    each_run.addArg(b.graph.zig_exe);
+    each_run.addPassthruArgs();
+    each.dependOn(&each_run.step);
     hooks.add(b, tools.check_commits);
 
     const check = b.step("check", "fmt + lint + repository checks + docs");
