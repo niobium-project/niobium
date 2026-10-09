@@ -111,6 +111,10 @@ jobs:
           key: kcov-v43-${{ runner.os }}-${{ runner.arch }}
       - run: echo "${{ runner.temp }}/kcov/bin" >> "$GITHUB_PATH"
       - run: zig build test -Dcoverage
+      # coverage.json is kcov's own summary. codecov.json keeps only the
+      # basename, so the same name in different modules collides. Cobertura
+      # keeps the source directory Codecov uses to map files.
+      - run: find zig-out/coverage -type f \( -name coverage.json -o -name codecov.json \) -delete
       - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           directory: zig-out/coverage
