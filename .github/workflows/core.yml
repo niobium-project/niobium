@@ -53,6 +53,11 @@ jobs:
         with:
           mode: restore
           build-cache: "false"
+      - id: tool-cache
+        uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: .cache/tools
+          key: host-tools-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.zig/toolchains.zon') }}
       - id: engine-cache
         uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
@@ -104,6 +109,14 @@ jobs:
         with:
           path: ci-prebuilt
           key: engine-v1-1.96.1-x86_64-unknown-linux-gnu-${{ hashFiles('third_party/wasmtime/adapter/Cargo.lock', 'third_party/wasmtime/adapter/Cargo.toml', 'third_party/wasmtime/adapter/*.rs', 'tests/component/reference/Cargo.toml', 'tests/component/reference/Cargo.lock', 'tests/component/reference/guest.rs', 'tests/component/rust/Cargo.toml', 'tests/component/rust/Cargo.lock', 'tests/component/rust/guest.rs', 'libs/stdlib/files/Cargo.toml', 'libs/stdlib/files/Cargo.lock', 'libs/stdlib/files/guest.rs', 'api/wit/reference/reference.wit', 'api/wit/files/files.wit', 'api/wit/qualification/qualification.wit', 'api/wit/runtime/proposal.wit', 'build/component.zig', 'build/component_cpu.zig', 'build/component_prebuilt.zig', 'build/commands.zig') }}
+      - name: Save the installed Rust and Go toolchains
+        if: >-
+          success() && steps.tool-cache.outputs.cache-hit != 'true' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: .cache/tools
+          key: host-tools-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.zig/toolchains.zon') }}
 
   native:
     name: Native ${{ matrix.target }}

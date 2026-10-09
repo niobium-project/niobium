@@ -133,7 +133,7 @@ jobs:
   windows:
     needs: changes
     if: >-
-      needs.changes.outputs.host == 'true' ||
+      (github.event_name != 'pull_request' && needs.changes.outputs.host == 'true') ||
       (github.event_name == 'pull_request' &&
        contains(github.event.pull_request.labels.*.name, 'ci:hosts'))
     runs-on: windows-2025
@@ -163,7 +163,7 @@ jobs:
   macos:
     needs: changes
     if: >-
-      needs.changes.outputs.host == 'true' ||
+      (github.event_name != 'pull_request' && needs.changes.outputs.host == 'true') ||
       (github.event_name == 'pull_request' &&
        contains(github.event.pull_request.labels.*.name, 'ci:hosts'))
     runs-on: macos-15
@@ -203,12 +203,16 @@ jobs:
           WINDOWS: ${{ needs.windows.result }}
           MACOS: ${{ needs.macos.result }}
           HOST: ${{ needs.changes.outputs.host }}
+          EVENT: ${{ github.event_name }}
           FORCE_HOSTS: ${{ contains(github.event.pull_request.labels.*.name, 'ci:hosts') }}
         run: |
           set -eu
           test "$CHANGES" = success
           test "$LINUX" = success
-          if [ "$HOST" = true ] || [ "$FORCE_HOSTS" = true ]; then
+          if [ "$EVENT" = pull_request ] && [ "$FORCE_HOSTS" != true ]; then
+            test "$WINDOWS" = skipped
+            test "$MACOS" = skipped
+          elif [ "$HOST" = true ] || [ "$FORCE_HOSTS" = true ]; then
             test "$WINDOWS" = success
             test "$MACOS" = success
           else

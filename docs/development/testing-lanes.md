@@ -41,7 +41,7 @@ GitHub Actions on the public repository. The required check is `CI / linux`. A n
 | Every pull request and push to `main` | `linux-tests` | `zig build check` |
 | Code, build, test, toolchain, workflow or unknown executable input | `linux-tests`, then advisory `coverage` | `zig build test -Dsuite=unit,conformance`, `zig build test:author`; coverage uses kcov |
 | UI implementation or golden inputs | `linux-tests` | `zig build test:golden` |
-| Code inputs above, manual dispatch, or `ci:hosts` | `windows`, `macos` | Selected native unit/conformance/e2e; macOS also ThreadSanitizer |
+| Code push to `main`, manual dispatch, or a pull request labeled `ci:hosts` | `windows`, `macos` | Selected native unit/conformance/e2e; macOS also ThreadSanitizer. Other pull requests skip these jobs |
 | Every CI run, even when a selected job failed or was cancelled | `linux` | Aggregate: changes and Linux must succeed; selected Windows/macOS must succeed; unselected jobs must be skipped |
 | Code pull request | `Linux SDK compile` | `zig build sdk:build` on Linux, using a cached engine archive and wasm32 guests when that cache hits. This compile is not native qualification and does not publish `core-sdk-*` artifacts. A cache miss builds those Rust outputs from source; a same-repository pull request then stores them |
 | Documentation-only pull request or push to `main` | Core v2 required | The native, assembly and pull-request compile jobs stay skipped and the aggregate check succeeds |
