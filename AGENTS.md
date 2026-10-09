@@ -54,6 +54,7 @@ A module may only `@import` the modules `build/modules.zig` hands it, which the 
 6. For review, security or boundary-related changes: review against the [review-niobium](.agents/skills/review-niobium/SKILL.md) checklist.
 7. For technical prose, read the installed `technical-writing` skill; for terminology or decisions also read `domain-modeling`.
 8. External GUI skills (`apple-hig`, `winui-app`, `gtk-ui-ux-engineer`) only provide design values and checklists; the SwiftUI/AppKit controls, WinUI 3/XAML/C#/MSIX and GTK/libadwaita they recommend do not change [ADR-0008](docs/adr/0008-shared-software-renderer.md).
+9. For git hooks: read [niobium-build](.agents/skills/niobium-build/SKILL.md). Hook behavior stays in the zig build steps.
 
 ## 5. Zig rules
 
@@ -95,5 +96,6 @@ Test lanes: L0 static (check/lint/schema/size), L1 pure core (VirtualPlatform), 
 | `niobium-native-look` | Map each platform's look and interaction conventions to tokens |
 | `niobium-platform-capability` | Contract-first flow and crash pitfalls for new capabilities / platform backends |
 | `review-niobium` | Security and boundary review checklist |
+| `niobium-build` | Git hooks installed by `zig build hooks:install` |
 | `zig-0.17`, `zig-tiger-style` | External Zig language skills (pinned by `skills-lock.json`) |
 | `apple-hig`, `winui-app`, `gtk-ui-ux-engineer` | External platform design references (values and checklists only); sources in [docs/development/tooling-and-rules.md](docs/development/tooling-and-rules.md#external-skills) |
