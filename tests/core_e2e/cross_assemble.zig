@@ -49,7 +49,7 @@ fn assemble(
     try argv.appendSlice(
         a,
         &.{
-            try std.fs.path.join(a, &.{ inputs, "compiler" }),
+            try std.fs.path.join(a, &.{ inputs, "nb-builder" }),
             "compile",
             "--program",
             try a.print("{s}/{s}.program.json", .{ source, name }),

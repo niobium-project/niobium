@@ -6,11 +6,11 @@ Use only `PASS`, `FAIL`, `BLOCKED`, `NOT_RUN`, `DEFERRED`. `PASS` must satisfy a
 
 1. At least one test name starts with the acceptance ID;
 2. That test actually ran and passed in this `zig build verify` (or the designated lane);
-3. The evidence path is written into the corresponding row of the owning acceptance plan; current Component cases use `docs/acceptance-plan-v0.3.md`, while historical N1/N2 rows retain their original evidence.
+3. The evidence path is written into the corresponding row of the owning acceptance plan; current Component cases use `docs/acceptance-plan.md`, while historical N1/N2 rows retain their original evidence.
 
 ## ID families
 
-Current N2 IDs and scenario definitions are owned by [acceptance-plan-v0.3](../../../../docs/acceptance-plan-v0.3.md). `core-e2e` provides the native product lane; `core-test` includes the current contract/host checks. Earlier Core Wasm IDs remain in v0.2 and use `aot-test`/`aot-e2e`. The following N1 families apply only to retained regressions.
+Current N2 IDs and scenario definitions are owned by [acceptance plan](../../../../docs/acceptance-plan.md). `core:e2e` provides the native product lane; `test:core` includes the current contract/host checks. The following N1 families apply only to independent components.
 
 | Prefix | Meaning | Main lane |
 |---|---|---|
@@ -32,7 +32,7 @@ Write the cases the risk calls for, not five per helper. A lower lane never upgr
 
 ## Evidence directory
 
-Catalog suites use `.evidence/<suite>/<execution>/report.json` and bounded attachments under [test-system-v1](../../../../docs/spec/test-system-v1.md). PoC and retained non-catalog lanes keep their explicitly documented layouts. Reports identify the command, exit code, time, source revision and artifact hashes. The evidence directory is not committed; acceptance records its location and verdict. Publication is governed by ADR-0021 and does not rerun tests.
+Catalog suites use `.evidence/<suite>/<execution>/report.json` and bounded attachments under [test-system-v1](../../../../docs/spec/test-system.md). Non-catalog lanes keep their explicitly documented layouts. Reports identify the command, exit code, time, source revision and artifact hashes. The evidence directory is not committed; acceptance records its location and verdict. Publication is governed by ADR-0021 and does not rerun tests.
 
 ## How to write BLOCKED
 

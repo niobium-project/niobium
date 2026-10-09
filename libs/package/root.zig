@@ -1,6 +1,6 @@
-//! Strict tar.zst artifact extraction (docs/spec/artifact-format-v1.md). Entries are written only
+//! Strict tar.zst artifact extraction (docs/spec/artifact-format.md). Entries are written only
 //! through the staging `Dir` handle with validated relative paths; `files/X` lands at `X`.
-//! `component.json` is returned in memory for the caller to validate (manifest.parseComponent).
+//! `component.json` is returned as opaque metadata; its interpretation belongs to the caller.
 
 const std = @import("std");
 const contracts = @import("contracts");

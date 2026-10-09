@@ -12,7 +12,7 @@ test "N2-KERNEL-19: unused typed overrides fail before claiming a root" {
     var tmp = std.testing.tmpDir(.{});
     defer tmp.cleanup();
     var fixture = try Fixture.init(arena.allocator(), io, tmp.dir, 1);
-    var host: platform.Host = .init(io, .{ .env = .{}, .system_managers = false });
+    var host: platform.Host = .init(io, .{ .env = .{} });
     var options = try fixture.options(&host, .install);
     options.inputs = &.{.{ .id = "label", .value = .{ .boolean = true } }};
     try std.testing.expectError(error.WitTypeMismatch, kernel.run(options));
@@ -32,7 +32,7 @@ test "N2-KERNEL-19: record input rejects extra fields before claiming a root" {
     var tmp = std.testing.tmpDir(.{});
     defer tmp.cleanup();
     var fixture = try Fixture.init(arena.allocator(), io, tmp.dir, 1);
-    var host: platform.Host = .init(io, .{ .env = .{}, .system_managers = false });
+    var host: platform.Host = .init(io, .{ .env = .{} });
     var options = try fixture.options(&host, .install);
     var model = options.model.?;
     model.inputs = &.{
@@ -80,7 +80,7 @@ test "N2-KERNEL-19: persisted reused input type is checked before lock creation"
     var tmp = std.testing.tmpDir(.{});
     defer tmp.cleanup();
     var fixture = try Fixture.init(arena.allocator(), io, tmp.dir, 1);
-    var host: platform.Host = .init(io, .{ .env = .{}, .system_managers = false });
+    var host: platform.Host = .init(io, .{ .env = .{} });
     const installed = try kernel.run(try fixture.options(&host, .install));
     var state = installed.state.?;
     state.inputs = &.{.{ .id = "label", .value = .{ .boolean = true } }};
@@ -126,7 +126,7 @@ test "N2-KERNEL-19: wire string limits reject otherwise typed override before ro
     var tmp = std.testing.tmpDir(.{});
     defer tmp.cleanup();
     var fixture = try Fixture.init(arena.allocator(), io, tmp.dir, 1);
-    var host: platform.Host = .init(io, .{ .env = .{}, .system_managers = false });
+    var host: platform.Host = .init(io, .{ .env = .{} });
     const text = try arena.allocator().alloc(u8, 131073);
     @memset(text, 'x');
     var options = try fixture.options(&host, .install);

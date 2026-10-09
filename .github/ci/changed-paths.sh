@@ -1,6 +1,6 @@
 #!/bin/sh
 # Classify a pull request or push for the CI workflow. Writes code, ui, and host
-# to GITHUB_OUTPUT. code selects test and c-smoke; ui also selects golden;
+# to GITHUB_OUTPUT. code selects test and author parity; ui also selects golden;
 # host selects the Windows and macOS jobs. A manual run exercises the code path
 # including the selected native machines.
 set -eu
@@ -41,7 +41,7 @@ while IFS= read -r file; do
         continue
     fi
     case "$file" in
-    libs/ui/* | tests/golden/*) ui=true ;;
+    libs/ui/* | apps/ui-gallery/* | tests/golden/*) ui=true ;;
     esac
     case "$file" in
     *.zig | *.zon | api/* | build/* | examples/* | tests/* | third_party/* | .github/*)

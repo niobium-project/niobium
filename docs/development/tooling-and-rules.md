@@ -1,34 +1,48 @@
 # Checks, lint and rule iteration
 
 `zig build` is the repository entry point ([ADR-0027](../adr/0027-zig-provisioned-host-tools.md)).
-Top-level steps are `fmt`, `lint`, `check`, `test`, `verify`, and `run`.
+Top-level steps are `fmt`, `lint`, `check`, `test`, `verify`.
 Every other public step is `namespace:leaf`, or `namespace:leaf:detail` for the
 tutorial tools step. `build/commands.zig` is the closed list. `zig build -l`
 prints it.
 
 `zig build tools:install` places Rust 1.96.1 and Go 1.26.8 in `.cache/tools`.
 Build and test steps that need them depend on that install.
-`zig build tools:doctor` checks the installed versions. Example steps and
-`vm:smoke` do not install tools. A missing `prlctl` fails `vm:smoke` and points
-at [the VM runbook](../runbooks/vm-smoke.md). Node.js for the user-docs site
+`zig build tools:doctor` checks the installed versions. Example wrapper steps do not install tools. Real OS execution uses separately
+recorded target witnesses. Node.js for the user-docs site
 stays on the host ([ADR-0015](../adr/0015-node-toolchain-for-user-docs.md)).
 
-`examples/hello` is its own package. `zig build example:hello` runs that
-package's `zig build`. `examples/dsl-tutorial/build.zig` calls back into
-`example:tutorial` and `example:tutorial:tools`, because those tools link this
-repository's module graph.
+`examples/dsl-tutorial/build.zig` calls `example:tutorial` and
+`example:tutorial:tools`, because those tools link the repository module graph.
 
-All checks are Zig programs, driven by `zig build check`.
+Static checks are Zig programs, driven by `zig build check`.
+`zig build check:binary` aggregates the current runtime binary dependency,
+security and size policies; `verify` also requires them.
 
 | Tool | Checks |
 |---|---|
 | `zig fmt --check`, `zig ast-check` | Formatting and syntax |
 | `tools/lint` | TigerStyle, crash safety, boundary rules (see below) |
 | `tools/check` | Module graph preserves layers and transitive execution-phase boundaries, no cross-module relative imports, files ≤ 600 lines, schema rules, catalog golden complete |
-| `tools/check-docs` | Links resolve (relative paths, user-site routes, `github.com/niobium-project/niobium` file URLs), URL hosts allowlisted, English only outside the Chinese paths of ADR-0017, user-site locale mirror, ADR fields complete, N1/N2 acceptance IDs and statuses consistent, ADR successor/index status consistent, spec file names versioned |
+| `tools/check-docs` | Links resolve (relative paths, user-site routes, `github.com/niobium-project/niobium` file URLs), URL hosts allowlisted, English only outside the Chinese paths of ADR-0017, user-site locale mirror, ADR fields complete, N1/N2 acceptance IDs and statuses consistent, ADR successor/index status consistent, spec filenames without historical version suffixes |
 | `tools/check-binary` | Dynamic dependency allowlist, PE security flags, no RWX segments, size gate |
 | `tools/check-commits` | `<type>(<scope>): summary` |
 | `zig fmt --complexity` | Per-file token/node baseline; growth > 10% requires updating the baseline in the same commit |
+
+
+## Public command catalog
+
+| Purpose | Steps |
+|---|---|
+| Static and integration gates | `fmt`, `lint`, `check`, `test`, `verify`, `fmt:fix`, `lint:baseline`, `check:docs`, `check:commits`, `check:binary` |
+| Test lanes | `test:cross`, `test:fuzz`, `test:tsan`, `test:golden`, `test:evidence`, `test:kernel`, `test:kernel-wire`, `test:image`, `test:access`, `test:core`, `test:component`, `test:author`, `test:compiler` |
+| Compiler and runtime delivery | `compiler:build`, `compiler:linux-x64`, `runtime:build`, `runtime:package`, `runtime:linux-x64`, `runtime:windows-x64` |
+| SDK delivery and final-image qualification | `sdk:build`, `sdk:c`, `sdk:zig`, `core:e2e`, `core:cross-tools` |
+| UI and tools | `ui:gallery`, `ui:run`, `tools:install`, `tools:doctor` |
+| Tutorial | `example:tutorial`, `example:tutorial:tools` |
+
+CLI and archive spellings are owned by [repository layout](repository-layout.md#apps-and-delivered-names).
+Old command aliases are removed.
 
 ## tools/lint rules
 
@@ -93,8 +107,8 @@ External GUI skills only provide values and checklists and do not change [ADR-00
 
 ## Component and authoring tools
 
-`component-test` builds pinned Wasmtime/Pulley and independent standard C/Rust
-guests. `author-v2-test` builds the typed authoring C ABI, its independent C
+`test:component` builds pinned Wasmtime/Pulley and independent standard C/Rust
+guests. `test:author` builds the typed authoring C ABI, its independent C
 consumer and the pinned Starlark worker, then checks native/C/Starlark model
 parity. Tool source archives and digests live in
 [the Component toolchain manifest](../../third_party/wasmtime/toolchain.zon);
@@ -105,4 +119,4 @@ WASI sysroot. Build-tool ZIP/tar extraction does not change runtime content rule
 The native CGO launcher passes the graph-owned static author archive to Go without
 a shell or a platform-specific `env` executable. The archive bundles Zig's compiler
 runtime for exact-width numeric parsing. SDK contracts and commands are in
-[authoring v2](authoring-v2.md) and [Component SDK](component-library-sdk.md).
+[authoring v2](authoring.md) and [Component SDK](component-library-sdk.md).

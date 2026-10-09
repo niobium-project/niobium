@@ -33,8 +33,7 @@ does not establish qualification on older distributions.
 ## Decision
 
 1. Native runtime publication uses a separate `component` binary policy. The
-   checker's default `legacy` policy and its existing artifact rules remain
-   unchanged. Artifact kind and dependency profile are independent selectors.
+   independent binary checks retain their own declared artifact scope. Artifact kind and dependency profile are independent selectors.
 2. Each Component rule identifies OS, CPU and native ABI. Linux GNU and musl
    have separate rules; musl requires no dynamic interpreter or dependency.
    GNU requires its exact loader and declared system dependencies. Missing or

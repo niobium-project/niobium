@@ -3,7 +3,7 @@
 
 const std = @import("std");
 
-pub const top_level = [_][]const u8{ "fmt", "lint", "check", "test", "verify", "run" };
+pub const top_level = [_][]const u8{ "fmt", "lint", "check", "test", "verify" };
 
 pub const names = [_][]const u8{
     "fmt",
@@ -14,15 +14,10 @@ pub const names = [_][]const u8{
     "check:docs",
     "check:commits",
     "check:binary",
-    "check:size",
-    "check:cross",
     "test",
     "test:cross",
-    "test:sim",
     "test:fuzz",
     "test:tsan",
-    "test:e2e",
-    "test:c-smoke",
     "test:golden",
     "test:evidence",
     "test:kernel",
@@ -34,26 +29,21 @@ pub const names = [_][]const u8{
     "test:author",
     "test:compiler",
     "verify",
-    "run",
     "compiler:build",
     "compiler:linux-x64",
     "runtime:build",
+    "runtime:package",
     "runtime:linux-x64",
     "runtime:windows-x64",
-    "core:sdk",
+    "sdk:build",
     "core:e2e",
     "core:cross-tools",
-    "aot:build",
-    "aot:test",
-    "aot:e2e",
-    "aot:size",
-    "aot:authoring",
     "ui:gallery",
-    "ui:workbench",
-    "vm:smoke",
+    "ui:run",
+    "sdk:c",
+    "sdk:zig",
     "tools:install",
     "tools:doctor",
-    "example:hello",
     "example:tutorial",
     "example:tutorial:tools",
 };

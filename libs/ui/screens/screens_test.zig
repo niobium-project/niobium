@@ -27,7 +27,6 @@ fn config(c: Copy) contracts.installation.ProductConfig {
     return .{
         .schema = 1,
         .mode = .branded,
-        .product_id = "com.example.hello",
         .branding = switch (c) {
             .normal => .{ .product_name = "Hello", .publisher = "Example Ltd.", .license = "MIT" },
             .long => .{

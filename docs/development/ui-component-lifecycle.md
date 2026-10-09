@@ -1,6 +1,6 @@
 # UI component lifecycle
 
-The installer UI vocabulary is closed (see [ui-ir-v1](../spec/ui-ir-v1.md)). The bar for adding a component or variant is high: a competitor having a feature is not a reason.
+The installer UI vocabulary is closed (see [ui-ir-v1](../spec/ui-ir.md)). The bar for adding a component or variant is high: a competitor having a feature is not a reason.
 
 ## Classify the task
 

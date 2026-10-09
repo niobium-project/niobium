@@ -55,7 +55,7 @@ def make_product(release_sequence):
 
 作者根目录是 `--source` 所指定入口文件的所在目录。模块路径相对于这个根目录，嵌套模块中的 load 也如此，不会切换为加载模块自己的目录。例如，`release1/` 中的入口会从 `release1/lib/policy.star` 加载 `lib/policy.star`；该模块内部的 load 仍从 `release1/` 开始。
 
-Starlark 会冻结已加载模块的全局值。应导出函数和不可变数据，不要依赖导入后修改共享字典。worker 在单次求值中缓存模块，并拒绝加载循环、绝对路径和在路径语法上超出作者根目录的路径。模块与执行预算见 [Authoring v2](https://github.com/niobium-project/niobium/blob/main/docs/development/authoring-v2.md#starlark-api)。
+Starlark 会冻结已加载模块的全局值。应导出函数和不可变数据，不要依赖导入后修改共享字典。worker 在单次求值中缓存模块，并拒绝加载循环、绝对路径和在路径语法上超出作者根目录的路径。模块与执行预算见 [Authoring v2](https://github.com/niobium-project/niobium/blob/main/docs/development/authoring.md#starlark-api)。
 
 ## 练习：验证提取
 
@@ -64,11 +64,11 @@ Starlark 会冻结已加载模块的全局值。应导出函数和不可变数�
 完整答案使用提供的 `product_modular.star` 和 `model.star`：
 
 ```sh
-"$NIOBIUM_REPO/zig-out/bin/niobium-starlark-v2" \
+"$NIOBIUM_REPO/zig-out/bin/nb-starlark-v2" \
   --source "$TUTORIAL_WORK/release1/product.star" \
   --out "$TUTORIAL_WORK/flat.program.json" \
   --source-map "$TUTORIAL_WORK/flat.sources.json"
-"$NIOBIUM_REPO/zig-out/bin/niobium-starlark-v2" \
+"$NIOBIUM_REPO/zig-out/bin/nb-starlark-v2" \
   --source "$TUTORIAL_WORK/release1/product_modular.star" \
   --out "$TUTORIAL_WORK/modular.program.json" \
   --source-map "$TUTORIAL_WORK/modular.sources.json"
@@ -84,6 +84,6 @@ cat "$TUTORIAL_WORK/modular.sources.json"
 
 用函数复用构造过程，用模块组织相关作者代码。模块文件名组织源码。产品身份、`Call.id`、`Library.id` 和 interface/function 选择信息标识运行时所有权。把 `deploy` 移到另一个文件会保留它的 ID。重命名这个调用会改变所属实例，不是等价重构。
 
-[编译后产品契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/program-image-v2.md#state-and-explicit-migration)定义调用状态所有权与显式迁移。应把这些变更与本章保留字节的源码提取分开处理。
+[编译后产品契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/program-image.md#state-and-explicit-migration)定义调用状态所有权与显式迁移。应把这些变更与本章保留字节的源码提取分开处理。
 
 下一章：[编译与诊断](/zh/tutorial/compilation-diagnostics/)。

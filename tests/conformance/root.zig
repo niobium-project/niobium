@@ -1,7 +1,7 @@
-//! Host PlatformContract (N1-AC-14): the backend compiled for this OS, with every system
-//! location redirected into a temp directory and system managers off, so the suite never
-//! touches the real home, registry or service manager. vm-smoke runs the same binary on
-//! Windows 11 and Ubuntu (zig-out/cross-tests/<target>/suite-conformance).
+//! File-backed PlatformContract (N1-AC-14): the backend compiled for this OS, with every system
+//! location redirected into a temp directory. OS manager activation is outside this profile.
+//! Native target tests run the same binary on
+//! Windows and Linux under redirected roots.
 
 const evidence = @import("test_evidence");
 const std = @import("std");
@@ -48,12 +48,12 @@ const Fixture = struct {
     }
 };
 
-/// Integration kinds each host must implement without system managers.
+/// File-backed integration kinds each host must implement.
 fn required() conformance.Required {
     return switch (builtin.os.tag) {
         .macos => .{ .service = true },
         .linux => .{ .file_association = true, .service = true },
-        // Associations, registration and services live only in the registry and SCM.
+        // Windows non-shortcut integrations are explicitly unsupported.
         else => .{},
     };
 }
@@ -78,7 +78,6 @@ fn runHost(scope: contracts.Scope) !void {
     var host: platform.Host = .init(std.testing.io, .{
         .env = try f.env(),
         .machine_root = try f.join("machine"),
-        .system_managers = false,
     });
     const req = required();
     const subject: conformance.Subject = .{

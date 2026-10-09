@@ -102,5 +102,5 @@ fn checkImports(report: *repo.Report, path: []const u8, bytes: []const u8) !void
 test "ownerDir prefers the declared module root" {
     try std.testing.expectEqualStrings("libs/ui/core", ownerDir("libs/ui/core/layout.zig"));
     try std.testing.expectEqualStrings("libs/platform", ownerDir("libs/platform/windows/fs.zig"));
-    try std.testing.expectEqualStrings("apps/setup", ownerDir("apps/setup/cli.zig"));
+    try std.testing.expectEqualStrings("apps/compiler", ownerDir("apps/compiler/options.zig"));
 }

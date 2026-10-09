@@ -53,6 +53,5 @@ These chapters use the current experimental Component-v2 profile: a command-line
 
 The commands use a POSIX shell on macOS arm64. Mach-O assembly uses the SDK's locked ad-hoc signer. Production publisher identity, Gatekeeper, and notarization require separate qualification; see the [runtime assembly workflow](https://github.com/niobium-project/niobium/blob/main/docs/development/cross-host-builds.md).
 
-Platform execution records live on [Status and platforms](/status/). This tutorial does not establish qualification for Linux or Windows. The [retained first-release tutorial](/start/) describes a separate manifest-era workflow.
 
 Start with [Prepare the tools and project](/tutorial/setup/).

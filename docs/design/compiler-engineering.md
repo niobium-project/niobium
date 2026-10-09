@@ -1,6 +1,6 @@
 # Compiler engineering
 
-- **Kind:** Engineering design for [compiler-frontends-v2](../spec/compiler-frontends-v2.md).
+- **Kind:** Engineering design for [compiler-frontends-v2](../spec/compiler-frontends.md).
 - **Owners:** `compiler`, `program`, `image` and the build-time language adapters.
 - **Current boundary:** Shared authoring, typed binding, exact locks, local emission cache,
   cancellation, source diagnostics and native assembly are implemented. Registry
@@ -8,14 +8,14 @@
 
 ## Stages and interfaces
 
-The [compiler contract](../spec/compiler-frontends-v2.md) owns stage inputs,
+The [compiler contract](../spec/compiler-frontends.md) owns stage inputs,
 validation and publication semantics. Frontends produce a typed author model and
 an independent source map. The common backend captures fixed inputs, normalizes
 content, binds WIT contracts and resolves input types before emitting the compiled
 product. Product assembly consumes a complete published runtime package.
 
 `compiler.author.Builder` is the native Zig construction API.
-[`compiler_v2.h`](../../api/c/compiler_v2.h) owns the authoring C ABI;
+[`compiler.h`](../../api/c/compiler.h) owns the authoring C ABI;
 Starlark calls it through the pinned Go worker. Complete Python, TypeScript, Go
 and Rust packages wrap that same boundary. Their package versions do not replace
 ABI negotiation. The retained `nbc_` facade and `program.Program` keep their v1
@@ -30,7 +30,7 @@ published output.
 
 ## Dependencies and determinism
 
-[Compiler inputs v1](../spec/compiler-inputs-v1.md) owns exact versions, hashes,
+[Compiler inputs v1](../spec/compiler-inputs.md) owns exact versions, hashes,
 lengths, target requirements and dependency graphs. Resolution is an independent
 build-time operation that produces this lock and explicit sources. No floating
 version or alternate library is selected during a locked build or installation.
@@ -94,8 +94,8 @@ than inventing rollback of a delivered file.
 
 ## Delivery and acceptance
 
-The [authoring guide](../development/authoring-v2.md) covers current APIs and
-commands. The [roadmap](../roadmap-v0.3.md) assigns follow-on compiler and SDK
+The [authoring guide](../development/authoring.md) covers current APIs and
+commands. The [roadmap](../roadmap.md) assigns follow-on compiler and SDK
 packages. Each package must carry clean/cached equivalence vectors, invalidation
 cases, cancellation before publication, source-map independence and real
 consumer execution. Throughput claims additionally require fixed workload,

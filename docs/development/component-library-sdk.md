@@ -1,7 +1,7 @@
 # Develop a Component capability library
 
 Use WIT and standard `wit-bindgen` to build a Component for
-[capability library v2](../spec/capability-library-v2.md). The
+[capability library v2](../spec/capability-library.md). The
 [official files library](../../libs/stdlib/files/guest.rs) and the
 [independent reference consumer](../../tests/component/reference/guest.rs) are
 separate examples of the same public contract.

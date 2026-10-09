@@ -1,4 +1,4 @@
-//! Free-space query for preflight (docs/spec/platform-contract-v1.md#capabilities,
+//! Free-space query for preflight (docs/spec/platform-contract.md#capabilities,
 //! FileSystem). Bytes available to the unprivileged caller on the volume holding `path`, or its
 //! nearest existing ancestor (install roots usually do not exist yet).
 

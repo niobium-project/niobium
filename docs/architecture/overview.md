@@ -6,7 +6,7 @@ and content containers. [ADR-0022](../adr/0022-installer-dsl-and-aot-toolchain.m
 defines the DSL/AOT direction;
 [ADR-0023](../adr/0023-standard-content-and-component-contracts.md) defines the
 standard content, Component and cross-host baseline. Qualification belongs to
-[N2 acceptance](../acceptance-plan-v0.2.md), with separate records for each profile.
+[N2 acceptance](../acceptance-plan.md), with separate records for each profile.
 
 ## Compilation and execution
 
@@ -58,8 +58,8 @@ assembly; verification and target execution refer to those exact final bytes.
 | `access_policy`, `access` | Portable access intent, native application/verification and durable receipts |
 | `kernel` | Ownership, compatibility selection, frozen plans, generation preparation, coordinator decision and recovery |
 | `stdlib/files` | Optional deployment and content selection through the public library contract |
-| `apps/compiler-v2`, `apps/runtime-v2` | Process assembly and CLI adapters |
-| `apps/libcompiler/v2.zig`, `apps/starlark/v2` | Public C and hosted author frontends |
+| `apps/compiler`, `apps/runtime` | Process assembly and CLI adapters |
+| `apps/compiler-sdk/c/root.zig`, `apps/compiler/starlark` | Public C and hosted author frontends |
 
 The runtime graph excludes compiler, author frontend and preset modules. The
 Component engine uses pinned Wasmtime with Pulley and no ambient WASI or native
@@ -89,17 +89,11 @@ before activation begins. Recovery before that decision retains OLD; recovery
 afterward completes NEW on every root. Cross-root visibility during activation is
 not simultaneous. Recovery never resolves a library, reruns a converter or
 reevaluates an author program. Modified and unrecorded user data is retained.
-The [lifecycle contract](../spec/runtime-lifecycle-v2.md) owns these rules.
+The [lifecycle contract](../spec/runtime-lifecycle.md) owns these rules.
 
-## Retained implementations
+## Independent components
 
-The Core Wasm/WAMR v1 compiler and runtime remain under `apps/compiler`,
-`apps/runtime`, `wasm_profile`, `wasm_host` and `runtime`; their `aot-*` evidence
-retains its original macOS and 1 MiB scope. The earlier manifest/engine path uses
-`apps/setup`, `apps/nbpack`, `apps/libdistribution` and `libs/engine`. Its trust,
-platform and UI regressions remain gates for reused code.
-
-The shared UI renderer and pure UI modules are unchanged. New UI adapters must
-use typed runtime inputs, state and progress. The
-[module disposition](module-boundaries.md) and [roadmap](../roadmap-v0.3.md) identify
-owners and remaining integration work without extending old evidence to new APIs.
+Trust/repository, safe tar.zst extraction, UI presentation, and validated
+privilege/platform protocols retain their independent contracts and tests. They
+are not wired into the current runtime. Runtime integration requires new authority,
+lifecycle and final-byte qualification. See [module boundaries](module-boundaries.md).

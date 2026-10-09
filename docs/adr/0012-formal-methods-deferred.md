@@ -9,7 +9,9 @@ The transaction/commit/recovery state machine suits TLA+ modeling, but TLC depen
 
 ## Decision
 
-- v0.1 has no `formal/`. State machine correctness is covered by three kinds of Zig tests: crash injection at every kill point, seeded fault simulation with `zig build test:sim`, and exhaustive enumeration of journal replay.
+- Formal model checking is deferred. Current kernel qualification uses frozen-plan
+  fault tests and real process kills through `zig build test:kernel core:e2e`.
+  These tests are not an exhaustive model proof.
 - Re-evaluate when the state machine grows to concurrent transactions or maintainer self-update.
 
 ## Consequences

@@ -48,7 +48,7 @@ in the Rust archive. Wasmtime also compiles a Unix C helper through the `cc` cra
    profile. Host-specific overrides cannot qualify as a generic publication.
    Specialized CPU profiles require a distinct publication and compatibility
    and execution evidence. Supplied cross archives carry the same provenance.
-   [Runtime-package v2](../spec/runtime-package-v2.md) requires a versioned
+   [Runtime-package v2](../spec/runtime-package.md) requires a versioned
    `native_profile` identifier supplied by the publisher build configuration.
    Native headers cannot prove that declaration. SDK inventories identify each
    artifact separately, including prebuilt signing tools outside these compilers.

@@ -5,7 +5,7 @@ description: How the Component-v2 kernel freezes installation plans and recovers
 
 The Component-v2 kernel validates and freezes an installation plan before changing deployment resources. A durable commit decision determines whether recovery preserves the old publication or completes the new one.
 
-These concepts apply to the current user-scope profile demonstrated in the [DSL tutorial](/tutorial/). The [runtime lifecycle contract](https://github.com/niobium-project/niobium/blob/main/docs/spec/runtime-lifecycle-v2.md) owns the protocol; [Status and platforms](/status/) records execution evidence.
+These concepts apply to the current user-scope profile demonstrated in the [DSL tutorial](/tutorial/). The [runtime lifecycle contract](https://github.com/niobium-project/niobium/blob/main/docs/spec/runtime-lifecycle.md) owns the protocol; [Status and platforms](/status/) records execution evidence.
 
 ## Owned roots and generations
 
@@ -52,4 +52,4 @@ Uninstall retains ownership records and verified content storage. Modified or un
 
 Product model changes and call-state changes require their own explicit compatibility declarations. The kernel checks those independently of the release sequence before mutation.
 
-Application databases and other business data remain product-owned. Deployment recovery does not imply database rollback, and the retained [App Bootstrap protocol](/concepts/app-bootstrap/) is not a hook in the current Component-v2 profile.
+Application databases and other business data remain product-owned. Deployment recovery does not imply database rollback. The current Component profile has no arbitrary execution hook.

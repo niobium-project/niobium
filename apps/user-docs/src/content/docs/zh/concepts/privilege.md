@@ -5,7 +5,7 @@ description: 逻辑根目录、显式授权和原生访问策略如何约束 Com
 
 能力库只接收为其调用声明的授权。当前 Component-v2 运行配置没有环境赋予的文件系统、网络、进程或提权权限。它支持用户范围根目录，拒绝整机范围。
 
-[DSL 教程](/zh/tutorial/content-capabilities/)展示受具名授权约束的文件库请求。[能力契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/capability-library-v2.md)规定库边界；真实执行记录见[状态与平台](/zh/status/)。
+[DSL 教程](/zh/tutorial/content-capabilities/)展示受具名授权约束的文件库请求。[能力契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/capability-library.md)规定库边界；真实执行记录见[状态与平台](/zh/status/)。
 
 ## 根目录与授权
 
@@ -21,23 +21,4 @@ description: 逻辑根目录、显式授权和原生访问策略如何约束 Com
 
 宿主私有地创建未发布资源，验证内容，应用请求的原生访问，并读取验证结果。不支持的文件系统、ACL 冲突或可移植子集之外的策略产生显式错误。
 
-契约不提供任意主体、拒绝规则、所有权转移或权限继承编辑。目录遍历和特权绕过属于独立的操作系统语义。[访问策略契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/access-policy-v1.md)定义支持的子集及限制。
-
-## 保留的 v1 提权
-
-<details data-pagefind-ignore>
-<summary>清单时代的提权助手协议与剩余风险</summary>
-
-基于清单的运行时拥有独立的整机范围助手协议。在单次事务期间，未提权安装器通过平台授权机制启动带管理员权限的第二个副本。
-
-助手只接受封闭的带类型文件和集成操作。它以事务 ID 和随机 nonce 认证请求，拒绝重放的消息 ID，并将写入限制在所选产品的整机根目录与已知集成位置。它没有执行程序、加载库或建立网络连接的操作。
-
-此助手不是 Component-v2 提权 API。保留的线路契约见 [IPC v1](https://github.com/niobium-project/niobium/blob/main/docs/spec/ipc-v1.md)，其证据保留原始适用范围。
-
-### 保留的助手风险 { #what-the-boundary-does-not-cover }
-
-v1 助手限制写入位置，未提权安装器验证发布内容。控制该用户会话的攻击者可以在获授权的产品根目录中提供不同内容，并注册允许的集成。
-
-保留的助手不授予这些位置之外的任意写入权限。此风险描述 v1 助手协议，不会扩展 Component-v2 库可获得的授权。
-
-</details>
+契约不提供任意主体、拒绝规则、所有权转移或权限继承编辑。目录遍历和特权绕过属于独立的操作系统语义。[访问策略契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/access-policy.md)定义支持的子集及限制。

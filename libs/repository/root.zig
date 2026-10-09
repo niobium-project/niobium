@@ -1,4 +1,4 @@
-//! Repository sources with the same layout (docs/spec/tuf-profile-v1.md#repository-layout):
+//! Repository sources with the same layout (docs/spec/tuf-profile.md#repository-layout):
 //! HTTP, a local directory (offline bundle) and embedded bytes. `fetch` satisfies the trust
 //! client's source contract; `download` streams a target to a file while hashing it.
 

@@ -12,11 +12,11 @@ comptime {
     if (!std.mem.eql(u8, pins.tools[1].id, "go")) @compileError("go is the second toolchain pin");
 }
 
-/// `go` as seen from `apps/starlark`, where the CGO launcher runs.
+/// `go` as seen from `apps/compiler/starlark`, where the CGO launcher runs.
 pub fn goBinary(b: *std.Build) []const u8 {
     const version = pins.tools[1].version;
     const ext = if (b.graph.host.result.os.tag == .windows) ".exe" else "";
-    return b.fmt("../../.cache/tools/go/{s}/bin/go{s}", .{ version, ext });
+    return b.fmt("../../../.cache/tools/go/{s}/bin/go{s}", .{ version, ext });
 }
 
 pub const Tools = struct {

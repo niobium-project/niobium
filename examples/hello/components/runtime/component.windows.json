@@ -1,6 +1,0 @@
-{
-  "schema": 1,
-  "id": "runtime",
-  "entrypoints": { "main": { "path": "bin/hello.exe", "bootstrap": true } },
-  "executables": ["bin/hello.exe"]
-}

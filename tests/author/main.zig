@@ -6,13 +6,13 @@ const Dir = std.Io.Dir;
 pub fn main(init: std.process.Init) !void {
     const arena = init.arena.allocator();
     const args = try init.minimal.args.toSlice(arena);
-    var run = try provenance.Run.startForSuite(arena, init.io, args, "author-v2");
+    var run = try provenance.Run.startForSuite(arena, init.io, args, "author");
     verify(&run, args) catch |err| {
         try run.finish(@errorName(err));
         return err;
     };
     try run.finish(null);
-    std.log.info("Author v2 evidence: {s}", .{run.evidence});
+    std.log.info("Author evidence: {s}", .{run.evidence});
 }
 fn verify(run: *provenance.Run, args: []const []const u8) !void {
     try run.capture();

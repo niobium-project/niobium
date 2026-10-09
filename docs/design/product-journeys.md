@@ -16,12 +16,12 @@ component count nor artifact count is a kernel invariant.
 
 | Boundary | Owning contract |
 |---|---|
-| Author programs, type binding and fixed compiler inputs | [Compiler](../spec/compiler-frontends-v2.md), [inputs](../spec/compiler-inputs-v1.md), [author ABI](../spec/authoring-c-abi-v2.md) |
-| Content trees, composition and source-independent identity | [Content container](../spec/content-container-v1.md) |
-| Library calls, type-only imports, generated content and private state | [Capability library](../spec/capability-library-v2.md) |
-| Resource authority and target access | [Access policy](../spec/access-policy-v1.md) |
-| Maintenance, receipts, frozen plans and recovery | [Runtime lifecycle](../spec/runtime-lifecycle-v2.md) |
-| Precompiled runtimes and delivered native bytes | [Setup image](../spec/setup-image-v2.md) |
+| Author programs, type binding and fixed compiler inputs | [Compiler](../spec/compiler-frontends.md), [inputs](../spec/compiler-inputs.md), [author ABI](../spec/authoring-c-abi.md) |
+| Content trees, composition and source-independent identity | [Content container](../spec/content-container.md) |
+| Library calls, type-only imports, generated content and private state | [Capability library](../spec/capability-library.md) |
+| Resource authority and target access | [Access policy](../spec/access-policy.md) |
+| Maintenance, receipts, frozen plans and recovery | [Runtime lifecycle](../spec/runtime-lifecycle.md) |
+| Precompiled runtimes and delivered native bytes | [Setup image](../spec/setup-image.md) |
 
 The four host families are content; machine state; authority and ownership;
 and execution and maintenance. Product libraries combine these mechanisms and

@@ -1,4 +1,4 @@
-//! Community Component Model qualification is separate from the retained WAMR profile.
+//! Bounded Component Model qualification with shared source and execution provenance.
 const std = @import("std");
 const commands = @import("commands.zig");
 const Compile = std.Build.Step.Compile;
@@ -53,7 +53,7 @@ pub fn add(b: *std.Build, inputs: Inputs) Artifacts {
     const c_guest = c_build.binary;
     const rust_guest = rustGuest(b, inputs.host, inputs.wasm_tools);
     const provenance = b.createModule(.{
-        .root_source_file = b.path("tests/aot/provenance.zig"),
+        .root_source_file = b.path("tests/component/provenance.zig"),
         .target = b.graph.host,
     });
     provenance.addImport("core", inputs.core);
@@ -84,6 +84,7 @@ pub fn add(b: *std.Build, inputs: Inputs) Artifacts {
     run.addFileArg(c_build.log);
     const step = commands.step(b, "test:component", "WIT, Canonical ABI, and Pulley qualification");
     step.dependOn(&run.step);
+    failureProvenance(b, inputs, suite, step);
     const production = ipc(b, inputs, engine, provenance, worker, rust_guest);
     step.dependOn(production.step);
     return .{
@@ -100,6 +101,24 @@ pub fn add(b: *std.Build, inputs: Inputs) Artifacts {
         .reference_guest_v2 = production.reference_v2,
         .files_guest = production.files,
     };
+}
+
+fn failureProvenance(
+    b: *std.Build,
+    inputs: Inputs,
+    suite: *Compile,
+    step: *std.Build.Step,
+) void {
+    const guard = b.addExecutable(.{
+        .name = "component-provenance-check",
+        .root_module = inputs.publication.root("tests/component/provenance_check.zig", &.{}),
+    });
+    const witness = b.addRunArtifact(guard);
+    witness.addArtifactArg(suite);
+    witness.addArg("tests/component/main.zig");
+    witness.setCwd(b.path("."));
+    witness.has_side_effects = true;
+    step.dependOn(&witness.step);
 }
 
 const Native = struct {
@@ -340,12 +359,12 @@ fn productionWorker(b: *std.Build, inputs: Inputs, engine: *std.Build.Module) *C
     worker_module.addImport("contracts", inputs.publication.get("contracts"));
     worker_module.addImport("component_engine", engine);
     const app = b.createModule(.{
-        .root_source_file = b.path("apps/component-worker/main.zig"),
+        .root_source_file = b.path("apps/compiler/worker/main.zig"),
         .target = inputs.publication.config.target,
         .optimize = .safe,
     });
     app.addImport("component_worker", worker_module);
-    return b.addExecutable(.{ .name = "niobium-component-worker", .root_module = app });
+    return b.addExecutable(.{ .name = "nb-component-worker", .root_module = app });
 }
 
 const Package = struct {

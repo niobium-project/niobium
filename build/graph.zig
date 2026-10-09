@@ -2,7 +2,6 @@
 
 const std = @import("std");
 const specs = @import("modules.zig");
-const wamr = @import("wamr.zig");
 
 pub const Config = struct {
     target: std.Build.ResolvedTarget,
@@ -22,8 +21,6 @@ pub const Inputs = struct {
 
 /// Package roots fetched by build/steps/deps.zig, one field per third_party/deps.zon package.
 pub const Deps = struct {
-    wamr: std.Build.LazyPath,
-    zstd: std.Build.LazyPath,
     stb_truetype: std.Build.LazyPath,
     inter: std.Build.LazyPath,
 };
@@ -92,13 +89,6 @@ fn createModule(b: *std.Build, config: Config, spec: specs.ModuleSpec) *std.Buil
             if (config.target.result.os.tag == .macos) addMacosSdk(b, config, module);
         },
         .stb_truetype => addStbTruetype(b, module, config.inputs.deps.stb_truetype),
-        .zstd_compress => addZstdCompress(module, config.inputs.deps.zstd),
-        .wamr => if (config.target.result.os.tag == .macos and
-            config.target.result.cpu.arch == .aarch64)
-        {
-            wamr.attach(b, module, config.inputs.deps.wamr);
-            addMacosSdk(b, config, module);
-        },
     }
     if (config.target.result.os.tag == .macos and spec.macos_frameworks.len > 0) {
         addMacosSdk(b, config, module);
@@ -147,50 +137,6 @@ fn addStbTruetype(b: *std.Build, module: *std.Build.Module, upstream: std.Build.
             "-fno-sanitize=undefined",
             "-ffreestanding",
             "-ffp-contract=off",
-        },
-    });
-}
-
-const zstd_sources = [_][]const u8{
-    "common/debug.c",
-    "common/entropy_common.c",
-    "common/error_private.c",
-    "common/fse_decompress.c",
-    "common/pool.c",
-    "common/threading.c",
-    "common/xxhash.c",
-    "common/zstd_common.c",
-    "compress/fse_compress.c",
-    "compress/hist.c",
-    "compress/huf_compress.c",
-    "compress/zstd_compress.c",
-    "compress/zstd_compress_literals.c",
-    "compress/zstd_compress_sequences.c",
-    "compress/zstd_compress_superblock.c",
-    "compress/zstd_double_fast.c",
-    "compress/zstd_fast.c",
-    "compress/zstd_lazy.c",
-    "compress/zstd_ldm.c",
-    "compress/zstd_opt.c",
-    "compress/zstd_preSplit.c",
-    "compress/zstdmt_compress.c",
-};
-
-fn addZstdCompress(module: *std.Build.Module, upstream: std.Build.LazyPath) void {
-    const b = module.owner;
-    const lib = upstream.path(b, "lib");
-    module.link_libc = true;
-    module.addIncludePath(lib);
-    module.addCSourceFiles(.{
-        .root = lib,
-        .files = &zstd_sources,
-        .flags = &.{
-            "-std=c99",
-            "-DZSTD_TRACE=0",
-            "-DZSTD_LEGACY_SUPPORT=0",
-            "-DZSTD_DISABLE_ASM",
-            "-DXXH_NAMESPACE=ZSTD_",
-            "-fno-sanitize=undefined",
         },
     });
 }

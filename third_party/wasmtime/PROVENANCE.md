@@ -51,7 +51,7 @@ Cargo packages from an isolated workspace containing the canonical WIT dependenc
 Both use the same Component C API and worker. Their tests do not qualify a native
 platform's installation or recovery behavior. See the
 [SDK guide](../../docs/development/component-library-sdk.md) and
-[version-two contract](../../docs/spec/capability-library-v2.md).
+[version-two contract](../../docs/spec/capability-library.md).
 
 The native build selects an explicit Rust target from the Zig host OS and ABI;
 it does not assume that rustup's default host matches the Zig linker. GNU targets

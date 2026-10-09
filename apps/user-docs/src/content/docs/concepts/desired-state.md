@@ -29,6 +29,4 @@ The author and libraries own selection and layout policy. The product declares l
 
 The tutorial declares `application` and binds it with `--root application=<absolute-directory>`. It requests the `hello` prefix within that root. No framework-selected product directory or fixed component-selection schema is required for this profile.
 
-Product model versions and per-call state versions have separate compatibility rules. Their changes require explicit applicable upgrade or migration declarations. See the [compiled product contract](https://github.com/niobium-project/niobium/blob/main/docs/spec/program-image-v2.md) and [migration contract](https://github.com/niobium-project/niobium/blob/main/docs/spec/migration-v2.md).
-
-The retained JSON manifest workflow remains documented in the [v1 manifest reference](/reference/manifest/).
+Product model versions and per-call state versions have separate compatibility rules. Their changes require explicit applicable upgrade or migration declarations. See the [compiled product contract](https://github.com/niobium-project/niobium/blob/main/docs/spec/program-image.md) and [migration contract](https://github.com/niobium-project/niobium/blob/main/docs/spec/migration.md).

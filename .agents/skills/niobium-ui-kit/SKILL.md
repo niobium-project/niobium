@@ -5,7 +5,7 @@ description: Use when changing the Niobium installer UI (tokens, kit components,
 
 # Installer UI kit
 
-Pipeline: `ViewModel → screen ZON template binding → UiTree → layout → DisplayList + SemanticTree → rasterizer → backend`. See [docs/architecture/ui-engine.md](../../../docs/architecture/ui-engine.md) and [docs/spec/ui-ir-v1.md](../../../docs/spec/ui-ir-v1.md).
+Pipeline: `ViewModel → screen ZON template binding → UiTree → layout → DisplayList + SemanticTree → rasterizer → backend`. See [docs/architecture/ui-engine.md](../../../docs/architecture/ui-engine.md) and [docs/spec/ui-ir.md](../../../docs/spec/ui-ir.md).
 
 ## Where to make changes
 
@@ -19,7 +19,7 @@ Pipeline: `ViewModel → screen ZON template binding → UiTree → layout → D
 
 ## New component process
 
-1. Register it in the node table of `docs/spec/ui-ir-v1.md` (name, properties, child node rules, semantic role).
+1. Register it in the node table of `docs/spec/ui-ir.md` (name, properties, child node rules, semantic role).
 2. `libs/ui/kit/<component>/root.zig`: `measure`, `emit` (DisplayList), `semantics`, `handleEvent`. Each function ≤ 70 lines.
 3. `libs/ui/kit/catalog.zon`: list the required states `default, hover, pressed, focus, disabled` × `light, dark` × scale `1, 2` (where applicable).
 4. Generate golden with `zig build test:golden -Dupdate=<component>`; inspect it manually in the `zig build ui:gallery` output.

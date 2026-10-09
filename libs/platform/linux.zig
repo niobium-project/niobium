@@ -1,4 +1,4 @@
-//! Linux host integrations (docs/spec/platform-contract-v1.md#linux), freedesktop layout:
+//! Linux file-backed host integrations (docs/spec/platform-contract.md#linux), freedesktop layout:
 //! - shortcut: `<data>/applications/<product>.<slug>.desktop`;
 //! - file association: shared-mime-info package `<data>/mime/packages/<product>-<ext>.xml` plus
 //!   a hidden handler `<data>/applications/<product>.assoc-<ext>.desktop` with `MimeType=`;
@@ -9,7 +9,6 @@
 const std = @import("std");
 const contracts = @import("contracts");
 const api = @import("api.zig");
-const command = @import("command.zig");
 const files = @import("files.zig");
 const host = @import("host.zig");
 const names = @import("names.zig");
@@ -242,45 +241,6 @@ pub fn discard(
     if (p.mime) |m| try files.discard(h.local, m.final, request.tx);
 }
 
-fn systemctl(
-    h: *const host.Host,
-    arena: Allocator,
-    scope: contracts.Scope,
-    args: []const []const u8,
-) Error!command.Outcome {
-    var argv: std.ArrayList([]const u8) = .empty;
-    try argv.append(arena, "systemctl");
-    try argv.append(arena, if (scope == .user) "--user" else "--system");
-    try argv.appendSlice(arena, args);
-    return command.run(h.local.io, arena, argv.items);
-}
-
-fn refresh(
-    h: *const host.Host,
-    arena: Allocator,
-    scope: contracts.Scope,
-    kind: contracts.installation.IntegrationKind,
-) Error!void {
-    if (!h.options.system_managers) return;
-    switch (kind) {
-        // Cache refreshes are advisory: desktops rescan these directories on their own.
-        .shortcut, .file_association => {
-            const apps = try dataDir(h, arena, scope, &.{"applications"});
-            // lint-allow(no-discard-call): update-desktop-database is optional on many desktops.
-            _ = try command.run(h.local.io, arena, &.{ "update-desktop-database", apps });
-            if (kind == .file_association) {
-                const mime = try dataDir(h, arena, scope, &.{"mime"});
-                // lint-allow(no-discard-call): shared-mime-info may be absent on minimal systems.
-                _ = try command.run(h.local.io, arena, &.{ "update-mime-database", mime });
-            }
-        },
-        .service => if (try systemctl(h, arena, scope, &.{"daemon-reload"}) == .failed) {
-            return error.PlatformIntegrationFailed;
-        },
-        .registration => {},
-    }
-}
-
 pub fn activate(
     h: *const host.Host,
     arena: Allocator,
@@ -289,14 +249,6 @@ pub fn activate(
     const p = try pair(h, arena, request);
     if (p.mime) |m| try files.activate(h.local, m, request.tx);
     try files.activate(h.local, p.primary, request.tx);
-    const i = request.integration;
-    try refresh(h, arena, request.scope, i.kind);
-    if (i.kind == .service and h.options.system_managers and i.start == .auto) {
-        const unit = std.fs.path.basename(p.primary.final);
-        if (try systemctl(h, arena, request.scope, &.{ "enable", "--now", unit }) == .failed) {
-            return error.PlatformIntegrationFailed;
-        }
-    }
     return arena.dupe(u8, p.primary.final);
 }
 
@@ -324,7 +276,6 @@ pub fn remove(
     arena: Allocator,
     installed: contracts.installation.Integration,
 ) Error!void {
-    const scope: contracts.Scope = if (h.isSystem(installed.location)) .machine else .user;
     switch (installed.kind) {
         .shortcut => {},
         .file_association => try files.remove(
@@ -332,15 +283,10 @@ pub fn remove(
             try mimeSibling(arena, installed.location),
             files.marker,
         ),
-        .service => if (h.options.system_managers) {
-            const unit = std.fs.path.basename(installed.location);
-            // lint-allow(no-discard-call): a unit that was never enabled needs no disable.
-            _ = try systemctl(h, arena, scope, &.{ "disable", "--now", unit });
-        },
+        .service => {},
         .registration => return error.CapabilityUnsupported,
     }
     try files.remove(h.local, installed.location, files.marker);
-    try refresh(h, arena, scope, installed.kind);
 }
 
 test "freedesktop renderers" {

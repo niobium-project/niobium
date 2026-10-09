@@ -3,6 +3,10 @@ title: Niobium
 description: 面向安装与分发的 DSL，包含 AOT 编译器和预编译原生 runtime。
 ---
 
+**早期 draft：Niobium 暂不可用，暂不接受外部贡献。**
+框架 API、格式、持久化状态和工具暂不提供任何兼容性保障，破坏性更新随时可能发生。
+产品旧安装识别、显式迁移、不兼容状态拒绝和事务恢复仍是必须保留的安全机制。
+
 Niobium 让产品团队通过语言 SDK 或 Starlark 编写安装程序模型。编译器验证能力契约，固定能力库与制品的身份，并将完整的预编译 runtime 封装为产品 setup。
 
 Runtime 绑定用户选择与机器事实，执行固定的 Wasm 能力库，再应用持久化的宿主计划。官方库与产品库使用相同的受检接口。可选组件、SDK 共存和升级路径等产品策略由库与预设定义。
@@ -23,8 +27,7 @@ CLI/用户范围基础已有原生托管 CI 和本地验收切片的记录。PE/
 
 从 [DSL 入门教程](/zh/tutorial/)开始，构建、安装和更新一个小型 Starlark 产品，再学习如何编写与编译它的模型。
 
-SDK 细节见[作者接口指南](https://github.com/niobium-project/niobium/blob/main/docs/development/authoring-v2.md)、[Component SDK](https://github.com/niobium-project/niobium/blob/main/docs/development/component-library-sdk.md)和[跨主机构建指南](https://github.com/niobium-project/niobium/blob/main/docs/development/cross-host-builds.md)。[路线图](/zh/roadmap/)及维护者[文档索引](https://github.com/niobium-project/niobium/blob/main/docs/README.md)区分基础机制、产品预设、完整语言 SDK 和后续平台验收。
+SDK 细节见[作者接口指南](https://github.com/niobium-project/niobium/blob/main/docs/development/authoring.md)、[Component SDK](https://github.com/niobium-project/niobium/blob/main/docs/development/component-library-sdk.md)和[跨主机构建指南](https://github.com/niobium-project/niobium/blob/main/docs/development/cross-host-builds.md)。[路线图](/zh/roadmap/)及维护者[文档索引](https://github.com/niobium-project/niobium/blob/main/docs/README.md)区分基础机制、产品预设、完整语言 SDK 和后续平台验收。
 
-侧边栏将旧版 v1 文档单独分组。保留的 [v1 教程](/zh/start/)及 manifest/`nbpack` 参考页描述它们原有的接口和证据。[术语表](/zh/reference/glossary/)定义当前领域概念。
 
 项目背景和维护方式见[关于本项目](/zh/about/)。

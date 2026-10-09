@@ -16,7 +16,7 @@ pub const Layer = enum(u8) {
     third_party = 20,
 };
 
-pub const CLibrary = enum { none, stb_truetype, zstd_compress, wamr, access };
+pub const CLibrary = enum { none, stb_truetype, access };
 pub const Phase = enum { shared, build_time, install_time, policy };
 
 pub const ModuleSpec = struct {
@@ -50,12 +50,6 @@ pub const specs = [_]ModuleSpec{
         .root = "libs/program/root.zig",
         .layer = .service,
         .imports = &.{ "core", "contracts", "access_policy", "content" },
-    },
-    .{
-        .name = "wasm_profile",
-        .root = "libs/wasm_profile/root.zig",
-        .layer = .service,
-        .imports = &.{"contracts"},
     },
     .{
         .name = "tar",
@@ -132,7 +126,7 @@ pub const specs = [_]ModuleSpec{
     },
     .{
         .name = "runtime_process",
-        .root = "apps/runtime-v2/main.zig",
+        .root = "apps/runtime/main.zig",
         .layer = .orchestration,
         .imports = &.{
             "image",            "program",  "contracts", "kernel", "evaluator", "host_primitives",
@@ -141,53 +135,16 @@ pub const specs = [_]ModuleSpec{
         .phase = .install_time,
     },
     .{
-        .name = "capability_sdk",
-        .root = "libs/capability_sdk/root.zig",
-        .layer = .service,
-        .imports = &.{},
-    },
-    .{
         .name = "compiler",
         .root = "libs/compiler/root.zig",
         .layer = .orchestration,
-        .imports = &.{ "program", "contracts", "wasm_profile", "content", "image" },
+        .imports = &.{ "program", "contracts", "content", "image" },
         .phase = .build_time,
-    },
-    .{
-        .name = "wasm_host",
-        .root = "libs/wasm_host/root.zig",
-        .layer = .service,
-        .imports = &.{ "contracts", "wasm_profile", "wamr" },
-        .phase = .install_time,
-        .macos_arm64_only = true,
-    },
-    .{
-        .name = "runtime",
-        .root = "libs/runtime/root.zig",
-        .layer = .orchestration,
-        .imports = &.{ "program", "contracts", "platform", "wasm_host" },
-        .phase = .install_time,
-        .macos_arm64_only = true,
-    },
-    .{
-        .name = "wamr",
-        .root = "third_party/wamr/bindings.zig",
-        .layer = .third_party,
-        .imports = &.{},
-        .c_library = .wamr,
-        .phase = .install_time,
-        .macos_arm64_only = true,
     },
     .{
         .name = "platform",
         .root = "libs/platform/root.zig",
         .layer = .platform,
-        .imports = &.{ "core", "contracts" },
-    },
-    .{
-        .name = "manifest",
-        .root = "libs/manifest/root.zig",
-        .layer = .service,
         .imports = &.{ "core", "contracts" },
     },
     .{
@@ -209,83 +166,11 @@ pub const specs = [_]ModuleSpec{
         .imports = &.{ "core", "contracts", "platform", "tar" },
     },
     .{
-        .name = "executor",
-        .root = "libs/executor/root.zig",
-        .layer = .service,
-        .imports = &.{ "core", "contracts", "platform" },
-    },
-    .{
-        .name = "resolver",
-        .root = "libs/resolver/root.zig",
-        .layer = .flow,
-        .imports = &.{ "core", "contracts", "manifest", "trust", "repository" },
-    },
-    .{
-        .name = "planner",
-        .root = "libs/planner/root.zig",
-        .layer = .flow,
-        .imports = &.{ "core", "contracts", "manifest", "platform" },
-    },
-    .{
         .name = "privilege",
         .root = "libs/privilege/root.zig",
         .layer = .flow,
-        .imports = &.{ "core", "contracts", "platform", "executor" },
-        .macos_frameworks = &.{"Security"},
-    },
-    .{
-        .name = "bootstrap",
-        .root = "libs/bootstrap/root.zig",
-        .layer = .flow,
         .imports = &.{ "core", "contracts", "platform" },
-    },
-    .{
-        .name = "transaction",
-        .root = "libs/transaction/root.zig",
-        .layer = .flow,
-        .imports = &.{ "core", "contracts", "platform", "executor", "package", "planner" },
-    },
-    .{
-        .name = "portable",
-        .root = "libs/portable/root.zig",
-        .layer = .flow,
-        .imports = &.{
-            "core",
-            "contracts",
-            "platform",
-            "manifest",
-            "trust",
-            "repository",
-            "package",
-            "resolver",
-        },
-    },
-    .{
-        .name = "engine",
-        .root = "libs/engine/root.zig",
-        .layer = .orchestration,
-        .imports = &.{
-            "core",
-            "contracts",
-            "platform",
-            "manifest",
-            "trust",
-            "repository",
-            "package",
-            "executor",
-            "resolver",
-            "planner",
-            "transaction",
-            "privilege",
-            "bootstrap",
-            "portable",
-        },
-    },
-    .{
-        .name = "packager",
-        .root = "libs/packager/root.zig",
-        .layer = .orchestration,
-        .imports = &.{ "core", "contracts", "manifest", "package", "trust", "zstd" },
+        .macos_frameworks = &.{"Security"},
     },
     .{
         .name = "conformance",
@@ -334,20 +219,11 @@ pub const specs = [_]ModuleSpec{
         .imports = &.{},
         .c_library = .stb_truetype,
     },
-    .{
-        .name = "zstd",
-        .root = "third_party/zstd/bindings.zig",
-        .layer = .third_party,
-        .imports = &.{},
-        .c_library = .zstd_compress,
-    },
 };
 
 /// Modules allowed to spawn processes (enforced by tools/lint, rule spawn-allowlist).
 pub const spawn_allowlist = [_][]const u8{
     "libs/component_client/", // Disposable, budgeted instance of a fixed published executable.
-    "libs/bootstrap/",
-    "libs/portable/",
     "libs/privilege/",
     "libs/platform/",
     "tools/",
@@ -364,15 +240,11 @@ pub const ptr_cast_allowlist = [_][]const u8{
     "libs/evaluator/", // Trusted evaluator/provider callback context, never guest memory.
     "libs/platform/",
     "libs/privilege/",
-    "libs/engine/events.zig",
     "libs/ui/backend/",
     "libs/ui/render/",
-    "apps/libdistribution/",
-    "apps/libcompiler/",
+    "apps/compiler-sdk/",
     "apps/runtime/",
-    "apps/runtime-v2/",
-    "apps/compiler-v2/", // Captured inspector/finalizer callback context, never guest memory.
-    "libs/wasm_host/",
+    "apps/compiler/", // Captured inspector/finalizer callback context, never guest memory.
     "third_party/",
 };
 

@@ -42,7 +42,7 @@ The following checks apply to the retained TUF distribution profile and its libr
 
 - [ ] `export fn` does not expose Zig types, slices, error unions, or allocators.
 - [ ] Every error maps to the owning ABI status; output buffers are provided by the caller or have a matching free function.
-- [ ] The owning header (`compiler_v2.h`, versioned WIT or a retained header) matches its implementation and consumer tests; its designated test lane ran. C object handles reject foreign contexts and wrong kinds. Transient Component resources never enter durable values.
+- [ ] The owning header (`compiler.h`, versioned WIT) matches its implementation and consumer tests; its designated test lane ran. C object handles reject foreign contexts and wrong kinds. Transient Component resources never enter durable values.
 
 ## Size and dependencies
 

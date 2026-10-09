@@ -14,7 +14,7 @@
 
 ## Debugging process
 
-1. **Pin the reproduction**: a sim failure gives a seed; replay it directly with `zig build test:sim -Dseeds=1 -- --seed=<n>`; for an e2e failure, look at `.evidence/e2e/<UTC>/`. Write down what you observed separately from what you suspect.
+1. **Pin the reproduction**: a failure identifies its case and failpoint; replay the owning lane and inspect its `.evidence/<suite>/<UTC>/` record. Write down what you observed separately from what you suspect.
 2. **Find the first anomaly first**: read the journal (`<root>/journal/*.jsonl`) in record order; the first record that deviates from the spec is near the root cause. Fix that deviation, not a later symptom.
 3. **Crash records**: `<root>/logs/crash-<UTC>.json` contains the phase, tx-id, and stack addresses; resolve them against symbols from `zig build -Doptimize=ReleaseSafe`.
 4. **Do not rerun to get green**: treat flakiness as a real bug first; add `-Dtsan` for concurrency issues, switch to a controllable clock for timing issues.

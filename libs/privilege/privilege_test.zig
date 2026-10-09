@@ -352,3 +352,26 @@ test "a dead helper is PrivilegeHelperLost, and stays lost" {
     r.to_helper[1].close(r.io);
     r.to_broker[0].close(r.io);
 }
+
+test "N1-INV-08 helper refuses an authenticated handshake with an undeclared version" {
+    if (builtin.os.tag == .windows) return error.SkipZigTest;
+    var w: World = .{ .tmp = undefined, .arena = undefined };
+    try w.init();
+    defer w.deinit();
+    const a = w.arena.allocator();
+    var r = rig(&w, .{ .tx = session.tx, .nonce = session.nonce });
+    try r.start();
+    defer r.stop();
+    try rawFrame(&r.writer.interface, a, .{
+        .v = 0,
+        .type = .hello,
+        .tx = session.tx,
+        .nonce = nonce,
+        .managed_roots = &.{w.root},
+    });
+    const reply = try ipc.decode(a, try ipc.readFrame(a, &r.reader.interface));
+    try std.testing.expectEqual(false, reply.ok.?);
+    try std.testing.expectEqualStrings("bad_request", reply.@"error".?);
+    r.stop();
+    try std.testing.expectEqual(helper.Outcome.protocol_violation, r.outcome);
+}

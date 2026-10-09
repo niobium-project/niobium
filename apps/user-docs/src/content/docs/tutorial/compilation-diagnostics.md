@@ -26,7 +26,7 @@ The `.json` product is compiler transport, not a configuration file to write by 
 
 Raw source bytes and canonical content have separate identities even when this example supplies an already canonical container. The runtime, metadata, library, compiled product and final installer also have separate identities. Digest agreement proves which bytes you have; trusted acquisition establishes who supplied them. This source-built exercise does not establish an external publisher's authority.
 
-See [Compiler and frontends v2](https://github.com/niobium-project/niobium/blob/main/docs/spec/compiler-frontends-v2.md) and [Locked compiler inputs](https://github.com/niobium-project/niobium/blob/main/docs/spec/compiler-inputs-v1.md) for the full pipeline.
+See [Compiler and frontends v2](https://github.com/niobium-project/niobium/blob/main/docs/spec/compiler-frontends.md) and [Locked compiler inputs](https://github.com/niobium-project/niobium/blob/main/docs/spec/compiler-inputs.md) for the full pipeline.
 
 ## Distinguish frontend and compiler errors
 
@@ -51,7 +51,7 @@ DIAG_BUILD="$TUTORIAL_WORK/diagnostics"
   --source "$NIOBIUM_REPO/examples/dsl-tutorial" --out "$DIAG_BUILD"
 sed 's/input("enabled", value("bool", True))/input("enabled", value("string", "true"))/' \
   "$DIAG_BUILD/product.star" > "$DIAG_BUILD/bad-type.star"
-"$NIOBIUM_REPO/zig-out/bin/niobium-starlark-v2" \
+"$NIOBIUM_REPO/zig-out/bin/nb-starlark-v2" \
   --source "$DIAG_BUILD/bad-type.star" \
   --out "$DIAG_BUILD/bad-type.program.json" \
   --source-map "$DIAG_BUILD/bad-type.sources.json"
@@ -60,7 +60,7 @@ sed 's/input("enabled", value("bool", True))/input("enabled", value("string", "t
 Author evaluation succeeds. Compile that emitted model:
 
 ```sh
-"$NIOBIUM_REPO/zig-out/bin/niobium-compiler-v2" compile \
+"$NIOBIUM_REPO/zig-out/bin/nb-builder" compile \
   --program "$DIAG_BUILD/bad-type.program.json" \
   --source-map "$DIAG_BUILD/bad-type.sources.json" \
   --lock "$DIAG_BUILD/inputs.lock.json" \
@@ -94,11 +94,11 @@ input("enabled", value("bool", True))
 The unmodified `product.star` already contains that answer. Emit it into fresh files, then build:
 
 ```sh
-"$NIOBIUM_REPO/zig-out/bin/niobium-starlark-v2" \
+"$NIOBIUM_REPO/zig-out/bin/nb-starlark-v2" \
   --source "$DIAG_BUILD/product.star" \
   --out "$DIAG_BUILD/good.program.json" \
   --source-map "$DIAG_BUILD/good.sources.json"
-"$NIOBIUM_REPO/zig-out/bin/niobium-compiler-v2" compile \
+"$NIOBIUM_REPO/zig-out/bin/nb-builder" compile \
   --program "$DIAG_BUILD/good.program.json" \
   --source-map "$DIAG_BUILD/good.sources.json" \
   --lock "$DIAG_BUILD/inputs.lock.json" \
@@ -139,8 +139,8 @@ Both comparisons exit 0 with no output. The failed build preserves the previousl
 
 The preparation tool requires a new destination directory. The Starlark frontend creates its model and optional sidecar exclusively; use new filenames for another evaluation. If a filename already exists, choose a new name instead of treating the refusal as a language error. The compiler publishes an assembled image only after verification and required final signing; its publication can replace an existing installer.
 
-The tutorial's content-only second release retains `model_version=1`, `Call.id="deploy"` and `state_version=1`, while increasing `release_sequence`. Model transitions and call-state transitions have independent compatibility declarations. Do not invent compatibility by incrementing a version or renaming a call. The [migration contract](https://github.com/niobium-project/niobium/blob/main/docs/spec/migration-v2.md) defines the advanced cases.
+The tutorial's content-only second release retains `model_version=1`, `Call.id="deploy"` and `state_version=1`, while increasing `release_sequence`. Model transitions and call-state transitions have independent compatibility declarations. Do not invent compatibility by incrementing a version or renaming a call. The [migration contract](https://github.com/niobium-project/niobium/blob/main/docs/spec/migration.md) defines the advanced cases.
 
 The supplied macOS finalizer covers the ad-hoc measurement profile. Production publisher signing and platform qualification require their own workflows and evidence; the tutorial's successful compilation does not establish them. See [Status and platforms](/status/) for the recorded scope.
 
-Return to [the tutorial overview](/tutorial/) or use [Authoring v2](https://github.com/niobium-project/niobium/blob/main/docs/development/authoring-v2.md) to continue with the full API.
+Return to [the tutorial overview](/tutorial/) or use [Authoring v2](https://github.com/niobium-project/niobium/blob/main/docs/development/authoring.md) to continue with the full API.

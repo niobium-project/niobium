@@ -1,7 +1,0 @@
-// macOS arm64 runtime PoC, including its 1 MiB product slot and classic Wasm interpreter.
-// Establish measured baselines with zig build aot-size -- --write and review the growth.
-.{
-    .targets = .{
-        .{ .name = "aarch64-macos", .bytes = 2071584 },
-    },
-}

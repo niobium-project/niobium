@@ -71,7 +71,7 @@ test "N1-AC-20 archive keys retain the source UTC month across publication retri
     );
 }
 
-test "N1-AC-20 legacy saved keys migrate without accepting unrelated object paths" {
+test "N1-AC-20 unprefixed and unrelated saved keys are rejected" {
     var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
     defer arena.deinit();
     const a = arena.allocator();
@@ -84,7 +84,7 @@ test "N1-AC-20 legacy saved keys migrate without accepting unrelated object path
     var value = fixtureReport();
     try store.collect(a, io, path, &value);
     const attachments = try a.dupe(model.Attachment, value.attachments);
-    for (attachments) |*attachment| attachment.key = try model.legacyEvidenceKey(
+    for (attachments) |*attachment| attachment.key = try model.relativeEvidenceKey(
         a,
         value,
         attachment.file,
@@ -92,11 +92,7 @@ test "N1-AC-20 legacy saved keys migrate without accepting unrelated object path
     );
     value.attachments = attachments;
     try store.save(a, io, path, value);
-    var saved = try store.load(a, io, path);
-    try store.rekey(a, &saved);
-    try store.save(a, io, path, saved);
-    const migrated = try store.load(a, io, path);
-    try std.testing.expect(std.mem.startsWith(u8, migrated.attachments[0].key, "ci-evidence/"));
+    try std.testing.expectError(error.EvidenceKeyMismatch, store.load(a, io, path));
     attachments[0].key = "ci-evidence/2026-10/evidence/v1/unrelated/object";
     value.attachments = attachments;
     try store.save(a, io, path, value);
@@ -128,8 +124,8 @@ test "N1-AC-20 malformed, missing, changed and partial evidence is never a pass"
     value.verdict = .FAIL;
     value.reason = "Timeout";
     try model.validate(value);
-    value.suite = .e2e;
-    value.lane = "L4";
+    value.suite = .conformance;
+    value.lane = "L3";
     value.complete = true;
     value.verdict = .PASS;
     value.reason = "";

@@ -84,7 +84,7 @@ fn sdkInputs(arena: std.mem.Allocator, io: std.Io, sdk: Dir, out: Dir) !SDKInput
     var entries: std.ArrayList(compiler.lock.Input) = .empty;
     const suffix = if (@import("builtin").target.os.tag == .windows) ".exe" else "";
     const maximum = limits.native_image_bytes;
-    const runtime_path = "bin/niobium-runtime-v2" ++ suffix;
+    const runtime_path = "bin/niobium-runtime" ++ suffix;
     const metadata_path = "share/niobium/runtime-package.json";
     const metadata_maximum = limits.manifest_bytes;
     var runtime = try copy(arena, io, sdk, out, runtime_path, "runtime", .runtime, maximum);
@@ -112,7 +112,7 @@ fn sdkInputs(arena: std.mem.Allocator, io: std.Io, sdk: Dir, out: Dir) !SDKInput
     runtime.dependencies = &.{"runtime-metadata"};
     metadata.version = package.version;
     try entries.appendSlice(arena, &.{ runtime, metadata });
-    const worker_path = "bin/niobium-component-worker" ++ suffix;
+    const worker_path = "bin/nb-component-worker" ++ suffix;
     const worker = try copy(arena, io, sdk, out, worker_path, "worker", .tool, maximum);
     try entries.append(arena, worker);
     const files_path = "lib/niobium/stdlib/files.wasm";

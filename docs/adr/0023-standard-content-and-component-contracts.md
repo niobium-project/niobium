@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-10-08
 - **Amended by:** [ADR-0024](0024-native-runtime-dependency-qualification.md) (native runtime publication qualification), [ADR-0025](0025-baseline-cpu-runtime-publication.md) (CPU publication contracts), [ADR-0026](0026-pinned-rust-component-wasm.md) (Component implementation language)
-- **Amends:** [ADR-0022](0022-installer-dsl-and-aot-toolchain.md) (contract representation and runtime qualification), [ADR-0005](0005-tar-zst-artifact-format.md) (new content profile), [ADR-0001](0001-repository-baseline-and-zig-only-toolchain.md) (pinned external toolchains)
+- **Amends:** [ADR-0022](0022-installer-dsl-and-aot-toolchain.md) (contract representation and runtime qualification), retired ADR-0005 (Git history) (new content profile), [ADR-0001](0001-repository-baseline-and-zig-only-toolchain.md) (pinned external toolchains)
 
 ## Context
 
@@ -28,7 +28,8 @@ OS, architecture and scope combinations.
    and explicit symbolic links. Its logical identity is independent of source
    location and transport encoding. A versioned POSIX pax/tar profile owns its
    canonical representation; Niobium does not introduce a new archive encoding.
-   The retained artifact-v1 layout and its no-link rule keep their original scope.
+   The independent tar.zst extraction layout and its no-link rule keep their
+   own scope.
 3. Source bytes, logical content, derivation, deployment resources and final
    delivered images have separate identities. A reference does not grant write
    authority. Runtime derivation may produce members only within fixed library,
@@ -58,8 +59,8 @@ OS, architecture and scope combinations.
    binding, emission, assembly and signing boundaries. Author programs are
    reevaluated by default. Backend caches use fixed semantic inputs and verified
    outputs; cancellation and publication failures preserve prior valid output.
-9. Public authoring, library, program and durable-state contracts evolve through
-   new versions. The new baseline rejects incompatible PoC state before mutation;
+9. Public authoring, library, program and durable-state contracts carry explicit
+   versions, with no draft framework compatibility guarantee. The new baseline rejects incompatible PoC state before mutation;
    it does not silently reinterpret v1. Recovery consumes frozen host plans and
    never requires a guest, an author program or a newly resolved dependency.
 

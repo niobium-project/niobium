@@ -3,8 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-10-08
 - **Amended by:** [ADR-0023](0023-standard-content-and-component-contracts.md) (standard content, Component contracts and cross-host compilation)
-- **Supersedes:** [ADR-0018](0018-built-in-feature-modules.md), [ADR-0019](0019-presets-and-themes.md)
-- **Amends:** [ADR-0001](0001-repository-baseline-and-zig-only-toolchain.md) (toolchain scope), [ADR-0002](0002-library-first-core-and-c-abi.md) (public facade scope), [ADR-0003](0003-strict-json-manifest.md) (authoring interface), [ADR-0004](0004-tuf-profile-v1.md) (distribution policy ownership), [ADR-0006](0006-transaction-and-pointer-swap-commit.md) (deployment profile scope), [ADR-0007](0007-same-binary-privilege-helper.md) (capability implementation boundary), [ADR-0008](0008-shared-software-renderer.md) (standard UI scope), [ADR-0020](0020-distribution-delivery-milestones.md) (distribution implementation model)
+- **Amends:** [ADR-0001](0001-repository-baseline-and-zig-only-toolchain.md) (toolchain scope), [ADR-0004](0004-tuf-profile.md) (distribution policy ownership), [ADR-0008](0008-shared-software-renderer.md) (standard UI scope), [ADR-0020](0020-distribution-delivery-milestones.md) (distribution implementation model)
 
 ## Context
 
@@ -53,14 +52,13 @@ implementation evidence does not establish that the new architecture is complete
    and is frozen before mutation. Recovery uses the recorded program and library
    identities, never a newly resolved implementation.
 8. Products declare supported upgrade sources, migrations, bridge requirements
-   and refusals. Core validates and executes those declarations. Framework and
-   library persistent-state compatibility are separate contracts. Business data
+   and refusals. Core validates and executes those declarations. The draft framework gives no cross-version compatibility guarantee. Product
+   and library identities still require explicit validation. Business data
    remains owned by the product; no database rollback guarantee is inferred from
    deployment rollback.
 9. The initial reset does not require a bridge from the old manifest, C ABI or
-   installed-state formats. Subsequent public format evolution follows explicit
-   versioned compatibility rules. Historical v1 records remain evidence for the
-   old implementation only.
+   installed-state formats. Breaking framework changes may occur at any time. Unknown persisted formats
+   refuse before mutation; no silent conversion is permitted.
 
 ADR-0020's online installer, complete offline file and SFX milestones remain
 planned delivery outcomes. Their implementations use the compiled program,
@@ -77,12 +75,11 @@ or place AWS CLI in product runtimes.
 The normative owners are the compiler frontend, program image, capability library,
 runtime lifecycle and migration specifications indexed in [docs/README](../README.md).
 Implementation sequencing and independent work packages belong to the
-[current roadmap](../roadmap-v0.2.md). Results belong to the N2 acceptance plan.
+[current roadmap](../roadmap.md). Results belong to the N2 acceptance plan.
 
 ## Consequences
 
-- The old repository-only module and JSON preset proposals are superseded. Accepted
-  ADR bodies remain unchanged; their amended portions have the scope stated above.
+- The old repository-only module and JSON preset proposals are superseded. Current ADRs are consolidated in place under ADR-0016.
 - Zig remains the language of the native compiler/runtime implementation. Product
   authoring languages and Wasm library toolchains are separate consumers.
 - Existing trust, extraction, platform, UI and transaction code can be reused where

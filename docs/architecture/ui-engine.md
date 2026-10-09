@@ -1,9 +1,14 @@
 # UI engine
 
+The gallery and presentation layer are independent of the current headless runtime.
+Their controller commands do not establish an installer integration. A typed
+kernel adapter and real lifecycle/accessibility qualification remain planned.
+
+
 ```text
 tokens.json ──gen-tokens──► tokens module (with contrast gate)
 screens/*.zon ──comptime──► static templates (binding validation)
-engine state ─► ViewModel ─► bind ─► UiTree ─► layout ─► DisplayList ─► rasterizer ─► backend
+presentation state ─► ViewModel ─► bind ─► UiTree ─► layout ─► DisplayList ─► rasterizer ─► backend
                                                      └─► SemanticTree ─► (accessibility bridge, deferred)
 ```
 
@@ -27,9 +32,9 @@ engine state ─► ViewModel ─► bind ─► UiTree ─► layout ─► Dis
   - Win32 (`win32.zig`): `CreateWindowExW` + `SetDIBitsToDevice` (top-down 32-bit DIB), per-monitor DPI v2, dark title bar via DWM attribute 20.
   - X11 (`x11.zig` + `x11_wire.zig`): links neither libX11 nor libc and speaks the core protocol directly over `/tmp/.X11-unix/X<n>`; `x11_wire` is pure-function encoding/decoding, unit-tested on every host; `x11.zig` handles only the socket, self-pipe wakeup and `poll`. Requires a 24-bit TrueColor, 32 bpp, LSB root visual.
   - offscreen (`offscreen.zig`): the same rendering path used by golden, gallery and tests.
-  - Shared conventions (`window.zig`): coordinates are in device pixels; OS callbacks only push events into a bounded queue of capacity 64 (when full, pointer motion is dropped first), and errors are not propagated inside callbacks; `Waker` lets the worker thread wake the UI thread's `next`. `driver.zig` is the event loop: one frame every 16 ms while animating, otherwise it blocks waiting. `host.zig` connects controller commands to an `Operation` (an engine transaction), and the worker thread merges progress through a `Mailbox` and then wakes the UI thread.
-  - Verification: `zig build workbench -- window --smoke` opens a window, reads back the window pixels and compares them with the canvas. AppKit reads back through the view cache (Display P3 conversion allows an error of 40 per channel); X11 uses `GetImage` and is bit-identical under Xvfb. Win32 is currently only cross-compiled; runtime verification is in vm-smoke.
+  - Shared conventions (`window.zig`): coordinates are in device pixels; OS callbacks only push events into a bounded queue of capacity 64 (when full, pointer motion is dropped first), and errors are not propagated inside callbacks; `Waker` lets the worker thread wake the UI thread's `next`. `driver.zig` is the event loop: one frame every 16 ms while animating, otherwise it blocks waiting. `host.zig` connects controller commands to an injected `Operation`, and the worker thread merges progress through a `Mailbox` and then wakes the UI thread.
+  - Verification: `zig build ui:run -- window --smoke` opens a window, reads back the window pixels and compares them with the canvas. AppKit reads back through the view cache (Display P3 conversion allows an error of 40 per channel); X11 uses `GetImage` and is bit-identical under Xvfb. Win32 is currently only cross-compiled; native window execution requires separately recorded qualification.
 
 ## Threads
 
-The UI thread owns the window and rendering; the engine runs on a worker thread and publishes snapshots (phase, progress, message) through a bounded queue. The UI only reads snapshots, and user actions are sent back to the engine as intents. When the heartbeat exceeds a threshold, it shows "Not responding" and offers cancel.
+The independent UI driver owns window and rendering; an injected operation runs on a worker thread and publishes snapshots (phase, progress, message) through a bounded queue. The UI only reads snapshots, and user actions are sent back to the engine as intents. When the heartbeat exceeds a threshold, it shows "Not responding" and offers cancel.

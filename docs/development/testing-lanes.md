@@ -1,58 +1,36 @@
 # Test lanes and evidence
 
-The DSL/AOT lane uses `zig build aot:test aot:e2e` and [N2 acceptance](../acceptance-plan-v0.2.md). Native N2 execution targets macOS arm64 user scope. Existing N1 lanes remain regression evidence for their legacy interfaces.
+The current product lane uses `zig build core:e2e`; current foundational contracts
+use `test:core`, `test:component` and `test:author`. Independent UI, TUF, package
+and platform tests retain their own scopes in [acceptance](../acceptance-plan.md).
 
-| Lane | Content | Command | Part of verify |
-|---|---|---|---|
-| L0 static | fmt, ast-check, lint, check, check-docs, complexity, schema, size gate, binary lint | `zig build check`, `zig build check:size` | Yes |
-| L1 pure core | Per-module unit tests (SafeAllocator), resolver/planner/state machine on VirtualPlatform | `zig build test` | Yes |
-| L2 faults and security | Crash injection at every kill point, `checkAllAllocationFailures`, TUF negative cases, malicious archives, seeded sim | `zig build test`, `zig build test:sim` | Yes (sim 500 seeds) |
-| L2 concurrency | ThreadSanitizer | `zig build test -Dtsan` | Yes (macOS/Linux hosts) |
-| L2 fuzz | Integrated fuzzer + `tests/fuzz/corpus` | `zig build test:fuzz` | No (on demand) |
-| L3 platform contract | Host backend runs PlatformContract in a temporary root | `zig build test` | Yes |
-| L4 scenarios | `examples/hello` online (local HTTP)/offline install → update → rollback release → repair → uninstall; UI golden | `zig build test:e2e`, `zig build test:golden` | Yes |
-| L4 build API | `examples/hello` as a standalone package depending on this repository by path, producing an offline bundle with `build/sdk.zig` ([consuming](consuming.md)) | `zig build example:hello` | Yes |
-| L5 real OS | Parallels Windows 11, Ubuntu ARM64 | `zig build vm:smoke` | No; reports BLOCKED when unavailable |
+| Lane | Content | Command |
+|---|---|---|
+| L0 | Static, documentation, schema, dependency and size checks | `zig build check`, `zig build verify` |
+| L1 | Pure module and author tests | `zig build test test:core test:author` |
+| L2 | Kill points, allocation failures, malicious archives and TUF inputs | `zig build test:kernel core:e2e test:fuzz` |
+| L2 concurrency | ThreadSanitizer | `zig build test:tsan` |
+| L3 | Independent file-backed platform profile | `zig build test` |
+| L4 | Final installer lifecycle, migration, refusal and recovery | `zig build core:e2e` |
+| L4 UI | Independent deterministic renderer snapshots | `zig build test:golden` |
+| L5 | Actual target execution | Transferred-byte native witnesses, separately recorded |
 
 ## Selection and saved reports
 
-The normative contract is [test-system-v1](../spec/test-system-v1.md); construction state and exit
-criteria are in the [maintainer roadmap](../roadmap-v0.2.md#test-system-construction).
+The [test-system contract](../spec/test-system.md) owns execution and evidence.
+`zig build test` runs the default registered selection. Unknown or empty selections
+fail; case filters require their suite. `verify` rejects narrowing filters.
+`-Dtarget` changes compilation, while an execution record names the host that ran it.
 
-```sh
-zig build test
-zig build test "-Dsuite=conformance,e2e"
-zig build test -Dsuite=e2e -Dcase=online-lifecycle
-zig build test -Dsuite=sim -Dseeds=2000 -Dseed-start=42
-zig build verify --cache-poison=disallowed
-zig build test:evidence -Daction=validate -Dinput=.evidence/e2e/<execution>
-zig build test:evidence -Daction=publish -Dinput=.evidence/e2e/<execution>
-```
+Use `zig build test:evidence -Daction=validate -Dinput=.evidence/<suite>/<execution>`
+to validate a saved record. Publication uses `-Daction=publish` and does not execute
+tests. Each run records source revision/dirty identity, binary digest, command,
+exit status and bounded stdout/stderr. Incomplete records remain NOT_RUN or FAIL;
+evidence I/O errors fail the build. Preserve the first failing record.
 
-`test` defaults to unit and host conformance. Registered suites are `unit`, `conformance`, `e2e`,
-`sim`, `golden`, `fuzz`, `c-smoke`. Stable case IDs are `host-user`, `host-machine`,
-`online-lifecycle`, `repair-uninstall`, `offline-bundle`, `artifact-tampering`. Unknown/empty
-selections fail. Quote comma-separated suite arguments in PowerShell. Case selection requires its suite; unselected cases do not claim a result.
-`verify` rejects suite/case filters. Simulation accepts 1–100,000 seeds and a non-overflowing start.
-`-Dtarget` changes compilation; native execution evidence still names the machine that ran it.
-`-Dcoverage` retains kcov and `-Dtsan` retains the concurrency lane. The old `sim`, `e2e`, `golden`,
-`fuzz` and `c-smoke` steps are aliases of the same execution nodes. VM execution stays explicit.
-Run Windows e2e (including `verify`) in a disposable OS account: temporary home variables do not
-redirect HKCU, and these CLI cases exercise the sample product's native uninstall registration.
-Evidence-tool timeout/output regressions use stock Windows PowerShell as a bounded child fixture;
-POSIX hosts use their standard shell utilities. The assertions and runner remain Zig.
-
-Continuous fuzzing uses Zig's native protocol: `zig build test:fuzz -Dcontinuous-fuzz --fuzz` (or
-`zig build test -Dsuite=fuzz -Dcontinuous-fuzz --fuzz=1000` for a bounded investigation). This
-explicit mode bypasses the saved-run wrapper; ordinary `fuzz` records corpus replay. Native fuzz
-exploration has no archived suite verdict and is not part of `verify`.
-
-Each binary writes a uniquely named saved run under `.evidence/<suite>/`. `report.json` includes
-separate stdout/stderr attachments and conformance/e2e case fragments. Other suites report the
-binary's aggregate outcome. Incomplete runs retain NOT_RUN or the observed failure; evidence I/O
-errors fail the build. To replay a simulation, use its saved seed count/start and tested revision.
-Publication reads saved data and never executes tests. It requires the pinned AWS CLI and explicit
-R2 configuration; testing and validation do not contact R2.
+Continuous fuzzing is explicit and separate from bounded corpus replay:
+`zig build test:fuzz -Dcontinuous-fuzz --fuzz`. It does not produce a saved suite
+verdict or qualify a platform by itself.
 
 ## Continuous integration
 
@@ -61,7 +39,7 @@ GitHub Actions on the public repository. The required check is `CI / linux`. A n
 | When | Job | Command |
 |---|---|---|
 | Every pull request and push to `main` | `linux-tests` | `zig build check` |
-| Code, build, test, toolchain, workflow or unknown executable input | `linux-tests`, then advisory `coverage` | `zig build test -Dsuite=unit,conformance,e2e`, `zig build test:c-smoke`; coverage uses kcov |
+| Code, build, test, toolchain, workflow or unknown executable input | `linux-tests`, then advisory `coverage` | `zig build test -Dsuite=unit,conformance`, `zig build test:author`; coverage uses kcov |
 | UI implementation or golden inputs | `linux-tests` | `zig build test:golden` |
 | Code inputs above, manual dispatch, or `ci:hosts` | `windows`, `macos` | Selected native unit/conformance/e2e; macOS also ThreadSanitizer |
 | Every CI run, even when a selected job failed or was cancelled | `linux` | Aggregate: changes and Linux must succeed; selected Windows/macOS must succeed; unselected jobs must be skipped |
@@ -73,7 +51,7 @@ GitHub Actions on the public repository. The required check is `CI / linux`. A n
 
 ## Evidence
 
-- Test names start with an acceptance ID, for example `test "N1-INV-01: crash at every op recovers to OLD or NEW"`; `tools/check-docs` verifies that the ID exists in [acceptance-plan-v0.1](../acceptance-plan-v0.1.md).
+- Test names start with an acceptance ID, for example `test "N1-INV-01: crash at every op recovers to OLD or NEW"`; `tools/check-docs` verifies that the ID exists in [acceptance-plan-v0.1](../acceptance-plan.md).
 - Catalog suites write structured runs to `.evidence/<suite>/<execution>/`; gallery and vm-smoke retain their existing evidence layouts.
 - On failure, keep the first evidence; find the root cause first, and do not rerun until green.
 - `zig build ui:gallery` writes every catalog case and page (platform × theme × 100/200%) to `.evidence/ui-gallery/<UTC>/` with an `index.html`; it is for human review only and is not a gate.
@@ -159,33 +137,9 @@ be presented as conformance PASS. The future viewer is a separate task.
 - Rasterization happens entirely in software and stb_truetype is compiled with `-ffp-contract=off`, so the same golden is bit-identical on macOS, Linux aarch64 and Linux x86_64. `zig build test:cross` installs `suite-golden`; run `zig-out/cross-tests/<target>/suite-golden` from the repository root to recheck on the target machine.
 - Waiting and concurrency use barriers, failpoints and a controllable clock, not sleep.
 
-## Seeded sim
+## Crash and recovery qualification
 
-- `zig build test:sim -Dseeds=N -Dseed-start=S` runs seeds S…S+N-1 for every scenario; a failure prints the scenario name and seed.
-- Reproduce: `zig build test:sim -Dseeds=1 -Dseed-start=<failing seed>`; the same seed produces the same fault sequence (`libs/platform/fault.zig`).
-- Scenarios live in `tests/sim/scenarios.zig`; each scenario asserts only invariants (OLD or NEW, no leftover lock, replayable journal), not specific errors.
-
-## Crash records
-
-Shipping builds (`setup`, helper, `libdistribution`) use ReleaseSafe. `zig build check:cross` also uses ReleaseSafe rather than ReleaseSmall: the size gate measures the ReleaseSafe binary that is actually shipped. Linux (ELF) shipping builds carry no DWARF (`shippingStrip` in `build/targets.zig`): DWARF is about 10 MB of 13 MB, and Zig 0.17's `objcopy` cannot split it into a separate file; on macOS and Windows the debug info is not in the executable to begin with (object files, PDB). Linux crash record `addresses` therefore have to be symbolized with an unstripped build of the same commit (`zig build -Dtarget=<target> -Doptimize=ReleaseSafe`); whether the code addresses of the two are byte-identical has not been verified.
-
-Both panics and native faults (POSIX `SIGSEGV`/`SIGBUS`/`SIGILL`/`SIGFPE`, Windows vectored exception handling) go through `libs/core/crash.zig`:
-
-1. call the registered flush hook (journal written to disk);
-2. write `crash-<YYYYMMDDTHHMMSSZ>.json` in the log directory;
-3. hand off to the std default handler, which prints the stack and aborts.
-
-Record fields:
-
-| Field | Meaning |
-|---|---|
-| `schema` | Always 1 |
-| `kind` | `panic` or `fault` |
-| `message` | Panic message or signal name |
-| `version`, `product` | Build version and product id |
-| `phase` | Engine phase at crash time (`core.Phase`) |
-| `tx_id` | Sequence number of the in-progress transaction, 0 for none |
-| `time` | UTC time |
-| `addresses` | Return addresses (hex strings), at most 32 |
-
-On the next start, `RecoverIncompleteTransaction` runs first, and then the user is told what happened.
+Runtime and tool delivery use ReleaseSafe. Native fault and crash hooks belong to
+`libs/core/crash.zig`; their presence is not a proof that an application installs
+those hooks or persists a recoverable kernel plan. Actual recovery qualification
+uses frozen-plan kill points in `core:e2e` and records OLD or NEW receipts.

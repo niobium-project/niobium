@@ -1,4 +1,4 @@
-//! TUF profile v1 client flow (docs/spec/tuf-profile-v1.md#client-workflow). `source` is any
+//! TUF profile v1 client flow (docs/spec/tuf-profile.md#client-workflow). `source` is any
 //! value with `fetch(arena, path, max_bytes) FetchError![]u8`; a missing file is
 //! error.RepoNotFound.
 

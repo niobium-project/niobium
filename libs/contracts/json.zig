@@ -1,4 +1,4 @@
-//! Strict JSON decode for every wire contract (ADR-0003): bounded size, depth and string length;
+//! Strict JSON decode for every wire contract: bounded size, depth and string length;
 //! unknown fields, duplicate keys and forbidden fields rejected at any level; a newer top-level
 //! `schema` fails closed with UnsupportedSchema before field-level errors.
 

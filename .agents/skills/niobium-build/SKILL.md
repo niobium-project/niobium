@@ -12,14 +12,13 @@ description: Maintain this repository's zig build graph, public step names, subd
 ## Add a step
 
 1. Put the name in `build/commands.zig` and register it with `commands.step`.
-2. Use a top-level name only for `fmt`, `lint`, `check`, `test`, `verify`, or `run`.
+2. Use a top-level name only for `fmt`, `lint`, `check`, `test`, `verify`.
 3. Otherwise use `namespace:leaf`. A second colon is only for a detail of that leaf, as in `example:tutorial:tools`.
 4. Update the command in the owning doc, CI, and both READMEs in the same change. Do not keep the old name as an alias.
 
 ## Where the work lives
 
 - Repository build and test steps stay in the root graph.
-- `examples/hello` is a separate package. The root `example:hello` step only runs `zig build` there.
 - `examples/dsl-tutorial` calls the root steps `example:tutorial` and `example:tutorial:tools`. Those steps stay in the root graph because they link its modules.
 
 ## Host tools
@@ -28,4 +27,4 @@ Pins live only in `.zig/toolchains.zon`. Official URLs and sha256 values. No pri
 
 `tools:install` and the build or test steps that run Cargo or Go use `.cache/tools`. They do not read a user-wide Rust or Go install.
 
-Do not install tools for examples, the user-docs site, VM smoke, OS signing, or the Windows GNU `gcc` / `dlltool`. Those steps check for the program and, when it is absent, fail with its name and where to install it.
+Do not install tools for examples, the user-docs site, target witnesses, OS signing, or the Windows GNU `gcc` / `dlltool`. Those steps check for the program and, when it is absent, fail with its name and where to install it.

@@ -1,5 +1,5 @@
 //! The system folder dialog on Windows: `IFileDialog` with `FOS_PICKFOLDERS`. Crash traps
-//! (docs/spec/platform-contract-v1.md): COM is initialized and released in pairs around the
+//! (docs/spec/platform-contract.md): COM is initialized and released in pairs around the
 //! dialog, and every COM pointer is released on all paths.
 
 const std = @import("std");

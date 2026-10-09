@@ -1,15 +1,14 @@
-//! macOS host integrations (docs/spec/platform-contract-v1.md#macos):
+//! macOS host integrations (docs/spec/platform-contract.md#macos):
 //! - shortcut: symlink `~/Applications/<id>` (user) or `/Applications/<id>` (machine) pointing
 //!   at `<root>/current/<target>`, so it follows every update without being rewritten;
 //! - service: launchd plist in `~/Library/LaunchAgents` or `/Library/LaunchDaemons`, then
-//!   `launchctl bootstrap` / `bootout`;
+//!   file lifecycle only; launchd activation is not implemented;
 //! - file association and registration: CapabilityUnsupported (declared by the app bundle;
 //!   installation.json is the registration).
 
 const std = @import("std");
 const contracts = @import("contracts");
 const api = @import("api.zig");
-const command = @import("command.zig");
 const files = @import("files.zig");
 const host = @import("host.zig");
 const names = @import("names.zig");
@@ -123,27 +122,7 @@ pub fn activate(
 ) Error![]const u8 {
     const s = try spec(h, arena, request);
     try files.activate(h.local, s, request.tx);
-    if (request.integration.kind == .service and h.options.system_managers) {
-        const domain = try launchDomain(arena, request.scope);
-        // A loaded job of the same label (update) is replaced: bootout may fail if absent.
-        const label = std.fs.path.stem(s.final);
-        const target = try std.fmt.allocPrint(arena, "{s}/{s}", .{ domain, label });
-        // lint-allow(no-discard-call): bootout of a job that is not loaded fails harmlessly.
-        _ = try command.run(h.local.io, arena, &.{ "/bin/launchctl", "bootout", target });
-        try command.require(
-            h.local.io,
-            arena,
-            &.{ "/bin/launchctl", "bootstrap", domain, s.final },
-        );
-    }
     return arena.dupe(u8, s.final);
-}
-
-fn launchDomain(arena: Allocator, scope: contracts.Scope) Error![]const u8 {
-    return switch (scope) {
-        .machine => "system",
-        .user => try std.fmt.allocPrint(arena, "gui/{d}", .{std.c.getuid()}),
-    };
 }
 
 pub fn remove(
@@ -151,20 +130,9 @@ pub fn remove(
     arena: Allocator,
     installed: contracts.installation.Integration,
 ) Error!void {
+    _ = arena;
     switch (installed.kind) {
-        .shortcut => {},
-        .service => if (h.options.system_managers) {
-            const scope: contracts.Scope = if (std.mem.find(
-                u8,
-                installed.location,
-                "/LaunchDaemons/",
-            ) != null) .machine else .user;
-            const label = std.fs.path.stem(installed.location);
-            const domain = try launchDomain(arena, scope);
-            const target = try std.fmt.allocPrint(arena, "{s}/{s}", .{ domain, label });
-            // lint-allow(no-discard-call): a job that is not loaded needs no bootout.
-            _ = try command.run(h.local.io, arena, &.{ "/bin/launchctl", "bootout", target });
-        },
+        .shortcut, .service => {},
         .file_association, .registration => return error.CapabilityUnsupported,
     }
     const owner = if (installed.kind == .shortcut) link_owner else files.marker;

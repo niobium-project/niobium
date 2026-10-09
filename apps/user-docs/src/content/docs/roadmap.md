@@ -34,7 +34,7 @@ belong to product libraries and presets. Detection does not adopt shared resourc
 Native mechanisms remain bounded and authorized; adding a Wasm library does not
 add an OS primitive or arbitrary process authority.
 
-The [work packages](https://github.com/niobium-project/niobium/blob/main/docs/roadmap-v0.3.md),
+The [work packages](https://github.com/niobium-project/niobium/blob/main/docs/roadmap.md),
 [feature ownership catalog](https://github.com/niobium-project/niobium/blob/main/docs/feature-coverage.md)
 and [product journeys](https://github.com/niobium-project/niobium/blob/main/docs/design/product-journeys.md)
 provide interfaces, dependencies, negative vectors and acceptance responsibilities.

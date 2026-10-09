@@ -22,7 +22,7 @@ pub fn add(b: *std.Build, graph: graph_mod.Graph) *std.Build.Step {
             .root_module = graph.root("tests/kernel/driver.zig", imports),
         },
     );
-    const provenance = graph.root("tests/aot/provenance.zig", &.{"core"});
+    const provenance = graph.root("tests/component/provenance.zig", &.{"core"});
     const main = graph.root("tests/kernel/main.zig", &.{"kernel"});
     main.addImport("suite_provenance", provenance);
     const witness = b.addExecutable(.{ .name = "kernel-acceptance", .root_module = main });

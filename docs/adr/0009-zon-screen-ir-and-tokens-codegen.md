@@ -16,4 +16,4 @@ The installer needs a dedicated, closed, testable component library that avoids 
 
 ## Consequences
 
-- Adding an IR node or a token category requires updating [ui-ir-v1](../spec/ui-ir-v1.md) first.
+- Adding an IR node or a token category requires updating [ui-ir-v1](../spec/ui-ir.md) first.

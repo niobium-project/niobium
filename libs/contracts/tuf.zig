@@ -1,4 +1,4 @@
-//! TUF profile v1 metadata wire types (docs/spec/tuf-profile-v1.md). Verification is libs/trust.
+//! TUF profile v1 metadata wire types (docs/spec/tuf-profile.md). Verification is libs/trust.
 
 const std = @import("std");
 

@@ -1,10 +1,10 @@
 //! api/schema rules: every object schema is closed; no forbidden (imperative) field anywhere in
-//! schemas or example manifests.
+//! schemas or serialized product inputs.
 
 const std = @import("std");
 const repo = @import("repo");
 
-/// Fields that would turn the manifest into code (principles 1 and 6).
+/// Serialized product inputs carry data, never executable author code.
 pub const forbidden_fields = [_][]const u8{
     "post_install",  "pre_install",  "post_uninstall", "pre_uninstall", "script", "scripts",
     "hook",          "hooks",        "command",        "commands",      "exec",   "shell",
