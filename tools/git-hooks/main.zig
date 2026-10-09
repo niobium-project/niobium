@@ -1,5 +1,6 @@
 //! Git hooks installed by `zig build hooks:install`.
 //! pre-commit formats staged Zig. pre-push checks commit subjects.
+//! A push to refs/heads/main uses check-commits --strict.
 
 const std = @import("std");
 const builtin = @import("builtin");
@@ -123,27 +124,31 @@ fn prePush(init: std.process.Init, arena: std.mem.Allocator, checker: []const u8
         const update = try parseUpdate(line);
         if (update.delete) continue;
         const range = try pushRange(init, arena, update);
-        try runChecker(init, arena, checker, range);
+        try runChecker(init, arena, checker, range, strictRef(update.remote_ref));
     }
 }
 
 const Update = struct {
     local_sha: []const u8,
     remote_sha: []const u8,
+    remote_ref: []const u8,
     delete: bool,
 };
 
 fn parseUpdate(line: []const u8) !Update {
     var fields = std.mem.splitScalar(u8, line, ' ');
-    _ = fields.next() orelse return error.BadRefLine;
+    const local_ref = fields.next() orelse return error.BadRefLine;
+    if (local_ref.len == 0) return error.BadRefLine;
     const local_sha = fields.next() orelse return error.BadRefLine;
-    _ = fields.next() orelse return error.BadRefLine;
+    const remote_ref = fields.next() orelse return error.BadRefLine;
     const remote_sha = fields.next() orelse return error.BadRefLine;
     if (fields.next() != null) return error.BadRefLine;
+    if (remote_ref.len == 0) return error.BadRefLine;
     if (!sha(local_sha) or !sha(remote_sha)) return error.BadRefLine;
     return .{
         .local_sha = local_sha,
         .remote_sha = remote_sha,
+        .remote_ref = remote_ref,
         .delete = zeros(local_sha),
     };
 }
@@ -169,9 +174,14 @@ fn runChecker(
     arena: std.mem.Allocator,
     checker: []const u8,
     range: []const u8,
+    strict: bool,
 ) !void {
+    const argv: []const []const u8 = if (strict)
+        &.{ checker, "--strict", range }
+    else
+        &.{ checker, range };
     const result = try std.process.run(arena, init.io, .{
-        .argv = &.{ checker, range },
+        .argv = argv,
         .stdout_limit = .limited(1 << 20),
         .stderr_limit = .limited(1 << 20),
     });
@@ -179,6 +189,10 @@ fn runChecker(
         std.debug.print("{s}{s}", .{ result.stdout, result.stderr });
         return error.CommitSubject;
     }
+}
+
+fn strictRef(ref: []const u8) bool {
+    return std.mem.eql(u8, ref, "refs/heads/main");
 }
 
 fn git(init: std.process.Init, arena: std.mem.Allocator, argv: []const []const u8) ![]const u8 {
@@ -241,6 +255,9 @@ test "push lines name the commit range" {
     const update = try parseUpdate(kept);
     try std.testing.expect(!update.delete);
     try std.testing.expectEqualStrings(local, update.local_sha);
+    try std.testing.expectEqualStrings("refs/heads/topic", update.remote_ref);
+    try std.testing.expect(!strictRef(update.remote_ref));
+    try std.testing.expect(strictRef("refs/heads/main"));
     try std.testing.expectError(error.BadRefLine, parseUpdate("only-three a b"));
 }
 

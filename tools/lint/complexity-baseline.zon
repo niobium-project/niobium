@@ -373,7 +373,7 @@
         .{ .path = "tools/check-binary/main.zig", .tokens = 2676, .nodes = 1260 },
         .{ .path = "tools/check-binary/pe.zig", .tokens = 854, .nodes = 440 },
         .{ .path = "tools/check-binary/size.zig", .tokens = 1155, .nodes = 550 },
-        .{ .path = "tools/check-commits/main.zig", .tokens = 1154, .nodes = 609 },
+        .{ .path = "tools/check-commits/main.zig", .tokens = 2806, .nodes = 1451 },
         .{ .path = "tools/check-docs/links.zig", .tokens = 1011, .nodes = 511 },
         .{ .path = "tools/check-docs/locales.zig", .tokens = 1139, .nodes = 647 },
         .{ .path = "tools/check-docs/main.zig", .tokens = 4530, .nodes = 2456 },

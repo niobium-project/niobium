@@ -25,7 +25,7 @@ pub fn add(b: *std.Build, check_commits: *std.Build.Step.Compile) void {
 
     const pre_push = run(b, hooks, "pre-push");
     pre_push.addArtifactArg(check_commits);
-    const push = b.step("hooks:pre-push", "Check subjects that would be pushed");
+    const push = b.step("hooks:pre-push", "Check subjects; pushes to main are strict");
     push.dependOn(&pre_push.step);
 }
 
