@@ -69,7 +69,8 @@ The [compiler input lock](compiler-inputs-v1.md) fixes source kind, version,
 digest, length, target and dependency IDs. Resolution supplies explicit sources;
 the compilation path performs no floating version selection or network fallback.
 Runtime metadata is a separately locked publication connected to the runtime
-entry. It records the template digest, length, version and supported profile.
+entry. [Runtime-package v2](runtime-package-v2.md) records the template digest,
+length, version, supported profile and explicit native CPU/ABI declaration.
 Digest agreement establishes identity; trusted acquisition establishes publisher
 authority and remains a separate requirement.
 
@@ -83,7 +84,9 @@ templates; no target execution, runtime compiler or linker is part of product
 assembly. Product payload toolchains may impose their own independent limits.
 
 `runtime-package` produces publication metadata by reading a template and
-checking its native target/descriptor. It does not execute the target. Releasing
+checking its native target/descriptor. The required `--native-profile` comes from
+the publisher's build configuration; headers cannot prove a minimum CPU. It does
+not execute the target. Releasing
 the Niobium runtime, assembling a product, publisher signing and real-OS
 qualification are distinct processes with distinct evidence.
 
@@ -141,7 +144,8 @@ durability through sudden power loss on every platform.
 `--runtime-metadata`, `--worker`, repeated `--input id=path` and `--output`.
 Optional `--source-map`, `--cache` and `--signer` select explicit diagnostic,
 cache and signer inputs. Worker/signer IDs must be locked tool entries.
-`runtime-package` takes `--template`, `--target`, `--version` and `--out`.
+`runtime-package` takes `--template`, `--target`, `--native-profile`, `--version`
+and `--out`.
 
 The supplied finalizer invokes pinned `rcodesign` and verifies the supported
 ad-hoc Mach-O measurement profile. It does not implement Developer ID publication,

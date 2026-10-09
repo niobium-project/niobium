@@ -18,6 +18,7 @@ pub const Options = struct {
     cache: ?[]const u8 = null,
     template: ?[]const u8 = null,
     target: ?[]const u8 = null,
+    native_profile: ?[]const u8 = null,
     version: ?[]const u8 = null,
     inputs: []const Input = &.{},
 };
@@ -53,10 +54,12 @@ pub fn parse(arena: std.mem.Allocator, argv: []const []const u8) Error!Options {
     if (action == .compile) {
         if (result.program == null or result.lock == null or result.runtime == null or
             result.metadata == null or result.worker == null) return error.Usage;
-        if (result.template != null or result.target != null or result.version != null)
+        if (result.template != null or result.target != null or result.version != null or
+            result.native_profile != null)
             return error.Usage;
     } else {
-        if (result.template == null or result.target == null or result.version == null)
+        if (result.template == null or result.target == null or result.version == null or
+            result.native_profile == null)
             return error.Usage;
         if (result.inputs.len != 0 or result.program != null or result.lock != null or
             result.worker != null or result.runtime != null or result.metadata != null or
@@ -87,7 +90,26 @@ fn option(result: *Options, name: []const u8, value: []const u8) Error!void {
         result.source_map = value;
         return;
     }
+    if (std.mem.eql(u8, name, "--native-profile")) {
+        if (result.native_profile != null) return error.Usage;
+        result.native_profile = value;
+        return;
+    }
     return error.Usage;
+}
+
+test "N2-PROFILE-03 CLI requires the publisher's native profile" {
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+    const args = [_][]const u8{
+        "compiler",  "runtime-package", "--template", "runtime",      "--target", "x86_64-linux",
+        "--version", "1",               "--out",      "package.json",
+    };
+    try std.testing.expectError(error.Usage, parse(arena.allocator(), &args));
+    const published = try parse(arena.allocator(), &(args ++ [_][]const u8{
+        "--native-profile", "x86_64-linux-gnu-baseline-v1",
+    }));
+    try std.testing.expectEqualStrings("x86_64-linux-gnu-baseline-v1", published.native_profile.?);
 }
 
 test "N2-COMPILER-04 CLI requires explicit locked identities and rejects duplicate options" {

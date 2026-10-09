@@ -37,7 +37,9 @@ Actual capability availability and authority must also be checked by the host.
 
 The runtime template's digest belongs to its locked input. Profile metadata must
 be bound to that input before it is trusted to describe the executable. A decoded
-profile alone does not establish that a runtime implements it. A runtime lock
+profile alone does not establish that a runtime implements it. The
+[runtime publication package](runtime-package-v2.md) separately declares a fixed
+native CPU/ABI profile and binds it to the complete template bytes. A runtime lock
 depends on a separately locked `runtime_metadata` input whose publication version,
 template length, SHA-256 and target must agree with that runtime. The compiler
 reads this metadata without executing the target. Publisher authorization remains

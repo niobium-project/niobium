@@ -13,6 +13,7 @@ pub const Inputs = struct {
     native_author: *std.Build.Step.Compile,
     c_author: *std.Build.Step.Compile,
     starlark: std.Build.LazyPath,
+    metadata: std.Build.LazyPath,
 };
 
 pub fn add(b: *std.Build, graph: *const graph_mod.Graph, inputs: Inputs) *std.Build.Step {
@@ -36,6 +37,7 @@ pub fn add(b: *std.Build, graph: *const graph_mod.Graph, inputs: Inputs) *std.Bu
     run.addFileArg(inputs.starlark);
     run.addFileArg(b.path("tests/author/author.star"));
     run.addFileArg(inputs.consumer_v2);
+    run.addFileArg(inputs.metadata);
     run.addFileInput(b.path("tests/author/types.star"));
     const step = b.step("core-e2e", "Delivered setup lifecycle, content and migration acceptance");
     step.dependOn(inputs.binary_check);
@@ -45,7 +47,12 @@ pub fn add(b: *std.Build, graph: *const graph_mod.Graph, inputs: Inputs) *std.Bu
 
 fn crossTools(b: *std.Build, graph: *const graph_mod.Graph) void {
     const cross = graph_mod.create(b, .{
-        .target = b.resolveTargetQuery(.{ .cpu_arch = .x86_64, .os_tag = .linux, .abi = .musl }),
+        .target = b.resolveTargetQuery(.{
+            .cpu_arch = .x86_64,
+            .cpu_model = .baseline,
+            .os_tag = .linux,
+            .abi = .musl,
+        }),
         .optimize = .safe,
         .inputs = graph.config.inputs,
     });
@@ -67,7 +74,12 @@ fn crossTools(b: *std.Build, graph: *const graph_mod.Graph) void {
     delivered(b, graph, "native", step);
     delivered(b, &cross, "linux-x64", step);
     const windows = graph_mod.create(b, .{
-        .target = b.resolveTargetQuery(.{ .cpu_arch = .x86_64, .os_tag = .windows, .abi = .gnu }),
+        .target = b.resolveTargetQuery(.{
+            .cpu_arch = .x86_64,
+            .cpu_model = .baseline,
+            .os_tag = .windows,
+            .abi = .gnu,
+        }),
         .optimize = .safe,
         .inputs = graph.config.inputs,
     });

@@ -24,9 +24,14 @@ pub fn main(init: std.process.Init) !void {
         .@"aarch64-macos", .@"x86_64-windows", .@"x86_64-linux",
     };
     for (targets, 0..) |target, index| {
+        const metadata = try std.fs.path.join(a, &.{
+            std.fs.path.dirname(args[index + 3]) orelse return error.Usage,
+            "../share/niobium/runtime-package.json",
+        });
         const path = try std.fs.path.join(a, &.{ base, @tagName(target) });
         const inputs = try prepare.create(a, init.io, path, target, .{
             .runtime = args[index + 3],
+            .metadata = metadata,
             .worker = args[6],
             .signer = args[7],
             .files = args[8],
@@ -36,6 +41,7 @@ pub fn main(init: std.process.Init) !void {
         const upgrade = try std.fs.path.join(a, &.{ path, "upgrade" });
         const newer = try prepare.create(a, init.io, upgrade, target, .{
             .runtime = args[index + 3],
+            .metadata = metadata,
             .worker = args[6],
             .signer = args[7],
             .files = args[8],

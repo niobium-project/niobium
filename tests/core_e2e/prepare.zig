@@ -3,11 +3,11 @@ const std = @import("std");
 const compiler = @import("compiler");
 const program = @import("program");
 const content = @import("content");
-const primitives = @import("host_primitives");
 const products = @import("products.zig");
 const Dir = std.Io.Dir;
 pub const Paths = struct {
     runtime: []const u8,
+    metadata: []const u8,
     worker: []const u8,
     signer: ?[]const u8,
     files: []const u8,
@@ -33,20 +33,26 @@ pub fn create(
     defer dir.close(io);
     var entries: std.ArrayList(Input) = .empty;
     var runtime = try copy(arena, io, dir, directory, "runtime", paths.runtime, .runtime);
+    var metadata = try copy(
+        arena,
+        io,
+        dir,
+        directory,
+        "runtime-metadata",
+        paths.metadata,
+        .runtime_metadata,
+    );
+    const bytes = try dir.readFileAlloc(io, "runtime-metadata", arena, .limited(1 << 20));
+    const package = try compiler.runtime_package.decode(arena, bytes);
+    if (!std.mem.eql(u8, package.template_sha256, runtime.entry.sha256) or
+        package.template_bytes != runtime.entry.bytes or package.profile.target != target)
+        return error.FixtureChanged;
     runtime.entry.target = target;
+    runtime.entry.version = package.version;
+    metadata.entry.version = package.version;
     runtime.entry.dependencies = &.{"runtime-metadata"};
     try entries.append(arena, runtime);
-    const metadata = try std.json.Stringify.valueAlloc(arena, compiler.runtime_package.Package{
-        .version = "1",
-        .template_sha256 = runtime.entry.sha256,
-        .template_bytes = runtime.entry.bytes,
-        .profile = primitives.runtimeProfile(target),
-    }, .{});
-    try dir.writeFile(io, .{ .sub_path = "runtime-metadata", .data = metadata });
-    try entries.append(
-        arena,
-        try describe(arena, io, directory, "runtime-metadata", .runtime_metadata),
-    );
+    try entries.append(arena, metadata);
     try entries.append(arena, try copy(arena, io, dir, directory, "worker", paths.worker, .tool));
     if (paths.signer) |signer| try entries.append(
         arena,

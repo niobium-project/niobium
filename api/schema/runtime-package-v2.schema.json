@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://niobium.dev/schema/runtime-package-v2.schema.json",
+  "title": "Runtime publication package v2",
+  "$comment": "Publisher declaration bound to exact template bytes. Parsing cannot prove CPU requirements or publisher authority. Native validation also checks UTF-8 byte limits and duplicate primitive identities.",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "$ref": "#/$defs/schema"
+        },
+        "version": {
+          "$ref": "#/$defs/version"
+        },
+        "template_sha256": {
+          "$ref": "#/$defs/template_sha256"
+        },
+        "template_bytes": {
+          "$ref": "#/$defs/template_bytes"
+        },
+        "native_profile": {
+          "enum": [
+            "aarch64-macos-baseline-v1"
+          ]
+        },
+        "profile": {
+          "$ref": "compiled-program-v2.schema.json#/$defs/profile",
+          "properties": {
+            "schema": {},
+            "id": {},
+            "target": {
+              "const": "aarch64-macos"
+            },
+            "runtime_abi": {},
+            "program_schema": {},
+            "component_profile": {},
+            "content_profile": {},
+            "primitives": {}
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "schema",
+        "version",
+        "template_sha256",
+        "template_bytes",
+        "native_profile",
+        "profile"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "$ref": "#/$defs/schema"
+        },
+        "version": {
+          "$ref": "#/$defs/version"
+        },
+        "template_sha256": {
+          "$ref": "#/$defs/template_sha256"
+        },
+        "template_bytes": {
+          "$ref": "#/$defs/template_bytes"
+        },
+        "native_profile": {
+          "enum": [
+            "x86_64-linux-gnu-baseline-v1",
+            "x86_64-linux-musl-baseline-v1"
+          ]
+        },
+        "profile": {
+          "$ref": "compiled-program-v2.schema.json#/$defs/profile",
+          "properties": {
+            "schema": {},
+            "id": {},
+            "target": {
+              "const": "x86_64-linux"
+            },
+            "runtime_abi": {},
+            "program_schema": {},
+            "component_profile": {},
+            "content_profile": {},
+            "primitives": {}
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "schema",
+        "version",
+        "template_sha256",
+        "template_bytes",
+        "native_profile",
+        "profile"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "$ref": "#/$defs/schema"
+        },
+        "version": {
+          "$ref": "#/$defs/version"
+        },
+        "template_sha256": {
+          "$ref": "#/$defs/template_sha256"
+        },
+        "template_bytes": {
+          "$ref": "#/$defs/template_bytes"
+        },
+        "native_profile": {
+          "enum": [
+            "x86_64-windows-gnu-baseline-v1"
+          ]
+        },
+        "profile": {
+          "$ref": "compiled-program-v2.schema.json#/$defs/profile",
+          "properties": {
+            "schema": {},
+            "id": {},
+            "target": {
+              "const": "x86_64-windows"
+            },
+            "runtime_abi": {},
+            "program_schema": {},
+            "component_profile": {},
+            "content_profile": {},
+            "primitives": {}
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "schema",
+        "version",
+        "template_sha256",
+        "template_bytes",
+        "native_profile",
+        "profile"
+      ],
+      "additionalProperties": false
+    }
+  ],
+  "$defs": {
+    "schema": {
+      "const": 2
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "template_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{64}$"
+    },
+    "template_bytes": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 17179869184
+    }
+  }
+}

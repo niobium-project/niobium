@@ -13,6 +13,11 @@ pub fn run(init: std.process.Init, args: options.Options) !void {
     const arena = init.arena.allocator();
     const target = std.meta.stringToEnum(program.profile.Target, args.target.?) orelse
         return error.Usage;
+    const native_profile = std.meta.stringToEnum(
+        compiler.runtime_package.NativeProfile,
+        args.native_profile.?,
+    ) orelse return error.Usage;
+    if (native_profile.target() != target) return error.TargetMismatch;
     const work = try storage.Workspace.init(arena, init.io, args.output);
     defer work.deinit();
     const input = try std.Io.Dir.cwd().openFile(init.io, args.template.?, .{});
@@ -37,9 +42,11 @@ pub fn run(init: std.process.Init, args: options.Options) !void {
     try source.read(init.io, layout.slot.offset, &slot);
     try image.descriptor.checkTemplate(&slot);
     const package: compiler.runtime_package.Package = .{
+        .schema = 2,
         .version = args.version.?,
         .template_sha256 = &contracts.ids.hexDigest(digest),
         .template_bytes = source.size(),
+        .native_profile = native_profile,
         .profile = primitives.runtimeProfile(target),
     };
     const bytes = try std.json.Stringify.valueAlloc(arena, package, .{ .whitespace = .indent_2 });

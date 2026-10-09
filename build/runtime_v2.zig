@@ -13,7 +13,12 @@ pub fn add(
     library: std.Build.LazyPath,
     checker: *std.Build.Step.Compile,
 ) Publication {
-    const runtime = executable(b, graph, library, "niobium-runtime-v2");
+    const publication = graph_mod.create(b, .{
+        .target = @import("publication.zig").baselineTarget(b),
+        .optimize = .safe,
+        .inputs = graph.config.inputs,
+    });
+    const runtime = executable(b, &publication, library, "niobium-runtime-v2");
     const binary_check = checkBinary(b, runtime, checker);
     const step = b.step("runtime-v2", "Build the complete Component runtime template");
     step.dependOn(&b.addInstallArtifact(runtime, .{}).step);
@@ -86,10 +91,23 @@ pub fn cross(
     checker: *std.Build.Step.Compile,
 ) void {
     const targets = .{
-        .{ "linux-x64", std.Target.Query{ .cpu_arch = .x86_64, .os_tag = .linux, .abi = .musl } },
+        .{
+            "linux-x64",
+            std.Target.Query{
+                .cpu_arch = .x86_64,
+                .cpu_model = .baseline,
+                .os_tag = .linux,
+                .abi = .musl,
+            },
+        },
         .{
             "windows-x64",
-            std.Target.Query{ .cpu_arch = .x86_64, .os_tag = .windows, .abi = .gnu },
+            std.Target.Query{
+                .cpu_arch = .x86_64,
+                .cpu_model = .baseline,
+                .os_tag = .windows,
+                .abi = .gnu,
+            },
         },
     };
     inline for (targets) |target| {

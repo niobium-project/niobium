@@ -21,12 +21,13 @@ pub fn main(init: std.process.Init) !void {
 }
 
 fn qualify(run: *provenance.Run, args: []const []const u8) !void {
-    if (args.len != 12) return error.Usage;
+    if (args.len != 13) return error.Usage;
     try run.capture();
     const target = try primitives.currentTarget();
     const directory = try run.arena.print("{s}/distribution", .{run.evidence});
     const prepared = try prepare.create(run.arena, run.io, directory, target, .{
         .runtime = args[1],
+        .metadata = args[12],
         .worker = args[2],
         .files = args[3],
         .consumer = args[4],
@@ -36,6 +37,7 @@ fn qualify(run: *provenance.Run, args: []const []const u8) !void {
     const upgrade = try run.arena.print("{s}/distribution-v2", .{run.evidence});
     const newer = try prepare.create(run.arena, run.io, upgrade, target, .{
         .runtime = args[1],
+        .metadata = args[12],
         .worker = args[2],
         .files = args[3],
         .consumer = args[11],

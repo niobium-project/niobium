@@ -3,6 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-10-09
 - **Amends:** [ADR-0023](0023-standard-content-and-component-contracts.md) (native runtime publication qualification)
+- **Amended by:** [ADR-0025](0025-baseline-cpu-runtime-publication.md) (CPU publication contracts)
 
 ## Context
 

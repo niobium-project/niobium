@@ -10,10 +10,15 @@ pub const Artifacts = struct {
     c_author: *std.Build.Step.Compile,
 };
 pub fn add(b: *std.Build, graph: *const graph_mod.Graph) Artifacts {
+    const published = graph_mod.create(b, .{
+        .target = @import("publication.zig").baselineTarget(b),
+        .optimize = .safe,
+        .inputs = graph.config.inputs,
+    });
     const library = b.addLibrary(.{
         .name = "niobium_compiler_v2",
         .linkage = .static,
-        .root_module = graph.root("apps/libcompiler/v2.zig", &.{ "compiler", "contracts" }),
+        .root_module = published.root("apps/libcompiler/v2.zig", &.{ "compiler", "contracts" }),
     });
     library.bundle_compiler_rt = true;
     const suite = b.addTest(.{
@@ -49,7 +54,7 @@ pub fn add(b: *std.Build, graph: *const graph_mod.Graph) Artifacts {
     go_test.addArgs(&.{ "-count=1", "-timeout=60s", "-v", "./v2" });
     tests.dependOn(&go_test.step);
     tests.dependOn(&go_build.step);
-    const parity = paritySuite(b, graph, library, starlark);
+    const parity = paritySuite(b, &published, library, starlark);
     tests.dependOn(&parity.run.step);
     return .{
         .library = library,
@@ -69,18 +74,12 @@ fn goCommand(
     const run = b.addRunArtifact(launcher);
     run.setCwd(b.path("apps/starlark"));
     const target = library.rootModuleTarget();
+    @import("component_cpu.zig").author(b, run, target);
     if (target.os.tag == .macos) {
         const minimum = target.os.version_range.semver.min;
         run.setEnvironmentVariable("MACOSX_DEPLOYMENT_TARGET", b.fmt("{d}.{d}.{d}", .{
             minimum.major, minimum.minor, minimum.patch,
         }));
-    }
-    if (target.os.tag == .windows) {
-        // The pinned linker handles compiler_rt's COFF weak aliases correctly.
-        run.setEnvironmentVariable("CC", b.fmt(
-            "\"{s}\" cc -target x86_64-windows-gnu",
-            .{b.graph.zig_exe},
-        ));
     }
     run.addFileArg(library.getEmittedBin());
     run.addFileInput(b.path("api/c/compiler_v2.h"));
@@ -114,7 +113,7 @@ fn paritySuite(
         .root_module = graph.root("tests/author/author.zig", &.{"compiler"}),
     });
     const c_module = b.createModule(
-        .{ .target = b.graph.host, .optimize = .safe, .link_libc = true },
+        .{ .target = graph.config.target, .optimize = .safe, .link_libc = true },
     );
     c_module.addIncludePath(b.path("api/c"));
     c_module.addCSourceFile(

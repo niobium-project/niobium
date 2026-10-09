@@ -7,7 +7,7 @@ pub const Artifacts = struct { compiler: *std.Build.Step.Compile, tests: *std.Bu
 
 pub fn add(b: *std.Build, inputs: graph_mod.Inputs) Artifacts {
     const graph = graph_mod.create(b, .{
-        .target = b.graph.host,
+        .target = @import("publication.zig").baselineTarget(b),
         .optimize = .safe,
         .inputs = inputs,
     });
@@ -33,6 +33,7 @@ fn addLinux(b: *std.Build, inputs: graph_mod.Inputs) void {
     const graph = graph_mod.create(b, .{
         .target = b.resolveTargetQuery(.{
             .cpu_arch = .x86_64,
+            .cpu_model = .baseline,
             .os_tag = .linux,
             .abi = .musl,
         }),

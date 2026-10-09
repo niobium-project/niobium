@@ -9,6 +9,8 @@ hard development constraints. Product-author documentation lives in
 
 [ADR-0024](adr/0024-native-runtime-dependency-qualification.md) defines native
 runtime dependency qualification by OS and ABI, separately from retained binaries.
+[ADR-0025](adr/0025-baseline-cpu-runtime-publication.md) defines CPU baselines for
+published runtimes and SDK artifacts.
 
 ## Active contracts
 
@@ -18,7 +20,7 @@ Normative requirements, current implementation and execution evidence are distin
 | Contract owner | Specifications | Interfaces |
 |---|---|---|
 | Compiler and authoring | [Compiler/frontends v2](spec/compiler-frontends-v2.md), [authoring C ABI v2](spec/authoring-c-abi-v2.md), [locked inputs/cache](spec/compiler-inputs-v1.md) | `compiler.author`, `compiler.pipeline`, `compiler_v2.h`, source-map schema |
-| Compiled product and native image | [Product v2](spec/program-image-v2.md), [setup image v2](spec/setup-image-v2.md), [content container v1](spec/content-container-v1.md) | `program`, `content`, `image`, compiled-product/value/type schemas |
+| Compiled product and native image | [Product v2](spec/program-image-v2.md), [setup image v2](spec/setup-image-v2.md), [content container v1](spec/content-container-v1.md), [runtime package v2](spec/runtime-package-v2.md) | `program`, `content`, `image`, compiled-product/value/type/runtime-package schemas |
 | Capability library | [Capability library v2](spec/capability-library-v2.md) | Versioned WIT, upstream bindings and Component profile |
 | Runtime lifecycle | [Lifecycle v2](spec/runtime-lifecycle-v2.md), [access policy v1](spec/access-policy-v1.md) | `kernel`, `evaluator`, host primitives and native receipts |
 | Migration | [Migration v2](spec/migration-v2.md) | Independent program, call-state and frozen-plan compatibility |

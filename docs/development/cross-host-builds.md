@@ -45,12 +45,14 @@ declared system UCRT and synchronization API sets. These are target prerequisite
 independent of the product assembly host. An unqualified ABI, including MSVC,
 fails publication until its own rule and execution evidence are provided.
 
-Current native SDK/runtime builds use the detected host CPU target. Qualification
-records the actual host and its Zig target, so these artifacts are not claimed to
-run on every CPU of the same architecture. Generic CPU publication requires the
-coordinated Zig, Rust and C-helper controls in
-[proposed ADR-0025](../adr/0025-baseline-cpu-runtime-publication.md); it is a separate
-publisher work package. Product assembly continues to consume fixed bytes.
+Published runtimes, SDK tools and transferred witnesses require the explicit CPU
+contracts in [ADR-0025](../adr/0025-baseline-cpu-runtime-publication.md). The contract
+covers Zig modules, Rust archives, native C helpers and Go/CGO outputs. Record
+effective targets and flag/wrapper provenance; architecture labels and successful
+execution on the publisher's machine do not establish a minimum CPU. Upstream
+prebuilt tools retain their own identities and qualification. The current
+[acceptance ledger](../acceptance-plan-v0.3.md) distinguishes earlier host-specific
+evidence from the baseline contract's new execution records.
 
 The build graph fetches hash-pinned `wasm-tools`, `wit-bindgen` and portable guest
 libc headers/libraries. `core-sdk` installs the compiler, authoring C library/header,
@@ -65,10 +67,16 @@ metadata and exact digest. `runtime-package` inspects a template without launchi
 ```sh
 niobium-compiler-v2 runtime-package \
   --template runtime-template \
-  --target aarch64-macos --version 0.3.0-dev --out runtime-package.json
+  --target aarch64-macos --native-profile aarch64-macos-baseline-v1 \
+  --version 0.3.0-dev --out runtime-package.json
 ```
 
 The declared target must match the native image and template profile marker.
+The required [native profile](../spec/runtime-package-v2.md) comes from the
+publisher's controlled build configuration. Metadata schema 2 records that
+declaration; headers cannot prove its truth. Consumers preserve the publisher's
+record and verify its digest and template binding instead of generating a CPU
+claim from a target filename or architecture label.
 Publishing requires evidence that this runtime implements the advertised profile;
 metadata generation alone does not establish that claim. The Windows runtime
 contains an `asInvoker` application manifest. Both native and cross publication
@@ -142,7 +150,8 @@ zig build runtime-windows-x64 \
 ```
 
 Those are runtime publication steps, separate from product assembly. Their engine
-libraries must match the pinned Rust package/lock and profile. The local experiment
+libraries must match the pinned Rust package/lock, native CPU declaration and
+profile, with compiler/flag provenance. The local experiment
 used Rust targets `x86_64-unknown-linux-musl` and `x86_64-pc-windows-gnu`, Zig C/AR/DLL
 utilities and the same locked Cargo manifest. Rust's compiler wrapper must translate
 its target triple to Zig's target spelling; this toolchain work does not enter the

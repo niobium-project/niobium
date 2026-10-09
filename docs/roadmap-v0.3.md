@@ -169,12 +169,14 @@ commands, negative results and the actual final artifact digest.
 - Deliverables: published profile matrix, explicit minimum OS/toolchain metadata,
   publisher finalizers, notarization, additional native variants and release automation.
 - Non-goals: product-stage runtime compilation or assuming cross-build equals target qualification.
-- CPU publication follow-up: implement [proposed ADR-0025](adr/0025-baseline-cpu-runtime-publication.md)
-  across the Zig graph, Rust/C-helper code generation and runtime/SDK metadata.
-  Record the complete minimum CPU requirements and supplied-archive provenance;
-  reject undeclared host-specific overrides. Acceptance must inspect emitted
-  commands and run the final bytes on the declared minimum CPU context. Until
-  then, native publisher results remain specific to their recorded host CPU.
+- CPU publication baseline: [ADR-0025](adr/0025-baseline-cpu-runtime-publication.md)
+  requires explicit targets across runtime, shipped SDK and witness graphs,
+  controlled Rust/C-helper/Go code generation and runtime-package v2 metadata.
+  `N2-PROFILE-03` checks the declaration; `N2-CPU-01` checks effective settings and
+  hostile flags; `N2-CPU-02` runs exact SDK/setup bytes in a recorded CPU context
+  lacking the original failing extensions. Retain supplied-archive provenance and
+  qualify prebuilt signing tools separately. Future specialized CPU profiles need
+  new IDs and evidence; earlier native records retain their host-specific scope.
 - Acceptance: existing `zig build image-test core-e2e core-cross-tools`; **new gate**
   `zig build release-profile-test`. Test final delivered bytes, prefix/code/payload
   tampering, wrong templates, signing interruption and each selected publisher policy.

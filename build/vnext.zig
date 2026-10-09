@@ -13,6 +13,7 @@ pub fn add(
 ) *std.Build.Step {
     @import("runtime_v2.zig").cross(b, inputs, checker);
     const step = b.step("core-test", "Content, access and compiler foundation conformance");
+    step.dependOn(cpuSettings(b));
     const graph = graph_mod.create(b, .{
         .target = b.graph.host,
         .optimize = .safe,
@@ -27,8 +28,10 @@ pub fn add(
     unitSuites(b, &graph, step);
     step.dependOn(image.add(b, inputs));
     if (component_tools.supported(b.graph.host.result)) {
+        const publication_graph = publicationGraph(b, inputs);
         const tools = component_tools.add(b, fetcher);
         const qualified = component.add(b, .{
+            .publication = &publication_graph,
             .wasm_tools = tools.wasm_tools,
             .wit_bindgen = tools.wit_bindgen,
             .wasi_sysroot = tools.wasi_sysroot,
@@ -41,19 +44,9 @@ pub fn add(
         const runtime = publication.runtime;
         step.dependOn(publication.binary_check);
         const signer = @import("signing.zig").add(b, fetcher);
-        @import("delivery_v2.zig").add(b, .{
-            .compiler = compiler.compiler,
-            .runtime = runtime,
-            .binary_check = publication.binary_check,
-            .worker = qualified.caller,
-            .author_library = authors.library,
-            .starlark = authors.starlark,
-            .signer = signer,
-            .files = qualified.files_guest,
-            .consumer_v1 = qualified.reference_guest,
-            .consumer_v2 = qualified.reference_guest_v2,
-        });
-        step.dependOn(@import("core_e2e.zig").add(b, &graph, .{
+        const metadata = @import("delivery_v2.zig").runtimePackage(b, compiler.compiler, runtime);
+        sdk(b, publication, compiler.compiler, authors, qualified, signer, metadata);
+        step.dependOn(@import("core_e2e.zig").add(b, &publication_graph, .{
             .runtime = runtime,
             .binary_check = publication.binary_check,
             .worker = qualified.caller,
@@ -61,6 +54,7 @@ pub fn add(
             .files = qualified.files_guest,
             .consumer = qualified.reference_guest,
             .consumer_v2 = qualified.reference_guest_v2,
+            .metadata = metadata,
             .signer = signer.executable,
             .native_author = authors.native,
             .c_author = authors.c_author,
@@ -79,6 +73,51 @@ pub fn add(
     }
     contentInterop(b, &graph, step);
     return step;
+}
+
+fn sdk(
+    b: *std.Build,
+    publication: @import("runtime_v2.zig").Publication,
+    compiler: *std.Build.Step.Compile,
+    authors: @import("author_v2.zig").Artifacts,
+    qualified: component.Artifacts,
+    signer: @import("signing.zig").Tool,
+    metadata: std.Build.LazyPath,
+) void {
+    @import("delivery_v2.zig").add(b, .{
+        .compiler = compiler,
+        .runtime = publication.runtime,
+        .binary_check = publication.binary_check,
+        .worker = qualified.caller,
+        .author_library = authors.library,
+        .starlark = authors.starlark,
+        .signer = signer,
+        .files = qualified.files_guest,
+        .consumer_v1 = qualified.reference_guest,
+        .consumer_v2 = qualified.reference_guest_v2,
+        .metadata = metadata,
+        .cpu_provenance = qualified.cpu_provenance,
+        .engine_build_log = qualified.engine_build_log,
+    });
+}
+
+fn cpuSettings(b: *std.Build) *std.Build.Step {
+    const suite = b.addTest(.{
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("build/component_cpu.zig"),
+            .target = b.graph.host,
+            .optimize = .safe,
+        }),
+    });
+    return &b.addRunArtifact(suite).step;
+}
+
+fn publicationGraph(b: *std.Build, inputs: graph_mod.Inputs) graph_mod.Graph {
+    return graph_mod.create(b, .{
+        .target = @import("publication.zig").baselineTarget(b),
+        .optimize = .safe,
+        .inputs = inputs,
+    });
 }
 
 fn unitSuites(b: *std.Build, graph: *const graph_mod.Graph, step: *std.Build.Step) void {

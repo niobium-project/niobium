@@ -29,6 +29,8 @@ record covering its required scenarios on the named snapshot.
 |---|---|---|---|---|
 | N2-ACCESS-01 | positive grants have one cross-platform interpretation | `libs/access/contract/root.zig`, `tests/access/` | PASS | `.evidence/final-v2/20261008T194056Z`; `.evidence/native-platform/20261008T144729Z`, `20261008T145621Z` |
 | N2-BINARY-01 | Exact Component native dependency profiles, ELF interpreters and unchanged executable hardening | `tools/check-binary`, runtime publication gates | PASS | `.evidence/native-binary/20261008T160447Z-profiles`; `.evidence/final-v2/20261008T194056Z` |
+| N2-CPU-01 | Explicit CPU targets and controlled Rust/C/Go flags cover published runtime, SDK and witness code | Publication graph and toolchain controls | NOT_RUN | New contract under ADR-0025 |
+| N2-CPU-02 | Exact SDK and setup bytes execute without undeclared mandatory CPU extensions | Source-free assembly and delivered lifecycle in a recorded CPU context | NOT_RUN | First failure: `.evidence/core-ci/20261009T020130Z-linux-sigill/`; fresh baseline bytes pending |
 | N2-AUTH-02 | Native/C/Starlark equivalent models, owned values, source maps and generic worker arguments | `apps/libcompiler/v2_test.zig` | PASS | `.evidence/author-v2/20261008T194115Z-92f15f47e115d915` |
 | N2-AUTH-03 | Equivalent Zig/C/Starlark programs become executable setups | `tests/core_e2e/frontends.zig` | PASS | `.evidence/core-e2e/20261008T194101Z-12ad24aac3dd97c8` |
 | N2-COMPILER-02 | common backend verifies WIT bindings and returns source diagnostics | `libs/compiler/pipeline_test.zig` | PASS | `.evidence/final-v2/20261008T194056Z` |
@@ -83,6 +85,7 @@ record covering its required scenarios on the named snapshot.
 | N2-PRIMITIVE-01 | facts are typed observations and unsupported requests stay explicit | `libs/host_primitives/root.zig` | PASS | `.evidence/final-v2/20261008T194056Z` |
 | N2-PROFILE-01 | target and primitive versions never fall back | `libs/program/profile.zig` | PASS | `.evidence/final-v2/20261008T194056Z` |
 | N2-PROFILE-02 | locked metadata must describe the exact runtime publication | `libs/compiler/runtime_package.zig` | PASS | `.evidence/final-v2/20261008T194056Z` |
+| N2-PROFILE-03 | Runtime-package schema 2 requires an explicit matching CPU/ABI declaration | `libs/compiler/runtime_package.zig`, compiler CLI and package schema | PASS | `.evidence/cpu-publication/20261009T020437Z/`: native/CLI tests and 13 schema/native vectors; no CPU execution claim |
 | N2-RUNTIME-02 | CLI preserves typed options and rejects ambiguous arguments | `apps/runtime-v2/arguments.zig` | PASS | `.evidence/final-v2/20261008T194056Z` |
 | N2-RUNTIME-03 | metadata reads use the captured image through A-B-A source changes | `apps/runtime-v2/product.zig` | PASS | `.evidence/final-v2/20261008T194056Z` |
 | N2-SAFE-02 | Bounded product-v2, native image and content parser corpus replay | `fuzz` | PASS | `.evidence/fuzz/1791473758366-suite-fuzz-91e3d412f9f9f6f0` |
@@ -193,8 +196,8 @@ Native contexts were macOS 15.7.9 arm64, Ubuntu 24.04 x64 with glibc 2.39, and
 Windows Server 2025 x64. CI proves user-scope product operations in hosted runner
 contexts. It does not establish a native Windows non-administrator token claim;
 the separate Windows 11 ARM64/x64-emulated standard-token record remains scoped
-to that environment. CPU portability beyond each recorded host remains proposed
-in [ADR-0025](adr/0025-baseline-cpu-runtime-publication.md).
+to that environment. These results do not qualify the CPU baseline contract in
+[ADR-0025](adr/0025-baseline-cpu-runtime-publication.md).
 
 Downloaded evidence is `.evidence/core-ci/20261008T193700Z-native-matrix-green/`:
 `run.json`, `artifacts.json`, `qualification.json`, assembly publisher/container/
@@ -210,3 +213,26 @@ build/test work. With the same GCC and archive, GNU ld 2.45 failed and 2.47 pass
 Internal Windows Starlark compilation now uses pinned Zig CC/LLD. All five Go
 test bodies passed in 0.092 seconds; the longer command time was cold compilation.
 The outer 300-second deadline and all test cases remain enabled.
+
+## CPU publication qualification
+
+[Core v2 run 37835115025](https://github.com/niobium-project/niobium/actions/runs/37835115025)
+failed during Linux delivered-image installation. The archived
+`.evidence/core-ci/20261009T020130Z-linux-sigill/diagnosis.json` records an `INSERTQ`
+instruction requiring SSE4a at `0x11f3098`. The runtime template is byte-identical
+to the earlier green run, and the assembled image's executable code section
+matches the template. Both facts exclude product assembly as the source of the
+instruction. Hosted CPU feature inventories were not captured, so the precise
+producer/consumer feature difference is unknown.
+
+A separate Rosetta replay, recorded as emulated rather than native evidence,
+fails earlier on `SHA256MSG1` in both witness and setup. The witness instruction
+maps to Zig's SHA-256 implementation. The stripped runtime's hosted `INSERTQ`
+symbol remains unknown. The original byte identities and failures remain intact;
+they are not relabeled as baseline qualifications.
+
+New baseline publication must record all effective code-generation targets and
+flag controls, bind schema-2 metadata to exact templates, and execute transferred
+SDK/setup bytes in a CPU context lacking the original failing extensions. The
+new `N2-CPU-*` rows stay `NOT_RUN` until those records exist. No claim about every
+physical CPU or older OS follows from compilation or one execution context.

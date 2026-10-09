@@ -2,6 +2,8 @@
 const std = @import("std");
 const Compile = std.Build.Step.Compile;
 const toolchain = @import("component_tools.zig");
+const graph_mod = @import("graph.zig");
+const cpu = @import("component_cpu.zig");
 pub const Inputs = struct {
     wasm_tools: std.Build.LazyPath,
     wit_bindgen: std.Build.LazyPath,
@@ -9,12 +11,15 @@ pub const Inputs = struct {
     core: *std.Build.Module,
     program: *std.Build.Module,
     contracts: *std.Build.Module,
+    publication: *const graph_mod.Graph,
 };
 pub const Artifacts = struct {
     step: *std.Build.Step,
     worker: *Compile,
     engine: *std.Build.Module,
     library: std.Build.LazyPath,
+    cpu_provenance: std.Build.LazyPath,
+    engine_build_log: std.Build.LazyPath,
     c_guest: std.Build.LazyPath,
     rust_guest: std.Build.LazyPath,
     caller: *Compile,
@@ -24,10 +29,11 @@ pub const Artifacts = struct {
 };
 
 pub fn add(b: *std.Build, inputs: Inputs) Artifacts {
-    const library = native(b);
+    const native_build = native(b);
+    const library = native_build.library;
     const engine = b.createModule(.{
         .root_source_file = b.path("third_party/wasmtime/session.zig"),
-        .target = b.graph.host,
+        .target = inputs.publication.config.target,
         .optimize = .safe,
         .link_libc = true,
     });
@@ -83,6 +89,8 @@ pub fn add(b: *std.Build, inputs: Inputs) Artifacts {
         .worker = worker,
         .engine = engine,
         .library = library,
+        .cpu_provenance = native_build.provenance,
+        .engine_build_log = native_build.log,
         .c_guest = c_guest,
         .rust_guest = rust_guest,
         .caller = production.caller,
@@ -92,11 +100,17 @@ pub fn add(b: *std.Build, inputs: Inputs) Artifacts {
     };
 }
 
-pub fn native(b: *std.Build) std.Build.LazyPath {
-    const host = b.graph.host.result;
+const Native = struct {
+    library: std.Build.LazyPath,
+    provenance: std.Build.LazyPath,
+    log: std.Build.LazyPath,
+};
+
+fn native(b: *std.Build) Native {
+    const host = @import("publication.zig").baselineTarget(b).result;
     const triple = rustTarget(host);
     const cargo = b.addSystemCommand(&.{
-        "cargo", "+1.96.1", "build", "--quiet", "--release", "--locked", "--manifest-path",
+        "cargo", "+1.96.1", "build", "-vv", "--release", "--locked", "--manifest-path",
     });
     cargo.addFileArg(b.path("third_party/wasmtime/adapter/Cargo.toml"));
     cargo.addArgs(&.{ "--target", triple });
@@ -111,7 +125,11 @@ pub fn native(b: *std.Build) std.Build.LazyPath {
         "niobium_wasmtime.lib"
     else
         "libniobium_wasmtime.a";
-    return target.path(b, b.fmt("{s}/release/{s}", .{ triple, name }));
+    return .{
+        .library = target.path(b, b.fmt("{s}/release/{s}", .{ triple, name })),
+        .provenance = cpu.engine(b, cargo, host, triple),
+        .log = cargo.captureStdErr(.{ .basename = "engine-build.log" }),
+    };
 }
 
 fn rustTarget(host: std.Target) []const u8 {
@@ -172,6 +190,7 @@ fn rustGuest(b: *std.Build, tool: std.Build.LazyPath) std.Build.LazyPath {
         "cargo",    "+1.96.1",                "build",           "--release", "--locked", "--quiet",
         "--target", "wasm32-unknown-unknown", "--manifest-path",
     });
+    cpu.guest(cargo);
     cargo.addFileArg(b.path("tests/component/rust/Cargo.toml"));
     cargo.addFileInput(b.path("tests/component/rust/Cargo.lock"));
     cargo.addFileInput(b.path("tests/component/rust/guest.rs"));
@@ -308,15 +327,15 @@ fn ipc(
 fn productionWorker(b: *std.Build, inputs: Inputs, engine: *std.Build.Module) *Compile {
     const worker_module = b.createModule(.{
         .root_source_file = b.path("libs/component_worker/root.zig"),
-        .target = b.graph.host,
+        .target = inputs.publication.config.target,
         .optimize = .safe,
     });
-    worker_module.addImport("program", inputs.program);
-    worker_module.addImport("contracts", inputs.contracts);
+    worker_module.addImport("program", inputs.publication.get("program"));
+    worker_module.addImport("contracts", inputs.publication.get("contracts"));
     worker_module.addImport("component_engine", engine);
     const app = b.createModule(.{
         .root_source_file = b.path("apps/component-worker/main.zig"),
-        .target = b.graph.host,
+        .target = inputs.publication.config.target,
         .optimize = .safe,
     });
     app.addImport("component_worker", worker_module);
@@ -350,6 +369,7 @@ fn packageGuest(b: *std.Build, tool: std.Build.LazyPath, package: Package) std.B
         "cargo",    "+1.96.1",                "build",           "--release", "--locked", "--quiet",
         "--target", "wasm32-unknown-unknown", "--manifest-path",
     });
+    cpu.guest(cargo);
     cargo.addFileArg(manifest);
     if (package.feature) |feature| cargo.addArgs(&.{ "--features", feature });
     for (sources) |source| cargo.addFileInput(source);

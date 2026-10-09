@@ -11,6 +11,9 @@ pub const Inputs = struct {
     files: std.Build.LazyPath,
     consumer_v1: std.Build.LazyPath,
     consumer_v2: std.Build.LazyPath,
+    metadata: std.Build.LazyPath,
+    cpu_provenance: std.Build.LazyPath,
+    engine_build_log: std.Build.LazyPath,
 };
 
 pub fn add(b: *std.Build, inputs: Inputs) void {
@@ -52,16 +55,36 @@ pub fn add(b: *std.Build, inputs: Inputs) void {
     step.dependOn(
         &b.addInstallFile(inputs.consumer_v2, "share/niobium/examples/toolchain-v2.wasm").step,
     );
-    const publish = b.addRunArtifact(inputs.compiler);
+    step.dependOn(&b.addInstallFile(
+        inputs.cpu_provenance,
+        "share/niobium/provenance/cpu.json",
+    ).step);
+    step.dependOn(&b.addInstallFile(
+        inputs.engine_build_log,
+        "share/niobium/provenance/engine-build.log",
+    ).step);
+    step.dependOn(&b.addInstallFile(
+        inputs.metadata,
+        "share/niobium/runtime-package.json",
+    ).step);
+}
+
+pub fn runtimePackage(
+    b: *std.Build,
+    compiler: *std.Build.Step.Compile,
+    runtime: *std.Build.Step.Compile,
+) std.Build.LazyPath {
+    const publish = b.addRunArtifact(compiler);
+    const profile = @import("publication.zig").nativeProfile(
+        runtime.root_module.resolved_target.?.result,
+    ) catch invalid: {
+        publish.step.dependOn(&b.addFail("Unqualified native CPU/ABI publication profile").step);
+        break :invalid "unqualified";
+    };
     publish.addArgs(&.{ "runtime-package", "--template" });
-    publish.addArtifactArg(inputs.runtime);
-    publish.addArgs(&.{ "--target", b.fmt("{s}-{s}", .{
+    publish.addArtifactArg(runtime);
+    publish.addArgs(&.{ "--native-profile", profile, "--target", b.fmt("{s}-{s}", .{
         @tagName(b.graph.host.result.cpu.arch), @tagName(b.graph.host.result.os.tag),
     }), "--version", "0.3.0-dev", "--out" });
-    step.dependOn(
-        &b.addInstallFile(
-            publish.addOutputFileArg("runtime-package.json"),
-            "share/niobium/runtime-package.json",
-        ).step,
-    );
+    return publish.addOutputFileArg("runtime-package.json");
 }
