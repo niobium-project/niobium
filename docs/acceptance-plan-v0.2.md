@@ -1,5 +1,7 @@
 # Acceptance plan v0.2
 
+Historical Core Wasm v1 evidence. [Acceptance v0.3](acceptance-plan-v0.3.md) owns standard Component/product-v2 qualification; these records retain their original scope.
+
 N2 records evidence for the DSL/AOT architecture in [ADR-0022](adr/0022-installer-dsl-and-aot-toolchain.md). N1 remains in the [historical acceptance plan](acceptance-plan-v0.1.md) and cannot establish N2 results.
 
 Status uses only `PASS`, `FAIL`, `BLOCKED`, `NOT_RUN`, `DEFERRED`. A row is PASS only when every required scenario ran on the stated target. A compiler result or an agent review alone does not meet an end-to-end row.

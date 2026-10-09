@@ -1,13 +1,19 @@
 ---
 title: 状态与平台
-description: Niobium 0.1 中哪些内容已经验证、在哪些平台上，以及哪些被阻塞、未运行或推迟。
+description: 当前 Component 方案的验收边界，以及各自保留范围内的历史结果。
 ---
 
-## DSL/AOT 验收
+## 当前标准 Component 方案
 
-新架构的唯一验收记录是 [N2 验收计划](https://github.com/niobium-project/niobium/blob/main/docs/acceptance-plan-v0.2.md)。首个原生验收目标是 macOS arm64、用户范围和 CLI。构建完成不能代替最终 setup 的执行证据；每个 N2 ID 的结果、命令与证据路径由该记录维护。
+[验收计划 v0.3](https://github.com/niobium-project/niobium/blob/main/docs/acceptance-plan-v0.3.md)记录当前编译器、标准 WIT 库、内容/权限、原生封装和维护流程的实际命令、源码及制品身份与证据。基础 CLI 切片已在 [CI 37874568090](https://github.com/niobium-project/niobium/actions/runs/37874568090) 中通过原生发布、隔离组装和最终字节验收矩阵；当前接口仍为实验性接口。
 
-下面的 N1 表格保留历史结果，仅适用于旧 manifest/engine 实现，不能证明新的编译器、Wasm 能力库或 runtime 已经验收。
+Niobium 的 runtime 和 SDK 代码采用带版本的最低 CPU 配置。最终 Linux SDK 和 setup 字节也已在缺少 SHA/SSE4a 扩展的 x64 模拟环境中通过验证。该记录仅覆盖已记录的 CPU、文件系统和权限上下文，不能证明所有物理 CPU 或更旧操作系统均已验收。
+
+作者入口一致性、标准 ABI/隔离 worker 和基础契约测试，与最终 setup 的生命周期、权限、签名及崩溃恢复验收是不同证据。编译成功不能代替运行最终字节；本地模拟目标的结果不能替代原生目标 CI。已记录的原生环境为 macOS 15.7.9 arm64、Ubuntu 24.04 x64 和 Windows Server 2025 x64。托管 runner 上的操作不能证明原生 Windows 普通用户令牌或通用 CPU 可移植性。整机范围、Developer ID、公证、Authenticode 和标准 v2 UI 仍为独立工作包；已记录的 Windows 私有 worker 副本清理限制也仍未关闭。
+
+可通过 `zig build author-v2-test component-test core-test` 运行基础检查，通过 `zig build core-e2e` 运行最终制品场景。完整门禁为 `zig build verify`。各平台的实际范围以验收记录为准，而非本文中的旧表格。
+
+[验收 v0.2](https://github.com/niobium-project/niobium/blob/main/docs/acceptance-plan-v0.2.md)保留原 Core Wasm/WAMR PoC 范围。下面的 N1 表格继续保留旧 manifest/engine 的历史结果，不能证明当前方案已经验收。
 
 ## 历史 v1 状态
 
@@ -26,13 +32,13 @@ Niobium 0.1 是一个用来证明模型可行的纵向切片，尚不能用于�
 
 事实来源是仓库中的[验收计划](https://github.com/niobium-project/niobium/blob/main/docs/acceptance-plan-v0.1.md)和[开发路线图](https://github.com/niobium-project/niobium/blob/main/docs/roadmap-v0.2.md)；如果本页与它们不一致，以它们为准。接下来计划做什么，用通俗的说法写在[路线图](/zh/roadmap/)上。
 
-## 在哪里验证
+## 历史记录的验证环境
 
-所有 `PASS` 条目都来自在 macOS arm64 主机上运行的 `zig build verify`；端到端测试套件也在 Debian bookworm arm64 容器中通过。目前还没有在真实的 Windows 机器或完整的 Linux 桌面上验证过任何内容。
+以下历史 `PASS` 条目都来自在 macOS arm64 主机上运行的 `zig build verify`；端到端测试套件也在 Debian bookworm arm64 容器中通过。该历史记录形成时，尚未在真实 Windows 机器或完整 Linux 桌面上验证。
 
 构建目标是 `x86_64-windows`、`aarch64-macos` 和 `x86_64-linux`，另有用于虚拟机测试的 `aarch64-linux`；它们的支持层级和参考操作系统见[平台支持](/zh/platforms/)。所有目标都能交叉编译并通过二进制检查，三个发布目标的 `setup` 都小于 30 MiB（N1-AC-15 到 N1-AC-17：`PASS`）。能为某个平台编译，并不等于已在该平台上验证。
 
-## 用户旅程
+## 历史用户旅程
 
 | ID | 旅程 | 状态 |
 |---|---|---|
@@ -49,7 +55,7 @@ Niobium 0.1 是一个用来证明模型可行的纵向切片，尚不能用于�
 
 N1-UJ-02 被阻塞的原因与下面的真实系统冒烟测试相同，另外还因为冒烟工具目前只运行用户范围。
 
-## 保证
+## 历史保证
 
 | ID | 保证 | 状态 |
 |---|---|---|
@@ -64,7 +70,7 @@ N1-UJ-02 被阻塞的原因与下面的真实系统冒烟测试相同，另外�
 
 这些测试在构建主机上运行，对象是注入了故障的测试平台以及主机的真实文件系统。它们不能作为尚未运行的平台（见下文）的证据。
 
-## 平台
+## 历史平台记录
 
 | 项目 | 状态 |
 |---|---|
@@ -84,7 +90,7 @@ N1-UJ-02 被阻塞的原因与下面的真实系统冒烟测试相同，另外�
 | 面向 Electron 宿主的嵌入式更新（`distribution.node`） | `DEFERRED` |
 | 把协议处理程序、开机自启项和环境变量作为能力 | `DEFERRED` |
 
-## 没有验收条目的缺口
+## 历史记录中没有验收条目的缺口
 
 - `nbpack` 目前还不能轮换 root 或在线密钥；客户端已经能验证轮换后的 root（[签名与密钥管理](/zh/guides/sign-and-keys/#rotate-or-recover-keys)）。
 - 没有已发布的安全策略或私密报告渠道（[安全](/zh/security/#report-a-vulnerability)）。

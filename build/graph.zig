@@ -83,6 +83,14 @@ fn createModule(b: *std.Build, config: Config, spec: specs.ModuleSpec) *std.Buil
     });
     switch (spec.c_library) {
         .none => {},
+        .access => {
+            module.link_libc = true;
+            module.addCSourceFile(.{
+                .file = b.path("libs/access/native.c"),
+                .flags = &.{ "-std=c11", "-Wall", "-Wextra", "-Werror" },
+            });
+            if (config.target.result.os.tag == .macos) addMacosSdk(b, config, module);
+        },
         .stb_truetype => addStbTruetype(b, module, config.inputs.deps.stb_truetype),
         .zstd_compress => addZstdCompress(module, config.inputs.deps.zstd),
         .wamr => if (config.target.result.os.tag == .macos and

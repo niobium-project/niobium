@@ -5,21 +5,21 @@ description: Contract-first workflow for capability libraries, host primitives a
 
 # Capability libraries and host primitives
 
-Read ADR-0022, the active capability/runtime/migration specs and [host primitives and stdlib](../../../docs/design/host-primitives-and-stdlib.md) before extending a capability.
+Read ADR-0022, ADR-0023, the active capability/runtime/migration specs and [host primitives and stdlib](../../../docs/design/host-primitives-and-stdlib.md) before extending a capability.
 
 ## Choose the owner
 
 1. Use an author library or preset for build-time composition and product policy.
 2. Use a Wasm capability library for runtime computation over existing host inputs and primitives.
 3. Add a host primitive only when the required mechanism is absent. Define its authority, platform/scope support, ownership and recovery before implementation.
-4. Keep platform implementation details inside the declared native backend. Libraries use the public guest ABI, including official libraries.
+4. Keep platform implementation details inside the declared native backend. Libraries use the public guest ABI, including official libraries. Use WIT and community Component bindgen; do not hand-build a replacement Canonical ABI.
 
 ## Contract-first process
 
-1. Specify request/result types, limits, versions, errors and required host grants.
+1. Specify WIT request/result types, limits, versions, errors and required host grants. Follow [Component SDK](../../../docs/development/component-library-sdk.md). Type-only imports use the shared structural predicate; function imports require native contracts.
 2. Define observation, planning, durable operation and recovery boundaries. Guest outputs are proposals; they cause no machine mutation.
 3. Describe ownership collision, user edits, uninstall, upgrade and state migration behavior.
-4. Add negative vectors for unavailable authority, invalid handles, unsupported targets and incompatible states.
+4. Add negative vectors for unavailable authority, invalid handles, forbidden resource persistence, unsupported targets and incompatible states.
 5. Implement host mechanisms with a virtual/fault backend where appropriate, then real platform behavior. Run the same contract cases against both.
 6. For elevation, define a closed authenticated helper operation; no generic execution import is allowed.
 7. Update runtime profile compatibility and compiler checks. Persist required primitive versions in recovery records.

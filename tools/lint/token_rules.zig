@@ -14,9 +14,17 @@ const panic_owners = [_][]const u8{
 
 /// Modules that parse untrusted bytes: no @intCast/@truncate (use std.math.cast).
 const parser_paths = [_][]const u8{
+    "libs/content/",
+    "libs/tar/",
+    "libs/image/",
+    "libs/kernel/",
+    "libs/component_worker/",
+    "libs/component_client/",
+    "libs/evaluator/",
+    "libs/access/",
+    "libs/compiler/",
     "libs/contracts/",
     "libs/program/",
-    "libs/compiler/",
     "libs/runtime/",
     "libs/wasm_profile/",
     "libs/wasm_host/",

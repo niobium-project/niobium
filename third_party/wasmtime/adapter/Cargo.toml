@@ -1,0 +1,20 @@
+[package]
+name = "niobium-wasmtime"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["staticlib"]
+path = "lib.rs"
+
+[dependencies]
+wasmtime-c-api-impl = { version = "=49.0.2", default-features = false, features = ["cranelift", "component-model", "pulley", "disable-logging"] }
+wasmparser = "=0.258.3"
+
+[profile.release]
+opt-level = "s"
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"

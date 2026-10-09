@@ -1,0 +1,553 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://niobium.dev/schema/compiled-program-v2.schema.json",
+  "title": "compiled-program-v2",
+  "$comment": "Wire shape only. Native validation also enforces UTF-8 byte limits, aggregate depth and budgets, references, authority, WIT compatibility and canonical identities.",
+  "type": "object",
+  "properties": {
+    "schema": {
+      "const": 2
+    },
+    "runtime_abi": {
+      "const": 2
+    },
+    "id": { "$ref": "#/$defs/id" },
+    "release_sequence": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 18446744073709551615
+    },
+    "model_version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4294967295
+    },
+    "target": { "$ref": "#/$defs/target" },
+    "profile": { "$ref": "#/$defs/profile" },
+    "state_root": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 128
+    },
+    "inputs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/input" },
+      "maxItems": 64
+    },
+    "libraries": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/library" },
+      "maxItems": 64
+    },
+    "containers": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/container" },
+      "maxItems": 64
+    },
+    "roots": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/root" },
+      "maxItems": 64
+    },
+    "grants": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/grant" },
+      "maxItems": 64
+    },
+    "observations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/observation" },
+      "maxItems": 64
+    },
+    "calls": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/call" },
+      "maxItems": 64
+    },
+    "upgrades": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/upgrade" },
+      "maxItems": 64
+    }
+  },
+  "required": ["id", "release_sequence", "target", "profile"],
+  "additionalProperties": false,
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9._-]{1,128}$"
+    },
+    "u32": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295
+    },
+    "u64": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 18446744073709551615
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "target": {
+      "enum": [
+        "x86_64-linux",
+        "x86_64-windows",
+        "aarch64-macos"
+      ]
+    },
+    "requirement": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        }
+      },
+      "required": ["id", "version"],
+      "additionalProperties": false
+    },
+    "profile": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "const": 1
+        },
+        "id": { "$ref": "#/$defs/id" },
+        "target": { "$ref": "#/$defs/target" },
+        "runtime_abi": {
+          "const": 2
+        },
+        "program_schema": {
+          "const": 2
+        },
+        "component_profile": {
+          "const": 1
+        },
+        "content_profile": {
+          "const": 1
+        },
+        "primitives": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/requirement" },
+          "maxItems": 64
+        }
+      },
+      "required": ["id", "target", "primitives"],
+      "additionalProperties": false
+    },
+    "rights": {
+      "type": "object",
+      "properties": {
+        "read": {
+          "type": "boolean"
+        },
+        "write": {
+          "type": "boolean"
+        },
+        "execute": {
+          "type": "boolean"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "policy": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "const": 1
+        },
+        "kind": {
+          "enum": [
+            "file",
+            "directory"
+          ]
+        },
+        "owner": { "$ref": "#/$defs/rights" },
+        "everyone": { "$ref": "#/$defs/rights" }
+      },
+      "required": ["kind", "owner", "everyone"],
+      "additionalProperties": false
+    },
+    "container_ref": {
+      "type": "object",
+      "properties": {
+        "format": {
+          "const": "posix_pax_v1"
+        },
+        "sha256": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          },
+          "minItems": 32,
+          "maxItems": 32
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 8589934592
+        }
+      },
+      "required": ["format", "sha256", "bytes"],
+      "additionalProperties": false
+    },
+    "input": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "default": { "$ref": "component-value-v1.schema.json" },
+        "resolved_type": {
+          "anyOf": [
+            { "$ref": "component-type-v1.schema.json" },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Compiler-owned full WIT type; null only in author IR. Executable products require a concrete type."
+        }
+      },
+      "required": ["id", "default"],
+      "additionalProperties": false
+    },
+    "library": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "member": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "sha256": { "$ref": "#/$defs/digest" },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18446744073709551615
+        },
+        "requires": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/requirement" },
+          "maxItems": 64
+        }
+      },
+      "required": ["id", "member", "sha256", "bytes"],
+      "additionalProperties": false
+    },
+    "container": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "member": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "reference": { "$ref": "#/$defs/container_ref" }
+      },
+      "required": ["id", "member", "reference"],
+      "additionalProperties": false
+    },
+    "root": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "scope": {
+          "const": "user"
+        }
+      },
+      "required": ["id"],
+      "additionalProperties": false
+    },
+    "grant": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "root": { "$ref": "#/$defs/id" },
+        "primitive": { "$ref": "#/$defs/requirement" },
+        "prefix": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 1024
+        },
+        "max_entries": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        },
+        "max_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 18446744073709551615
+        },
+        "file_access": { "$ref": "#/$defs/policy" },
+        "directory_access": { "$ref": "#/$defs/policy" }
+      },
+      "required": ["id", "root", "primitive"],
+      "additionalProperties": false
+    },
+    "projection": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "maxItems": 32
+        }
+      },
+      "required": ["id"],
+      "additionalProperties": false
+    },
+    "binding": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "literal": { "$ref": "component-value-v1.schema.json" }
+          },
+          "required": ["literal"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "input": { "$ref": "#/$defs/id" }
+          },
+          "required": ["input"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "node_result": { "$ref": "#/$defs/projection" }
+          },
+          "required": ["node_result"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "observation": { "$ref": "#/$defs/projection" }
+          },
+          "required": ["observation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "previous_state": {
+              "type": "object",
+              "properties": {},
+              "required": [],
+              "additionalProperties": false
+            }
+          },
+          "required": ["previous_state"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "record": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1024
+                  },
+                  "binding": { "$ref": "#/$defs/binding" }
+                },
+                "required": ["name", "binding"],
+                "additionalProperties": false
+              },
+              "maxItems": 64
+            }
+          },
+          "required": ["record"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "list": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/binding" },
+              "maxItems": 4096
+            }
+          },
+          "required": ["list"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "tuple": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/binding" },
+              "maxItems": 4096
+            }
+          },
+          "required": ["tuple"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "some": { "$ref": "#/$defs/binding" }
+          },
+          "required": ["some"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "observation": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "primitive": { "$ref": "#/$defs/requirement" },
+        "function": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "arguments": {
+          "type": "array",
+          "items": { "$ref": "component-value-v1.schema.json" },
+          "maxItems": 64
+        },
+        "grant": {
+          "anyOf": [
+            { "$ref": "#/$defs/id" },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": ["id", "primitive", "function"],
+      "additionalProperties": false
+    },
+    "migration": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "from": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        },
+        "to": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        },
+        "library": { "$ref": "#/$defs/id" },
+        "interface": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 1024
+        },
+        "function": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "implementation_sha256": { "$ref": "#/$defs/digest" }
+      },
+      "required": [
+        "id",
+        "from",
+        "to",
+        "library",
+        "interface",
+        "function",
+        "implementation_sha256"
+      ],
+      "additionalProperties": false
+    },
+    "call": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "library": { "$ref": "#/$defs/id" },
+        "interface": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 1024
+        },
+        "function": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "arguments": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/binding" },
+          "maxItems": 64
+        },
+        "grants": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/id" },
+          "maxItems": 64
+        },
+        "after": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/id" },
+          "maxItems": 64
+        },
+        "state_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        },
+        "migrations": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/migration" },
+          "maxItems": 64
+        },
+        "result_role": {
+          "enum": [
+            "value",
+            "plan"
+          ]
+        }
+      },
+      "required": ["id", "library", "interface", "function"],
+      "additionalProperties": false
+    },
+    "upgrade": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "from": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        },
+        "to": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        }
+      },
+      "required": ["id", "from", "to"],
+      "additionalProperties": false
+    }
+  }
+}

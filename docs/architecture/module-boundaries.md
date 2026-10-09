@@ -41,10 +41,32 @@ Wasm modules cross a versioned host ABI, not Zig module imports. Runtime profile
 | `ui/screens`, `ui/backend` | Adapt boundary as needed | Standard workflow and native presentation |
 | `apps/setup`, `apps/nbpack`, `apps/libdistribution` | Retain for legacy | Historical process interfaces and regressions |
 | `apps/ui-workbench` | Reuse | Standard UI development tooling |
-| `third_party` | Reuse dependency/provenance discipline | Pinned WAMR plus existing upstream libraries |
+| `third_party` | Reuse dependency/provenance discipline | Pinned Component toolchain plus retained WAMR and other dependencies |
 | `tools`, `tests` | Extend | N2 contract checks and evidence without removing N1 regressions |
 
-The new owners are `program`, `compiler`, `wasm_profile`, `wasm_host` and `runtime`. The application layer performs process assembly and platform signing. Details of target SDKs and stdlib packages are designs until their work-package acceptance runs.
+## Standard-core owners
+
+| Owner | Responsibility | Dependency constraint |
+|---|---|---|
+| `tar` | Shared pure tar codec and generic fixtures | No platform or product policy |
+| `content` | Logical trees, canonical containers and transformations | Contracts plus pure tar; no native deployment |
+| `program` | Author/compiled model, WIT descriptors, values and profiles | Shared contracts/content only |
+| `compiler` | Author SDK and common compilation stages | Build-time phase; no product runtime relink |
+| `image` | Native carrier inspection, assembly and measurement | Shared bounded sources; signing invocation stays in the application |
+| `component_engine` | Pinned upstream engine bridge | Upstream boundary only |
+| `component_worker` | Standard ABI inspection/evaluation | Shared program contract and engine, no frontend |
+| `component_client` | Disposable fixed-worker process lifetime | Shared protocol; no engine/native guest memory |
+| `host_primitives` | Published observation and primitive contracts | No component/workload/channel policy |
+| `evaluator` | Typed graph evaluation and proposal normalization | Install-time; no compiler/frontend |
+| `access_policy`, `access` | Portable intent and native discretionary access | Pure contract separated from platform bridge |
+| `kernel` | Ownership, frozen operations, commit and recovery | Install-time; no library/preset policy |
+| `runtime_process` | Complete precompiled runtime entrypoint | Registered install-time root; transitive phase guards include app assembly |
+| `stdlib/files` | Optional file deployment and content selection | Public WIT only; built as an independent Component |
+
+`apps/compiler-v2`, `apps/libcompiler/v2.zig` and `apps/starlark/v2` assemble host
+entrypoints. `apps/runtime-v2` consumes the registered `runtime_process` graph.
+The Core Wasm owners `wasm_profile`, `wasm_host` and `runtime` remain v1 implementations.
+All platform support claims require their own current acceptance evidence.
 
 ## Enforced boundaries
 

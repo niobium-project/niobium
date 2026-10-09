@@ -1,0 +1,96 @@
+// Public build tools; no host SDK executable or archive symlink is extracted.
+.{
+    .packages = .{
+        .{
+            .name = "wasm_tools",
+            .version = "1.258.3",
+            .sources = .{.{
+                .url = "https://github.com/bytecodealliance/wasm-tools/releases/download/v1.258.3/wasm-tools-1.258.3-aarch64-macos.tar.gz",
+                .sha256 = "dacd5e6a79c0ad513c369373eb0e595dafadae01fddbb47cda8dee543a31495d",
+                .archive = .tar_gz,
+                .strip_components = 1,
+                .extract = .{ "wasm-tools", "LICENSE-APACHE", "LICENSE-MIT", "LICENSE-Apache-2.0_WITH_LLVM-exception" },
+                .executables = .{"wasm-tools"},
+            }},
+            .patches = .{},
+        },
+        .{
+            .name = "wit_bindgen",
+            .version = "0.61.1",
+            .sources = .{.{
+                .url = "https://github.com/bytecodealliance/wit-bindgen/releases/download/v0.61.1/wit-bindgen-0.61.1-aarch64-macos.tar.gz",
+                .sha256 = "7f3a73a917a73a67d9d9b8e422dc4e938d3bdb749926109426dd631de2298365",
+                .archive = .tar_gz,
+                .strip_components = 1,
+                .extract = .{ "wit-bindgen", "LICENSE-APACHE", "LICENSE-MIT", "LICENSE-Apache-2.0_WITH_LLVM-exception" },
+                .executables = .{"wit-bindgen"},
+            }},
+            .patches = .{},
+        },
+        .{
+            .name = "wasi_sysroot",
+            .version = "34.0",
+            .sources = .{.{
+                .url = "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-34/wasi-sysroot-34.0.tar.gz",
+                .sha256 = "9d813544eeebe38b7b8f2244ed591de46b6db812c6dd1a257ff9f0d2a905a2be",
+                .archive = .tar_gz,
+                .strip_components = 1,
+                .max_download_bytes = 134217728,
+                .extract = .{ "include/wasm32-wasip1/", "lib/wasm32-wasip1/libc.a" },
+            }},
+            .patches = .{},
+        },
+        .{
+            .name = "wasm_tools_linux_x64",
+            .version = "1.258.3",
+            .sources = .{.{
+                .url = "https://github.com/bytecodealliance/wasm-tools/releases/download/v1.258.3/wasm-tools-1.258.3-x86_64-linux.tar.gz",
+                .sha256 = "99b486a9ddc19af0260cd5f98f3b709a60817a3acd20efc9c582d719caebbf6d",
+                .archive = .tar_gz,
+                .strip_components = 1,
+                .extract = .{ "wasm-tools", "LICENSE-APACHE", "LICENSE-MIT", "LICENSE-Apache-2.0_WITH_LLVM-exception" },
+                .executables = .{"wasm-tools"},
+            }},
+            .patches = .{},
+        },
+        .{
+            .name = "wit_bindgen_linux_x64",
+            .version = "0.61.1",
+            .sources = .{.{
+                .url = "https://github.com/bytecodealliance/wit-bindgen/releases/download/v0.61.1/wit-bindgen-0.61.1-x86_64-linux.tar.gz",
+                .sha256 = "1aea51f8379e36e76081c08fcc5faada928c03a6d0965a55132d72c8d966463c",
+                .archive = .tar_gz,
+                .strip_components = 1,
+                .extract = .{ "wit-bindgen", "LICENSE-APACHE", "LICENSE-MIT", "LICENSE-Apache-2.0_WITH_LLVM-exception" },
+                .executables = .{"wit-bindgen"},
+            }},
+            .patches = .{},
+        },
+        .{
+            .name = "wasm_tools_windows_x64",
+            .version = "1.258.3",
+            .sources = .{.{
+                .url = "https://github.com/bytecodealliance/wasm-tools/releases/download/v1.258.3/wasm-tools-1.258.3-x86_64-windows.zip",
+                .sha256 = "bae5d6d73baffe55c4aaaa00e9b26e85bad021bccd8a1c6b7f0b2bcbbe8b86be",
+                .archive = .zip,
+                .strip_components = 1,
+                .extract = .{ "wasm-tools.exe", "LICENSE-APACHE", "LICENSE-MIT", "LICENSE-Apache-2.0_WITH_LLVM-exception" },
+                .executables = .{"wasm-tools.exe"},
+            }},
+            .patches = .{},
+        },
+        .{
+            .name = "wit_bindgen_windows_x64",
+            .version = "0.61.1",
+            .sources = .{.{
+                .url = "https://github.com/bytecodealliance/wit-bindgen/releases/download/v0.61.1/wit-bindgen-0.61.1-x86_64-windows.zip",
+                .sha256 = "42f255e8d185ab9f2d7677e1bb437eb4ff37041943d25357476d718b542d629f",
+                .archive = .zip,
+                .strip_components = 1,
+                .extract = .{ "wit-bindgen.exe", "LICENSE-APACHE", "LICENSE-MIT", "LICENSE-Apache-2.0_WITH_LLVM-exception" },
+                .executables = .{"wit-bindgen.exe"},
+            }},
+            .patches = .{},
+        },
+    },
+}

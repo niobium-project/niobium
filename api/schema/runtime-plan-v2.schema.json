@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://niobium.dev/schema/runtime-plan-v2.schema.json",
+  "title": "runtime-plan-v2",
+  "type": "object",
+  "properties": {
+    "schema": {
+      "const": 2,
+      "default": 2
+    },
+    "host_abi": {
+      "const": 2,
+      "default": 2
+    },
+    "instance": { "$ref": "https://niobium.dev/schema/runtime-state-v2.schema.json#/$defs/nonce" },
+    "product_id": { "$ref": "https://niobium.dev/schema/compiled-program-v2.schema.json#/$defs/id" },
+    "transaction": { "$ref": "https://niobium.dev/schema/runtime-state-v2.schema.json#/$defs/nonce" },
+    "roots": {
+      "type": "array",
+      "items": { "$ref": "https://niobium.dev/schema/runtime-state-v2.schema.json#/$defs/root_binding" },
+      "minItems": 1,
+      "maxItems": 64
+    },
+    "state_root": { "$ref": "https://niobium.dev/schema/compiled-program-v2.schema.json#/$defs/id" },
+    "previous": { "$ref": "#/$defs/state_or_null" },
+    "next": { "$ref": "#/$defs/state_or_null" },
+    "containers": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/desired_container" },
+      "minItems": 0,
+      "maxItems": 64
+    }
+  },
+  "required": [
+    "instance",
+    "product_id",
+    "transaction",
+    "roots",
+    "state_root",
+    "previous",
+    "next",
+    "containers"
+  ],
+  "additionalProperties": false,
+  "$comment": "Frozen host plan, never a guest continuation. Maximum encoded size is 16 MiB and wrapper depth 144. Native validation additionally checks the exact owned root map/coordinator, snapshots, transaction generations, no containers for null next state, access contracts and content limits before recovery effects. Digest length/version/unknown-field checks are strict; publisher trust is a separate boundary.",
+  "$defs": {
+    "state_or_null": {
+      "anyOf": [
+        { "$ref": "https://niobium.dev/schema/runtime-state-v2.schema.json" },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "desired_container": {
+      "type": "object",
+      "properties": {
+        "call": { "$ref": "https://niobium.dev/schema/compiled-program-v2.schema.json#/$defs/id" },
+        "root": { "$ref": "https://niobium.dev/schema/compiled-program-v2.schema.json#/$defs/id" },
+        "grant": { "$ref": "https://niobium.dev/schema/compiled-program-v2.schema.json#/$defs/id" },
+        "prefix": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 1024,
+          "pattern": "^[^\\u0000]*$"
+        },
+        "container": { "$ref": "https://niobium.dev/schema/compiled-program-v2.schema.json#/$defs/container_ref" },
+        "file_access": { "$ref": "https://niobium.dev/schema/compiled-program-v2.schema.json#/$defs/policy" },
+        "directory_access": { "$ref": "https://niobium.dev/schema/compiled-program-v2.schema.json#/$defs/policy" }
+      },
+      "required": [
+        "call",
+        "root",
+        "grant",
+        "prefix",
+        "container",
+        "file_access",
+        "directory_access"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

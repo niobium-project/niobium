@@ -1,0 +1,17 @@
+[package]
+name = "niobium-component-consumer"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+path = "guest.rs"
+
+[dependencies]
+wit-bindgen = "=0.61.1"
+
+[profile.release]
+opt-level = "s"
+panic = "abort"
+strip = "symbols"

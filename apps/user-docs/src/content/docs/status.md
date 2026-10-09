@@ -1,13 +1,41 @@
 ---
 title: Status and platforms
-description: What has been verified in Niobium 0.1, on which platforms, and what is blocked, not run or deferred.
+description: Current Component qualification boundaries and historical results within their original scope.
 ---
 
-## DSL/AOT qualification
+## Current standard Component profile
 
-The [N2 acceptance plan](https://github.com/niobium-project/niobium/blob/main/docs/acceptance-plan-v0.2.md) owns new-architecture results. The initial native target is macOS arm64, user scope and CLI. Building is insufficient evidence for a final setup; that record maintains each N2 ID's result, command and evidence path.
+[Acceptance v0.3](https://github.com/niobium-project/niobium/blob/main/docs/acceptance-plan-v0.3.md)
+records actual commands, source/artifact identities and evidence for the compiler,
+standard WIT libraries, content/access, native assembly and maintenance. The
+foundational CLI slice passed its native publishing, isolated assembly and final-byte
+matrix in [CI run 37874568090](https://github.com/niobium-project/niobium/actions/runs/37874568090).
+Current interfaces remain experimental.
 
-The N1 tables below preserve historical results for the manifest/engine implementation. They do not qualify the new compiler, Wasm libraries or runtime.
+Niobium runtime and SDK code use versioned minimum CPU profiles. The exact
+Linux SDK and setup bytes also passed in a recorded x64 emulation context lacking
+SHA/SSE4a extensions. That record remains scoped to its CPU, filesystem and
+privilege context; it does not qualify every physical CPU or older operating system.
+
+Author parity, standard ABI/worker isolation and foundation tests are distinct
+from final setup lifecycle, permissions, signing and crash-recovery evidence.
+Compilation is not final-byte execution, and local emulated-target results do not
+replace native-target CI. The recorded native environments are macOS 15.7.9 arm64,
+Ubuntu 24.04 x64 and Windows Server 2025 x64. Hosted runner operations do not
+establish a native Windows standard-user token claim or generic CPU portability.
+Machine scope, Developer ID, notarization, Authenticode and a standard v2 UI remain
+separate work packages. The recorded Windows private worker-copy cleanup limitation
+also remains open.
+
+Run `zig build author-v2-test component-test core-test` for foundation checks and
+`zig build core-e2e` for delivered-artifact scenarios. `zig build verify` is the
+complete gate. Each platform's actual scope comes from its acceptance record,
+not the historical tables below.
+
+[Acceptance v0.2](https://github.com/niobium-project/niobium/blob/main/docs/acceptance-plan-v0.2.md)
+retains the earlier Core Wasm/WAMR PoC. The following N1 tables preserve the
+manifest/engine implementation's historical results and do not qualify the
+current profile.
 
 ## Historical v1 status
 
@@ -26,13 +54,13 @@ Statuses use five values only:
 
 The source of truth is the repository's [acceptance plan](https://github.com/niobium-project/niobium/blob/main/docs/acceptance-plan-v0.1.md) and [development roadmap](https://github.com/niobium-project/niobium/blob/main/docs/roadmap-v0.2.md); if this page and those disagree, they are right. What is planned next, in plain terms, is on the [Roadmap](/roadmap/).
 
-## Where it was verified
+## Historical verification environment
 
-All `PASS` entries come from `zig build verify` on a macOS arm64 host; the end-to-end suite also passes in a Debian bookworm arm64 container. Nothing has been verified yet on a real Windows machine or a full Linux desktop.
+The following historical `PASS` entries come from `zig build verify` on a macOS arm64 host; the end-to-end suite also passes in a Debian bookworm arm64 container. At the time of this historical record, no real Windows machine or full Linux desktop had been verified.
 
 Build targets are `x86_64-windows`, `aarch64-macos` and `x86_64-linux`, plus `aarch64-linux` for VM tests; their support tiers and reference operating systems are on [Platform support](/platforms/). All of them cross-compile and pass the binary checks, and the three shipping targets keep `setup` under 30 MiB (N1-AC-15 to N1-AC-17: `PASS`). Compiling for a platform is not the same as having verified it there.
 
-## User journeys
+## Historical user journeys
 
 | ID | Journey | Status |
 |---|---|---|
@@ -49,7 +77,7 @@ Build targets are `x86_64-windows`, `aarch64-macos` and `x86_64-linux`, plus `aa
 
 N1-UJ-02 is blocked for the same reason as the real-OS smoke tests below, and additionally because the smoke tool runs user scope only so far.
 
-## Guarantees
+## Historical guarantees
 
 | ID | Guarantee | Status |
 |---|---|---|
@@ -64,7 +92,7 @@ N1-UJ-02 is blocked for the same reason as the real-OS smoke tests below, and ad
 
 These run on the build host against a test platform with injected faults and against the host's real file system. They are not evidence for platforms that have not been run (below).
 
-## Platforms
+## Historical platform records
 
 | Item | Status |
 |---|---|
@@ -77,14 +105,14 @@ These run on the build host against a test platform with injected faults and aga
 
 The real-OS smoke tests are blocked because the test virtual machines were not running when the suite last ran. What each platform is committed to, and which test lanes are still missing, is on [Platform support](/platforms/).
 
-## Deferred features
+## Historical deferred features
 
 | Item | Status |
 |---|---|
 | Embedded updates for Electron hosts (`distribution.node`) | `DEFERRED` |
 | Protocol handlers, autostart entries and environment variables as capabilities | `DEFERRED` |
 
-## Gaps without an acceptance entry
+## Historical gaps without an acceptance entry
 
 - `nbpack` cannot rotate root or online keys yet; clients already verify rotated roots ([Sign and manage keys](/guides/sign-and-keys/#rotate-or-recover-keys)).
 - There is no published security policy or private reporting channel ([Security](/security/#report-a-vulnerability)).

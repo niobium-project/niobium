@@ -36,7 +36,8 @@ pub fn add(b: *std.Build, graph: *const graph_mod.Graph) Artifacts {
     go_build.addArg(".");
     const tests = b.step("aot-authoring-test", "Compiler authoring and Starlark conformance");
     const go_test = goCommand(b, library);
-    go_test.addArgs(&.{ "test", "-mod=readonly", "-count=1", "./..." });
+    // ABI v2 is tested by author-v2-test with its independently linked C library.
+    go_test.addArgs(&.{ "test", "-mod=readonly", "-count=1", "." });
     tests.dependOn(&go_test.step);
     for ([_][]const u8{ "apps/libcompiler/root.zig", "apps/compiler/main.zig" }) |source| {
         const suite = b.addTest(.{

@@ -1,7 +1,8 @@
 # ADR-0005: tar.zst component payload format
 
 - **Status:** Accepted
-- **Date:** 2026-10-07
+- **Date:** 2026-10-08
+- **Amended by:** [ADR-0023](0023-standard-content-and-component-contracts.md) (new logical content profile; retained artifact-v1 keeps its original restrictions)
 
 ## Context
 

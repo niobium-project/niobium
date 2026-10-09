@@ -11,16 +11,18 @@ Runtime 绑定用户选择与机器事实，执行固定的 Wasm 能力库，再
 
 1. 通过作者 SDK 构建产品模型。函数、循环和跨项目组合使用源码语言。
 2. 在构建时绑定库实现与制品。编译器验证契约并封装 runtime，无需重新链接。
-3. 分发最终签名的 setup。Runtime 的宿主操作控制机器副作用、状态所有权与恢复。
+3. 完成平台方案要求的签名后，分发最终 setup。Runtime 的宿主操作控制机器副作用、状态所有权与恢复。
 
-作者源码仅在构建时执行。Wasm 能力库获得明确且有界的输入与宿主权限。恢复时重放冻结的宿主操作，不重新执行作者程序或能力库。
+作者源码仅在构建时执行。Wasm 能力库接收有界的类型化输入，由宿主验证其提出的操作。恢复时重放冻结的宿主操作，不重新执行作者程序或能力库。
 
 ## 当前范围
 
-首个可执行基线面向 macOS arm64、用户范围和 CLI，使用容量有界的单文件封装。新接口处于发布前阶段。依赖某项行为前，请查看[状态与平台](/zh/status/)中的证据。
+当前实验性方案采用标准 WIT/Component 契约、Wasmtime/Pulley、规范化 POSIX pax 内容，以及明确的可移植权限策略。原生 Zig、C 和 Starlark 构造相同模型。编译器解析完整输入类型和源码诊断，固定依赖，并组装预编译 runtime，不针对具体产品重新链接。
 
-[路线图](/zh/roadmap/)区分当前基线与后续可并行推进的 SDK、能力库、分发及平台工作。维护者规范和详细设计见仓库[文档索引](https://github.com/niobium-project/niobium/blob/main/docs/README.md)。
+CLI/用户范围基础已具备本地验收切片。PE/ELF/Mach-O 组装与本地原生或模拟执行分别记录，不能据此宣称原生 Windows/Linux CI、整机范围或发布者身份认证已经完成。当前证据边界见[状态与平台](/zh/status/)。
 
-现有[教程](/zh/start/)及 manifest/`nbpack` 参考页保留用于旧实现，其 N1 结果不能证明新的编译器/runtime 边界已经验收。[新术语表](/zh/reference/glossary/)定义当前概念。
+请从[作者接口指南](https://github.com/niobium-project/niobium/blob/main/docs/development/authoring-v2.md)、[Component SDK](https://github.com/niobium-project/niobium/blob/main/docs/development/component-library-sdk.md)和[跨主机构建指南](https://github.com/niobium-project/niobium/blob/main/docs/development/cross-host-builds.md)开始。[路线图](/zh/roadmap/)及维护者[文档索引](https://github.com/niobium-project/niobium/blob/main/docs/README.md)区分基础机制、产品预设、完整语言 SDK 和后续平台验收。
+
+现有[教程](/zh/start/)及 manifest/`nbpack` 参考页描述保留的旧实现。其 1 MiB 封装、ASCII 资源名称和 WAMR ABI 不是当前 Component/内容契约，旧验收结果也保留原有范围。[术语表](/zh/reference/glossary/)定义共享领域概念。
 
 项目背景和维护方式见[关于本项目](/zh/about/)。

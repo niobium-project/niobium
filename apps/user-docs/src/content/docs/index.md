@@ -11,16 +11,34 @@ The runtime binds user choices and machine facts, evaluates fixed Wasm capabilit
 
 1. Build a product model with the authoring SDK. Functions, loops and project composition use the source language.
 2. Bind library implementations and artifacts at build time. The compiler validates their contracts and packages the runtime without relinking it.
-3. Distribute the final signed setup. Runtime host primitives control machine effects, state ownership and recovery.
+3. Distribute the final setup after any signing required by its platform profile. Runtime host primitives control machine effects, state ownership and recovery.
 
-Author source runs only at build time. Wasm libraries receive explicit bounded inputs and host authority. Recovery replays frozen host operations without reevaluating the author program or library.
+Author source runs only at build time. Wasm libraries receive bounded typed inputs; the host validates their proposed effects. Recovery replays frozen host operations without reevaluating the author program or library.
 
 ## Current scope
 
-The executable baseline targets macOS arm64, user scope and CLI, with a bounded single-file carrier. New interfaces remain pre-release. Check [Status and platforms](/status/) for evidence before relying on a behavior.
+The experimental current profile uses standard WIT/Component contracts,
+Wasmtime/Pulley, canonical POSIX pax content and explicit portable access policy.
+Native Zig, C and Starlark construct the same model. The compiler resolves complete
+input types and source diagnostics, fixes dependencies and assembles a precompiled
+runtime without product-specific linking.
 
-The [roadmap](/roadmap/) separates this baseline from parallel work on SDKs, libraries, distribution and platforms. Maintainer specifications and detailed designs are indexed in the repository's [documentation](https://github.com/niobium-project/niobium/blob/main/docs/README.md).
+The CLI/user-scope foundation has local qualification slices. PE/ELF/Mach-O
+assembly and local native or emulated execution are recorded separately; they do
+not establish native Windows/Linux CI, machine scope or publisher authentication.
+Check [Status and platforms](/status/) for the current evidence boundary.
 
-Existing [tutorials](/start/) and manifest/`nbpack` references are retained for the legacy implementation. Their N1 results do not establish the new compiler/runtime boundary. The [new glossary](/reference/glossary/) defines current terms.
+Use the [authoring guide](https://github.com/niobium-project/niobium/blob/main/docs/development/authoring-v2.md),
+[Component SDK](https://github.com/niobium-project/niobium/blob/main/docs/development/component-library-sdk.md)
+and [cross-host build guide](https://github.com/niobium-project/niobium/blob/main/docs/development/cross-host-builds.md).
+The [roadmap](/roadmap/) and maintainer
+[documentation index](https://github.com/niobium-project/niobium/blob/main/docs/README.md)
+separate the foundation from product presets, complete language SDKs and further
+platform qualification.
+
+Existing [tutorials](/start/) and manifest/`nbpack` references describe the retained
+implementation. Its 1 MiB carrier, ASCII resource names and WAMR ABI are not the
+current Component/content contracts. Its acceptance results retain their original
+scope. The [glossary](/reference/glossary/) defines the shared domain terms.
 
 Project background and maintenance expectations are on [About the project](/about/).

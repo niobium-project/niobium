@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-10-08
-- **Amended by:** [ADR-0021](0021-ci-evidence-transport.md) (CI evidence transport), [ADR-0022](0022-installer-dsl-and-aot-toolchain.md) (DSL/toolchain scope)
+- **Amended by:** [ADR-0021](0021-ci-evidence-transport.md) (CI evidence transport), [ADR-0022](0022-installer-dsl-and-aot-toolchain.md) (DSL/toolchain scope), [ADR-0023](0023-standard-content-and-component-contracts.md) (pinned Component and signing toolchains)
 
 ## Context
 

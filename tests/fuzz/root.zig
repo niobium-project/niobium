@@ -8,6 +8,8 @@ const manifest = @import("manifest");
 const package = @import("package");
 const program = @import("program");
 const wasm_profile = @import("wasm_profile");
+const content = @import("content");
+const image = @import("image");
 
 test "fuzz exit-code classification" {
     try std.testing.fuzz({}, fuzzExitCode, .{ .corpus = &.{ "TrustHashMismatch", "", "Usage" } });
@@ -106,4 +108,62 @@ fn fuzzProgram(_: void, smith: *std.testing.Smith) anyerror!void {
         try std.testing.expect(payload.len <= bytes.len);
     } else |_| {}
     if (wasm_profile.validate(bytes, .{})) |_| {} else |_| {}
+}
+
+test "N2-SAFE-02: v2 product and native image parsers share bounded malformed-input replay" {
+    try std.testing.fuzz({}, fuzzProductV2, .{ .corpus = &.{
+        "{}", "{\"schema\":2}", "NIOIMG02", "NIOTMP02", "\x7fELF", "MZ", "[[[[[[",
+        "{\"id\":\"fuzz.product\",\"release_sequence\":1,\"target\":\"x86_64-linux\"," ++
+            "\"profile\":{\"id\":\"fuzz.runtime\",\"target\":\"x86_64-linux\",\"primitives\":[]}}",
+    } });
+}
+
+fn fuzzProductV2(_: void, smith: *std.testing.Smith) anyerror!void {
+    var buffer: [4096]u8 = @splat(0);
+    const length = smith.slice(&buffer);
+    const bytes = buffer[0..length];
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    if (program.model.decode(a, bytes)) |model| {
+        const encoded = try program.model.encode(a, model);
+        const roundtrip = try program.model.decode(a, encoded);
+        try std.testing.expectEqualStrings(model.id, roundtrip.id);
+    } else |_| {}
+    if (image.inspect(a, std.testing.io, .{ .bytes = bytes }, .{})) |descriptor| {
+        try std.testing.expect(try descriptor.payload.end() <= bytes.len);
+    } else |_| {}
+    if (bytes.len == image.descriptor.size) {
+        if (image.descriptor.decode(bytes[0..image.descriptor.size])) |descriptor| {
+            const encoded = image.descriptor.encode(descriptor);
+            try std.testing.expectEqualSlices(u8, bytes, &encoded);
+        } else |_| {}
+    }
+}
+
+test "N2-SAFE-02: canonical content accepts bounded trees or refuses without extraction" {
+    try std.testing.fuzz({}, fuzzContent, .{ .corpus = &.{
+        "", "13 path=../x\n", "ustar\x0000",
+    } });
+}
+
+fn fuzzContent(_: void, smith: *std.testing.Smith) anyerror!void {
+    var buffer: [4096]u8 = @splat(0);
+    const length = smith.slice(&buffer);
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const limits: contracts.Limits = .{
+        .files_per_artifact = 64,
+        .expanded_bytes = 1 << 20,
+        .archive_entry_bytes = 1 << 20,
+    };
+    if (content.parseTar(a, std.testing.io, .{ .bytes = buffer[0..length] }, limits)) |tree| {
+        try std.testing.expect(tree.entries.len <= limits.files_per_artifact);
+        for (tree.entries) |entry| try content.names.check(entry.path, limits);
+        var scratch: [4096]u8 = undefined; // SAFETY: discard writer owns its scratch buffer.
+        var sink: std.Io.Writer.Discarding = .init(&scratch);
+        const identity = try content.writeTar(a, std.testing.io, tree, &sink.writer, limits);
+        try std.testing.expect(identity.bytes >= 1024);
+    } else |_| {}
 }

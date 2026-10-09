@@ -16,7 +16,7 @@ pub const Layer = enum(u8) {
     third_party = 20,
 };
 
-pub const CLibrary = enum { none, stb_truetype, zstd_compress, wamr };
+pub const CLibrary = enum { none, stb_truetype, zstd_compress, wamr, access };
 pub const Phase = enum { shared, build_time, install_time, policy };
 
 pub const ModuleSpec = struct {
@@ -49,13 +49,96 @@ pub const specs = [_]ModuleSpec{
         .name = "program",
         .root = "libs/program/root.zig",
         .layer = .service,
-        .imports = &.{ "core", "contracts" },
+        .imports = &.{ "core", "contracts", "access_policy", "content" },
     },
     .{
         .name = "wasm_profile",
         .root = "libs/wasm_profile/root.zig",
         .layer = .service,
         .imports = &.{"contracts"},
+    },
+    .{
+        .name = "tar",
+        .root = "libs/tar/root.zig",
+        .layer = .core,
+        .imports = &.{},
+    },
+    .{
+        .name = "content",
+        .root = "libs/content/root.zig",
+        .layer = .service,
+        .imports = &.{ "contracts", "tar" },
+    },
+    .{
+        .name = "image",
+        .root = "libs/image/root.zig",
+        .layer = .service,
+        .imports = &.{ "contracts", "content" },
+    },
+    .{
+        .name = "access_policy",
+        .root = "libs/access/contract/root.zig",
+        .layer = .contracts,
+        .imports = &.{},
+    },
+    .{
+        .name = "access",
+        .root = "libs/access/root.zig",
+        .layer = .service,
+        .imports = &.{ "contracts", "platform", "access_policy" },
+        .c_library = .access,
+        .windows_libraries = &.{ "advapi32", "kernel32", "ntdll" },
+    },
+    .{
+        .name = "component_engine",
+        .root = "third_party/wasmtime/session.zig",
+        .layer = .third_party,
+        .imports = &.{},
+    },
+    .{
+        .name = "component_worker",
+        .root = "libs/component_worker/root.zig",
+        .layer = .flow,
+        .imports = &.{ "program", "contracts", "component_engine" },
+    },
+    .{
+        .name = "component_client",
+        .root = "libs/component_client/root.zig",
+        .layer = .flow,
+        .imports = &.{ "program", "contracts" },
+    },
+    .{
+        .name = "host_primitives",
+        .root = "libs/host_primitives/root.zig",
+        .layer = .service,
+        .imports = &.{"program"},
+    },
+    .{
+        .name = "kernel",
+        .root = "libs/kernel/root.zig",
+        .layer = .orchestration,
+        .imports = &.{ "contracts", "program", "content", "access", "access_policy", "platform" },
+        .phase = .install_time,
+    },
+    .{
+        .name = "evaluator",
+        .root = "libs/evaluator/root.zig",
+        .layer = .orchestration,
+        .imports = &.{
+            "contracts",       "program",       "content", "kernel", "component_client",
+            "host_primitives", "access_policy",
+        },
+        .phase = .install_time,
+    },
+    .{
+        .name = "runtime_process",
+        .root = "apps/runtime-v2/main.zig",
+        .layer = .orchestration,
+        .imports = &.{
+            "image",            "program",  "contracts", "kernel", "evaluator", "host_primitives",
+            "component_worker", "platform", "content",   "access",
+        },
+        .phase = .install_time,
     },
     .{
         .name = "capability_sdk",
@@ -67,7 +150,7 @@ pub const specs = [_]ModuleSpec{
         .name = "compiler",
         .root = "libs/compiler/root.zig",
         .layer = .orchestration,
-        .imports = &.{ "program", "contracts", "wasm_profile" },
+        .imports = &.{ "program", "contracts", "wasm_profile", "content", "image" },
         .phase = .build_time,
     },
     .{
@@ -123,7 +206,7 @@ pub const specs = [_]ModuleSpec{
         .name = "package",
         .root = "libs/package/root.zig",
         .layer = .service,
-        .imports = &.{ "core", "contracts", "platform" },
+        .imports = &.{ "core", "contracts", "platform", "tar" },
     },
     .{
         .name = "executor",
@@ -262,6 +345,7 @@ pub const specs = [_]ModuleSpec{
 
 /// Modules allowed to spawn processes (enforced by tools/lint, rule spawn-allowlist).
 pub const spawn_allowlist = [_][]const u8{
+    "libs/component_client/", // Disposable, budgeted instance of a fixed published executable.
     "libs/bootstrap/",
     "libs/portable/",
     "libs/privilege/",
@@ -273,6 +357,11 @@ pub const spawn_allowlist = [_][]const u8{
 
 /// Paths allowed to use @ptrCast/@alignCast/@intFromPtr (rule ptr-cast-allowlist).
 pub const ptr_cast_allowlist = [_][]const u8{
+    "libs/access/posix.zig",
+    "libs/access/windows.zig",
+    "libs/access/root.zig",
+    "libs/component_worker/",
+    "libs/evaluator/", // Trusted evaluator/provider callback context, never guest memory.
     "libs/platform/",
     "libs/privilege/",
     "libs/engine/events.zig",
@@ -281,6 +370,8 @@ pub const ptr_cast_allowlist = [_][]const u8{
     "apps/libdistribution/",
     "apps/libcompiler/",
     "apps/runtime/",
+    "apps/runtime-v2/",
+    "apps/compiler-v2/", // Captured inspector/finalizer callback context, never guest memory.
     "libs/wasm_host/",
     "third_party/",
 };

@@ -9,12 +9,13 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const patch = @import("patch.zig");
+const archive_zip = @import("zip.zig");
 
 const Dir = std.Io.Dir;
 const max_download = 64 << 20;
 const max_patch = 1 << 20;
 
-pub const Archive = enum { none, tar_gz };
+pub const Archive = enum { none, tar_gz, zip };
 
 pub const Source = struct {
     url: []const u8,
@@ -26,6 +27,9 @@ pub const Source = struct {
     extract: []const []const u8 = &.{},
     /// Destination of a plain file download.
     file: ?[]const u8 = null,
+    max_download_bytes: u32 = max_download,
+    /// Executable build tools only; runtime payload extraction has a separate contract.
+    executables: []const []const u8 = &.{},
 };
 
 pub const Package = struct {
@@ -68,6 +72,7 @@ pub fn main(init: std.process.Init) !u8 {
         switch (source.archive) {
             .none => try out.writeFile(io, .{ .sub_path = source.file.?, .data = bytes }),
             .tar_gz => try extract(io, out, bytes, source),
+            .zip => try archive_zip.extract(init.gpa, io, out, bytes, source),
         }
     }
     for (args.patches) |path| try applyPatch(io, arena, out, path);
@@ -128,7 +133,7 @@ fn defaultCache(arena: std.mem.Allocator, environ: *const std.process.Environ.Ma
 fn loadManifest(io: std.Io, arena: std.mem.Allocator, path: []const u8) !Manifest {
     const bytes = try Dir.cwd().readFileAlloc(io, path, arena, .limited(1 << 20));
     var diagnostics: std.zon.parse.Diagnostics = undefined; // SAFETY: filled by fromSlice.
-    return std.zon.parse.fromSlice(Manifest, .{
+    const manifest = std.zon.parse.fromSlice(Manifest, .{
         .gpa = arena,
         .arena = arena,
         .source = try arena.dupeSentinel(u8, bytes, 0),
@@ -137,6 +142,24 @@ fn loadManifest(io: std.Io, arena: std.mem.Allocator, path: []const u8) !Manifes
         std.debug.print("fetch-deps: {f}\n", .{diagnostics.fmt(path)});
         return err;
     };
+    if (manifest.packages.len > 64) return error.FetchInvalidLimit;
+    for (manifest.packages) |package| {
+        if (package.sources.len > 16) return error.FetchInvalidLimit;
+        for (package.sources) |source| {
+            const budget = try sourceBudget(source);
+            std.debug.assert(budget != 0);
+            if (source.sha256.len != 64) return error.FetchInvalidHash;
+            for (source.sha256) |byte| {
+                if (!std.ascii.isDigit(byte) and !(byte >= 'a' and byte <= 'f'))
+                    return error.FetchInvalidHash;
+            }
+            if (source.archive == .none) {
+                const destination = source.file orelse return error.FetchUnsafePath;
+                if (!safe(destination)) return error.FetchUnsafePath;
+            }
+        }
+    }
+    return manifest;
 }
 
 /// The verified bytes of `source`: from `cache/<sha256>` when present, else downloaded.
@@ -148,16 +171,17 @@ fn obtain(
     cache_path: []const u8,
     source: Source,
 ) ![]const u8 {
+    const max = try sourceBudget(source);
     var cache = try Dir.cwd().createDirPathOpen(io, cache_path, .{});
     defer cache.close(io);
-    if (cache.readFileAlloc(io, source.sha256, arena, .limited(max_download))) |bytes| {
+    if (cache.readFileAlloc(io, source.sha256, arena, .limited64(max))) |bytes| {
         // A corrupt cache entry is fetched again and overwritten.
         if (matches(bytes, source.sha256)) return bytes;
     } else |err| switch (err) {
         error.FileNotFound => {},
         else => return err,
     }
-    const bytes = try downloadRetrying(io, gpa, arena, environ, source.url);
+    const bytes = try downloadRetrying(io, gpa, arena, environ, source.url, max);
     if (!matches(bytes, source.sha256)) {
         std.debug.print("fetch-deps: {s}: sha256 mismatch, expected {s}\n", .{
             source.url,
@@ -179,18 +203,20 @@ fn downloadRetrying(
     arena: std.mem.Allocator,
     environ: *const std.process.Environ.Map,
     url: []const u8,
+    max: u64,
 ) ![]const u8 {
     const retries = 3;
     var delay_seconds: i64 = 2;
     for (0..retries) |_| {
-        const bytes = download(io, gpa, arena, environ, url) catch {
+        const bytes = download(io, gpa, arena, environ, url, max) catch |err| {
+            if (err == error.FetchTooLarge) return err;
             try io.sleep(.fromSeconds(delay_seconds), .awake);
             delay_seconds *= 2;
             continue;
         };
         return bytes;
     }
-    return download(io, gpa, arena, environ, url);
+    return download(io, gpa, arena, environ, url, max);
 }
 
 fn download(
@@ -199,21 +225,29 @@ fn download(
     arena: std.mem.Allocator,
     environ: *const std.process.Environ.Map,
     url: []const u8,
+    max: u64,
 ) ![]const u8 {
     var client: std.http.Client = .{ .allocator = gpa, .io = io };
     defer client.deinit();
     try client.initDefaultProxies(arena, environ);
-    var body: std.Io.Writer.Allocating = .init(arena);
-    const result = try client.fetch(.{
-        .location = .{ .url = url },
-        .response_writer = &body.writer,
+    const uri = try std.Uri.parse(url);
+    var request = try client.request(.GET, uri, .{
+        .redirect_behavior = .init(3),
+        .headers = .{ .accept_encoding = .{ .override = "identity" } },
     });
-    if (result.status != .ok) {
-        std.debug.print("fetch-deps: {s}: HTTP {d}\n", .{ url, @backingInt(result.status) });
+    defer request.deinit();
+    try request.sendBodiless();
+    var redirect: [8 << 10]u8 = undefined; // SAFETY: response header scratch.
+    var response = try request.receiveHead(&redirect);
+    if (response.head.status != .ok) {
+        std.debug.print("fetch-deps: {s}: HTTP {d}\n", .{ url, @backingInt(response.head.status) });
         return error.FetchHttpStatus;
     }
-    if (body.written().len > max_download) return error.FetchTooLarge;
-    return body.written();
+    if (response.head.content_length) |length| {
+        if (length > max) return error.FetchTooLarge;
+    }
+    var transfer: [64]u8 = undefined; // SAFETY: HTTP body reader scratch.
+    return boundedBody(response.reader(&transfer), arena, max);
 }
 
 fn matches(bytes: []const u8, expected_hex: []const u8) bool {
@@ -234,13 +268,24 @@ fn extract(io: std.Io, out: Dir, bytes: []const u8, source: Source) !void {
         .link_name_buffer = &link_buffer,
     });
     var kept: usize = 0;
+    var count: u32 = 0;
+    var expanded: u64 = 0;
     while (try entries.next()) |entry| {
-        if (entry.kind != .file) continue;
+        count += 1;
+        if (count > 65_536) return error.FetchTooLarge;
+        expanded = std.math.add(u64, expanded, entry.size) catch return error.FetchTooLarge;
+        if (expanded > 512 << 20) return error.FetchTooLarge;
         const path = strip(entry.name, source.strip_components) orelse continue;
         if (!selected(path, source.extract)) continue;
+        if (entry.kind == .sym_link) return error.FetchUnsupportedLink;
+        if (entry.kind != .file) continue;
         if (!safe(path)) return error.FetchUnsafePath;
         if (std.fs.path.dirname(path)) |parent| try out.createDirPath(io, parent);
-        var file = try out.createFile(io, path, .{});
+        const permissions: std.Io.File.Permissions = if (selected(path, source.executables))
+            .executable_file
+        else
+            .default_file;
+        var file = try out.createFile(io, path, .{ .permissions = permissions });
         defer file.close(io);
         var buffer: [64 << 10]u8 = undefined; // SAFETY: writer scratch.
         var writer = file.writer(io, &buffer);
@@ -271,7 +316,7 @@ fn applyPatch(io: std.Io, arena: std.mem.Allocator, out: Dir, path: []const u8) 
 }
 
 /// `path` without its first `count` components; null when nothing is left.
-fn strip(path: []const u8, count: u32) ?[]const u8 {
+pub fn strip(path: []const u8, count: u32) ?[]const u8 {
     var rest = path;
     for (0..count) |_| {
         const slash = std.mem.indexOfScalar(u8, rest, '/') orelse return null;
@@ -280,7 +325,7 @@ fn strip(path: []const u8, count: u32) ?[]const u8 {
     return if (rest.len == 0) null else rest;
 }
 
-fn selected(path: []const u8, keep: []const []const u8) bool {
+pub fn selected(path: []const u8, keep: []const []const u8) bool {
     for (keep) |entry| {
         if (std.mem.endsWith(u8, entry, "/")) {
             if (std.mem.startsWith(u8, path, entry)) return true;
@@ -289,10 +334,12 @@ fn selected(path: []const u8, keep: []const []const u8) bool {
     return false;
 }
 
-fn safe(path: []const u8) bool {
+pub fn safe(path: []const u8) bool {
     if (path.len == 0 or path[0] == '/' or std.mem.indexOfScalar(u8, path, '\\') != null) {
         return false;
     }
+    if (std.mem.indexOfScalar(u8, path, ':') != null) return false;
+    if (std.mem.indexOfScalar(u8, path, 0) != null) return false;
     var parts = std.mem.splitScalar(u8, path, '/');
     while (parts.next()) |part| {
         if (part.len == 0 or std.mem.eql(u8, part, "..") or std.mem.eql(u8, part, ".")) {
@@ -304,6 +351,7 @@ fn safe(path: []const u8) bool {
 
 test {
     _ = patch;
+    _ = archive_zip;
 }
 
 test "archive entry selection" {
@@ -316,6 +364,9 @@ test "archive entry selection" {
     try std.testing.expect(!selected("lib/decompress/x.c", &keep));
     try std.testing.expect(!safe("../x"));
     try std.testing.expect(!safe("a//b"));
+    try std.testing.expect(!safe("C:/escape"));
+    try std.testing.expect(!safe("tool.exe:stream"));
+    try std.testing.expect(!safe("nul\x00name"));
     try std.testing.expect(safe("lib/common/x.c"));
 }
 
@@ -325,4 +376,82 @@ test "the pinned sha256 is compared as lowercase hex" {
         "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
     ));
     try std.testing.expect(!matches("abd", "ba7816bf"));
+}
+
+fn sourceBudget(source: Source) !u64 {
+    if (source.max_download_bytes == 0 or source.max_download_bytes > 256 << 20) {
+        return error.FetchInvalidLimit;
+    }
+    if (source.executables.len > 16) return error.FetchInvalidLimit;
+    if (source.strip_components > 32 or source.extract.len > 64) return error.FetchInvalidLimit;
+    for (source.executables) |path| {
+        if (!safe(path)) return error.FetchUnsafePath;
+        if (std.mem.endsWith(u8, path, "/")) return error.FetchUnsafePath;
+    }
+    return source.max_download_bytes;
+}
+
+fn boundedBody(reader: *std.Io.Reader, arena: std.mem.Allocator, max: u64) ![]u8 {
+    const bytes = reader.allocRemaining(arena, .limited64(max + 1)) catch |err| switch (err) {
+        error.StreamTooLong => return error.FetchTooLarge,
+        else => return err,
+    };
+    if (bytes.len > max) return error.FetchTooLarge;
+    return bytes;
+}
+
+test "download rejects over-limit data before unbounded allocation" {
+    const input: [4096]u8 = @splat('x');
+    var storage: [512]u8 = undefined;
+    var allocator = std.heap.FixedBufferAllocator.init(&storage);
+    var reader: std.Io.Reader = .fixed(&input);
+    try std.testing.expectError(
+        error.FetchTooLarge,
+        boundedBody(&reader, allocator.allocator(), 64),
+    );
+}
+
+test "source download allowance has an explicit bounded range" {
+    var source: Source = .{ .url = "https://example.com/source", .sha256 = "unused" };
+    try std.testing.expectEqual(@as(u64, max_download), try sourceBudget(source));
+    source.max_download_bytes = 128 << 20;
+    try std.testing.expectEqual(@as(u64, 128 << 20), try sourceBudget(source));
+    source.max_download_bytes = 0;
+    try std.testing.expectError(error.FetchInvalidLimit, sourceBudget(source));
+    source.max_download_bytes = (256 << 20) + 1;
+    try std.testing.expectError(error.FetchInvalidLimit, sourceBudget(source));
+}
+
+test "build tool extraction uses explicit executable paths and rejects links and expansion" {
+    var tmp = std.testing.tmpDir(.{});
+    defer tmp.cleanup();
+    const source: Source = .{
+        .url = "https://example.com/tool",
+        .sha256 = "unused",
+        .archive = .tar_gz,
+        .strip_components = 1,
+        .extract = &.{"tool"},
+        .executables = &.{"tool"},
+    };
+    try extract(std.testing.io, tmp.dir, @embedFile("fixtures/tool.tar.gz"), source);
+    const contents = try tmp.dir.readFileAlloc(
+        std.testing.io,
+        "tool",
+        std.testing.allocator,
+        .limited(32),
+    );
+    defer std.testing.allocator.free(contents);
+    try std.testing.expectEqualStrings("abc", contents);
+    if (std.Io.File.Permissions.has_executable_bit) {
+        const stat = try tmp.dir.statFile(std.testing.io, "tool", .{});
+        try std.testing.expect((stat.permissions.toMode() & 0o100) != 0);
+    }
+    try std.testing.expectError(
+        error.FetchUnsupportedLink,
+        extract(std.testing.io, tmp.dir, @embedFile("fixtures/link.tar.gz"), source),
+    );
+    try std.testing.expectError(
+        error.FetchTooLarge,
+        extract(std.testing.io, tmp.dir, @embedFile("fixtures/oversize.tar.gz"), source),
+    );
 }

@@ -4,51 +4,86 @@
 
 English | [Chinese](README.zh.md)
 
-Niobium is an installation and distribution DSL with an AOT compiler, a precompiled native runtime and host-controlled Wasm capability libraries. Product authors compose installers through language SDKs or Starlark. The compiler fixes dependencies and packages the runtime; products define their distribution and upgrade policies through libraries and presets.
+Niobium is an installation and distribution DSL with an AOT compiler, a
+precompiled native runtime and host-controlled Wasm capability libraries. Product
+authors use native Zig/C APIs or Starlark; language SDKs share the compiler
+backend. Libraries and presets own product selection, distribution and upgrade
+policy.
 
-The architecture baseline is [ADR-0022](docs/adr/0022-installer-dsl-and-aot-toolchain.md). New interfaces are pre-release and may change. [N2 acceptance](docs/acceptance-plan-v0.2.md) records actual results; historical N1 evidence applies to the retained implementation.
+[ADR-0023](docs/adr/0023-standard-content-and-component-contracts.md) establishes
+the current standard-content/WIT baseline. These interfaces are experimental and
+pre-release. [Acceptance v0.3](docs/acceptance-plan-v0.3.md) records current results;
+the older acceptance plans retain their own implementation and platform scope.
 
 ## Build and verify
 
-The native toolchain requires Zig 0.17.0. The Starlark build-time worker requires Go 1.25 or newer and a host C compiler for cgo. The initial native product lane targets macOS arm64, user scope and CLI.
+Source builds use Zig 0.17.0, Rust 1.96.1 with the `wasm32-unknown-unknown` target,
+and Go 1.25 or newer plus a host C compiler for the Starlark worker. The build
+fetches pinned Wasm tools; product assembly consumes precompiled runtime bytes.
+Install the Rust native target matching the Zig host ABI; see the
+[cross-host build prerequisites](docs/development/cross-host-builds.md#build-the-host-sdk-and-a-runtime-template).
 
 ```sh
-zig build aot             # compiler, author ABI, guest examples and runtime template
-zig build aot-test        # program/profile/host contract checks
-zig build aot-e2e         # native products, migration, recovery and final image checks
-zig build verify          # new architecture lane plus retained regression gates
+zig build compiler-v2 runtime-v2  # host compiler and complete runtime template
+zig build author-v2-test         # native Zig, C and Starlark author parity
+zig build component-test         # standard WIT/Canonical ABI and isolated worker
+zig build core-test              # content, access, types and compiler foundations
+zig build core-e2e               # final setup, lifecycle, migration and recovery
+zig build verify                # current gates and retained regressions
 ```
 
-Product assembly consumes a complete runtime template and preserves its executable code sections. The PoC fills a reserved 1 MiB product section and applies ad-hoc signing. Resource names use printable ASCII; installation roots may use Unicode. Publisher signing, larger carriers and additional platforms have separate qualification work.
+The current runtime is a headless user-scope profile. Standard WIT and community
+bindgen drive Wasmtime/Pulley; guests receive typed inputs and prebound observations
+without ambient WASI or machine authority. Canonical POSIX pax containers preserve
+logical file/directory/link structure; deployment access is an explicit separate
+policy. PE, ELF and Mach-O assembly preserves the template's executable code and
+binds its native prefix, product and payload identities.
 
-[Compiler frontends](docs/spec/compiler-frontends-v1.md) defines authoring; [capability libraries](docs/spec/capability-library-v1.md) defines runtime extension. Existing `examples/hello` and manifest tutorials describe the legacy build API.
+Local native and emulated target runs are recorded individually. They do not
+establish native Windows/Linux CI, machine scope, full native application metadata,
+publisher authentication or notarization. Final qualification remains in progress.
+The 1 MiB section, ASCII resource names and WAMR profile belong to the retained v1
+PoC, not the current content/Component contracts.
 
-The [PoC workflow](docs/development/aot-poc.md) walks through authoring, assembly,
-installation and an explicit state migration using two releases.
+Start with [authoring v2](docs/development/authoring-v2.md), the
+[Component SDK](docs/development/component-library-sdk.md), and
+[cross-host builds](docs/development/cross-host-builds.md).
+The [current contracts](docs/README.md) define the shared compiler and runtime
+boundaries. `examples/hello`, manifest tutorials and the older
+[PoC workflow](docs/development/aot-poc.md) retain their original API scope.
 
 ## Roadmap
 
-🚧 current delivery · 🔜 parallel implementation after the baseline · 🗓️ later qualification. These marks describe work priority; execution results use the acceptance status vocabulary.
+🚧 current delivery · 🔜 parallel implementation after the baseline · 🗓️ later
+qualification. These are priorities, not blanket completion or support claims.
 
 | Status | Feature |
 |---|---|
 | 🚧 | Programmable authoring and the AOT compiler |
 | 🚧 | Precompiled runtime and fixed Wasm capability libraries |
+| 🚧 | Standard content, access and cross-host native assembly |
 | 🚧 | Transactional deployment and explicit state migration |
-| 🔜 | Compiler caching, library SDK and additional host primitives |
+| 🔜 | Incremental compiler tooling, SDK packaging and additional host primitives |
 | 🔜 | Python, TypeScript, Go and Rust author SDKs |
 | 🔜 | Component, SDK and toolchain presets |
 | 🔜 | Distribution, trust and channels as libraries |
-| 🔜 | Online, offline-file and SFX delivery |
-| 🗓️ | Large native images and publisher signing |
+| 🔜 | Online, offline-file and SFX product profiles |
+| 🗓️ | Publisher signing and notarization qualification |
 | 🗓️ | Standard UI, embedded maintenance and accessibility |
-| 🗓️ | Windows/Linux and machine-scope qualification |
+| 🗓️ | Native-platform CI and machine-scope qualification |
 
-The [user roadmap](apps/user-docs/src/content/docs/roadmap.md) explains these items. The [maintainer roadmap](docs/roadmap-v0.2.md) assigns interfaces, owners, dependencies and acceptance.
+The [user roadmap](apps/user-docs/src/content/docs/roadmap.md) explains these items.
+The [maintainer roadmap](docs/roadmap-v0.3.md),
+[feature ownership catalog](docs/feature-coverage.md) and
+[product journeys](docs/design/product-journeys.md) assign interfaces, owners,
+dependencies and acceptance.
 
 ## Background
 
-Niobium is a hobby project that the author works on while employed at TongYuan. It is not part of TongYuan's commercial products. It supports creating installers for products, including internal, experimental and commercial work. TongYuan provides no direct support or steering. See [About the project](apps/user-docs/src/content/docs/about.md).
+Niobium is a hobby project that the author works on while employed at TongYuan.
+It is not part of TongYuan's commercial products. It supports creating installers
+for internal, experimental and commercial products. TongYuan provides no direct
+support or steering. See [About the project](apps/user-docs/src/content/docs/about.md).
 
 ## Documentation
 
@@ -57,7 +92,7 @@ Niobium is a hobby project that the author works on while employed at TongYuan. 
 - Engineering designs: [Compiler](docs/design/compiler-engineering.md), [library SDK](docs/design/wasm-library-sdk.md), [host and stdlib](docs/design/host-primitives-and-stdlib.md)
 - Development constraints: [AGENTS.md](AGENTS.md)
 - Domain terms: [GLOSSARY.md](GLOSSARY.md)
-- Evidence: [N2 acceptance](docs/acceptance-plan-v0.2.md), [historical N1](docs/acceptance-plan-v0.1.md)
+- Evidence: [Current v0.3](docs/acceptance-plan-v0.3.md), [retained v0.2](docs/acceptance-plan-v0.2.md), [historical N1](docs/acceptance-plan-v0.1.md)
 
 ## License
 

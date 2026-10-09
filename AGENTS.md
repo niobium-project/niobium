@@ -14,15 +14,16 @@ Current explicit user instruction > this file > accepted ADRs > active versioned
 
 ## 2. Inviolable principles
 
-[ADR-0022](docs/adr/0022-installer-dsl-and-aot-toolchain.md) owns the architecture direction. These rules apply to every new feature:
+[ADR-0022](docs/adr/0022-installer-dsl-and-aot-toolchain.md) owns the architecture direction, amended by [ADR-0023](docs/adr/0023-standard-content-and-component-contracts.md) for standard content, WIT and cross-host compilation. These rules apply to every new feature:
 
 1. **Author programs execute at build time.** Native-language SDKs and Starlark construct the same typed product model. Serialized program data is a compiler output.
-2. **The compiler packages a complete precompiled runtime.** Product builds must preserve the template input and executable code sections, and must not relink a product-specific runtime. Filling its reserved product section and final signing change only the output image.
-3. **Capability contracts bind libraries.** Official and product/third-party Wasm libraries use the same host-controlled ABI. No ambient WASI, filesystem, network, process or elevation authority is granted.
+2. **The compiler packages a complete precompiled runtime.** Product builds must preserve the template input and executable code sections, and must not relink or execute a target runtime. The host-independent image assembler and final signer change only the output image.
+3. **Capability contracts bind libraries.** Official and product/third-party Wasm Components use the same WIT and upstream Canonical ABI implementation. No ambient WASI, filesystem, network, process or elevation authority is granted. The retained Core Wasm v1 ABI keeps its historical scope.
 4. **Core provides mechanisms.** Product distribution, component selection, coexistence, channels and layout policies belong to libraries, presets and templates.
 5. **Machine effects are transactional.** The host validates and freezes outputs before mutation; recovery uses durable plans and reaches only old-good or new-good.
 6. **Compatibility is explicit.** Product migration/bridge policy belongs to the product. Framework and library state have independent versioned compatibility contracts.
 7. **Release bytes are fixed.** Runtime, program, libraries and artifacts have distinct identities. Final signing and qualification apply to the delivered bytes.
+8. **Content and authority are distinct.** Logical content uses the versioned POSIX pax profile. Archive modes do not grant access; explicit host access policies control installed resources. Unsupported native semantics must be rejected rather than approximated.
 
 The pre-release reset does not require compatibility with old manifest/API/state formats. It does not waive compatibility checks for new product releases. Retained manifest/engine v1 specs and N1 product evidence describe the legacy implementation. Shared test-system evidence retains its own stated scope.
 
@@ -31,7 +32,7 @@ The pre-release reset does not require compatibility with old manifest/API/state
 ```text
 apps/ process assembly (compiler, runtime, language/ABI adapters, legacy apps), no business logic
 libs/ implementation; one owner directory per module
-api/ machine-readable contracts (JSON Schema, C header)
+api/ machine-readable contracts (JSON Schema, C header, versioned WIT)
 tools/ checks, generators and gates written in Zig
 tests/ cross-module e2e, conformance, golden, fixtures
 build/ the single source of truth for the build graph: modules.zig declares modules and allowed imports
@@ -72,7 +73,7 @@ Test lanes: L0 static (check/lint/schema/size), L1 pure core (VirtualPlatform), 
 
 - Crash-injection invariant: after recovery from any kill point, `Active == OLD` or `Active == NEW`, never MIXED.
 - No artifact can write outside the staging root through extraction.
-- New architecture evidence uses N2 IDs in [acceptance-plan-v0.2](docs/acceptance-plan-v0.2.md). N1 product results cover the retained implementation and cannot establish N2 completion; shared test-system evidence retains its declared scope.
+- New standard-core evidence uses N2 IDs in [acceptance-plan-v0.3](docs/acceptance-plan-v0.3.md). Prior N2 and N1 records retain their original profiles and cannot establish new contract completion; shared test-system evidence retains its declared scope.
 - Acceptance status uses only `PASS`/`FAIL`/`BLOCKED`/`NOT_RUN`/`DEFERRED`; without real evidence, never write "supported" or "passed".
 - Compiling, mocks succeeding, screenshots and an agent's own claims do not constitute completion. Evidence goes to `.evidence/<suite>/<UTC>/`.
 - Goldens are never updated wholesale: `zig build golden -Dupdate=<component>` must name a scope, and the diff is inspected in review.

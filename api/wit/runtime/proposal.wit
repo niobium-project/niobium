@@ -1,0 +1,34 @@
+package niobium:runtime@1.0.0;
+
+// Libraries may define their own plan record when private state needs another WIT type.
+interface proposal {
+    enum container-format { posix-pax-v1 }
+    record container-ref {
+        format: container-format,
+        sha256: list<u8>,
+        bytes: u64,
+    }
+    variant entry-kind { file(list<u8>), directory, symlink(string) }
+    record entry { path: string, mode: u16, kind: entry-kind }
+    variant container-source { reference(container-ref), generated(list<entry>) }
+    enum object-kind { file, directory }
+    record rights { read: bool, write: bool, execute: bool }
+    record policy {
+        schema: u32,
+        kind: object-kind,
+        owner: rights,
+        everyone: rights,
+    }
+    record desired-container {
+        root: string,
+        grant: string,
+        prefix: string,
+        container: container-source,
+        file-access: policy,
+        directory-access: policy,
+    }
+    record plan {
+        containers: list<desired-container>,
+        state: option<string>,
+    }
+}
