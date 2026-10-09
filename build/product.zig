@@ -16,6 +16,7 @@ pub fn add(
     @import("runtime.zig").cross(b, inputs, checker);
     const step = commands.step(b, "test:core", "Content, access, and compiler foundations");
     step.dependOn(cpuSettings(b));
+    step.dependOn(prebuiltNames(b));
     const graph = graph_mod.create(b, .{
         .target = b.graph.host,
         .optimize = .safe,
@@ -117,6 +118,17 @@ fn sdk(
         .cpu_provenance = qualified.cpu_provenance,
         .engine_build_log = qualified.engine_build_log,
     });
+}
+
+fn prebuiltNames(b: *std.Build) *std.Build.Step {
+    const suite = b.addTest(.{
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("build/component_prebuilt.zig"),
+            .target = b.graph.host,
+            .optimize = .safe,
+        }),
+    });
+    return &b.addRunArtifact(suite).step;
 }
 
 fn cpuSettings(b: *std.Build) *std.Build.Step {

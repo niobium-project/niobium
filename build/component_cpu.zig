@@ -42,16 +42,34 @@ pub fn engine(
     target: std.Target,
     triple: []const u8,
 ) std.Build.LazyPath {
-    const native_profile = publication.nativeProfile(target) catch {
+    std.debug.assert(triple.len != 0);
+    if (publication.nativeProfile(target)) |_| {
+        const settings = profile(target);
+        const flags = rustFlags(b, settings);
+        engineEnvironment(
+            b.allocator,
+            run.getEnvMap(),
+            settings,
+            triple,
+            flags,
+        ) catch @panic("OOM");
+    } else |_| {
         run.step.dependOn(&b.addFail("Unqualified native CPU/ABI publication profile").step);
-        return b.addWriteFiles().add("engine-cpu.json", "{}");
+    }
+    return provenance(b, target, triple);
+}
+
+pub fn provenance(
+    b: *std.Build,
+    target: std.Target,
+    triple: []const u8,
+) std.Build.LazyPath {
+    std.debug.assert(triple.len != 0);
+    const native_profile = publication.nativeProfile(target) catch {
+        return failedProvenance(b);
     };
     const settings = profile(target);
-    const flags = if (settings.rust_features) |features|
-        b.fmt("-C\x1ftarget-cpu={s}\x1f-C\x1ftarget-feature={s}", .{ settings.rust_cpu, features })
-    else
-        b.fmt("-C\x1ftarget-cpu={s}", .{settings.rust_cpu});
-    engineEnvironment(b.allocator, run.getEnvMap(), settings, triple, flags) catch @panic("OOM");
+    const flags = rustFlags(b, settings);
     const bytes = std.json.Stringify.valueAlloc(b.allocator, .{
         .schema = 1,
         .native_cpu_profile = native_profile,
@@ -82,6 +100,19 @@ pub fn engine(
         },
     }, .{ .whitespace = .indent_2 }) catch @panic("OOM");
     return b.addWriteFiles().add("engine-cpu.json", bytes);
+}
+
+fn failedProvenance(b: *std.Build) std.Build.LazyPath {
+    const bytes = b.addWriteFiles();
+    bytes.step.dependOn(&b.addFail("Unqualified native CPU/ABI publication profile").step);
+    return bytes.add("engine-cpu.json", "{}");
+}
+
+fn rustFlags(b: *std.Build, settings: Profile) []const u8 {
+    return if (settings.rust_features) |features|
+        b.fmt("-C\x1ftarget-cpu={s}\x1f-C\x1ftarget-feature={s}", .{ settings.rust_cpu, features })
+    else
+        b.fmt("-C\x1ftarget-cpu={s}", .{settings.rust_cpu});
 }
 
 pub fn guest(run: *std.Build.Step.Run) void {
