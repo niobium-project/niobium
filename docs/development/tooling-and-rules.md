@@ -20,7 +20,7 @@ repository's module graph.
 
 All checks are Zig programs, driven by `zig build check`.
 
-`zig build hooks:install` copies [`.githooks/posix`](../../.githooks/posix/pre-commit) or [`.githooks/windows`](../../.githooks/windows/commit-msg.cmd) into `.git/hooks`. Pre-commit checks staged Zig formatting. The commit-message hook and pre-push check `<type>(<scope>): summary` through `zig build check:commits`. New hook behavior goes through these steps. The platform scripts do not grow a second policy.
+`zig build hooks:install` copies [`.githooks/posix`](../../.githooks/posix/pre-commit) or [`.githooks/windows`](../../.githooks/windows/commit-msg.cmd) into `.git/hooks`. Pre-commit checks staged Zig formatting. The commit-message hook and pre-push check `<type>(<scope>): summary` through `zig build check:commits`. A push to `refs/heads/main` uses `check:commits --strict`. New hook behavior goes through these steps. The platform scripts do not grow a second policy.
 
 | Tool | Checks |
 |---|---|
@@ -29,7 +29,8 @@ All checks are Zig programs, driven by `zig build check`.
 | `tools/check` | Module graph preserves layers and transitive execution-phase boundaries, no cross-module relative imports, files ≤ 600 lines, schema rules, catalog golden complete |
 | `tools/check-docs` | Links resolve (relative paths, user-site routes, `github.com/niobium-project/niobium` file URLs), URL hosts allowlisted, English only outside the Chinese paths of ADR-0017, user-site locale mirror, ADR fields complete, N1/N2 acceptance IDs and statuses consistent, ADR successor/index status consistent, spec file names versioned |
 | `tools/check-binary` | Dynamic dependency allowlist, PE security flags, no RWX segments, size gate |
-| `tools/check-commits` | `<type>(<scope>): summary` |
+| `tools/check-commits` | `<type>(<scope>): summary`; `--strict` also requires a signature and rejects merges and fixup subjects |
+| `tools/check-each` | `zig build check` and `zig build` on every commit in the range, at most 64 |
 | `zig fmt --complexity` | Per-file token/node baseline; growth > 10% requires updating the baseline in the same commit |
 
 ## tools/lint rules

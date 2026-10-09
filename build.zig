@@ -313,6 +313,15 @@ fn addStaticChecks(b: *std.Build, tools: checks.Tools) *std.Build.Step {
     const commit_run = checks.addRepoRun(b, tools.check_commits, &.{});
     commit_run.addPassthruArgs();
     commits.dependOn(&commit_run.step);
+    const each = commands.step(
+        b,
+        "check:each",
+        "Build check and the default build for every commit",
+    );
+    const each_run = checks.addRepoRun(b, tools.check_each, &.{});
+    each_run.addArg(b.graph.zig_exe);
+    each_run.addPassthruArgs();
+    each.dependOn(&each_run.step);
     const check = commands.step(b, "check", "fmt + lint + repository checks + docs");
     check.dependOn(fmt);
     check.dependOn(lint);

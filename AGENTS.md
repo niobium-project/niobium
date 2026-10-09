@@ -82,7 +82,7 @@ Test lanes: L0 static (check/lint/schema/size), L1 pure core (VirtualPlatform), 
 
 ## 7. Changes, commits and definition of done
 
-- Commits: `<type>(<scope>): summary` with an English summary, type ∈ `feat|fix|test|docs|refactor|chore|adr|build`.
+- Commit and pull request rules: [Commits and pull requests](docs/development/commits.md).
 - Hand-written patches target ≤ 300 net lines; more needs splitting or a stated reason. Hand-written files ≤ 600 lines (generated files, fixtures and third_party excepted).
 - Never get a pass by disabling rules, widening ignores, deleting regression cases or updating snapshots wholesale; `// lint-allow(<rule>): <reason>` must state a reason, and the count is reported.
 - When the same class of problem appears a second time, it must become a failing check: write the failing case first, then implement.
@@ -98,5 +98,6 @@ Test lanes: L0 static (check/lint/schema/size), L1 pure core (VirtualPlatform), 
 | `niobium-native-look` | Map each platform's look and interaction conventions to tokens |
 | `niobium-platform-capability` | Contract-first flow and crash pitfalls for new capabilities / platform backends |
 | `review-niobium` | Security and boundary review checklist |
+| `merge-prs` | Land labeled pull requests onto main as a linear signed history |
 | `zig-0.17`, `zig-tiger-style` | External Zig language skills (pinned by `skills-lock.json`) |
 | `apple-hig`, `winui-app`, `gtk-ui-ux-engineer` | External platform design references (values and checklists only); sources in [docs/development/tooling-and-rules.md](docs/development/tooling-and-rules.md#external-skills) |

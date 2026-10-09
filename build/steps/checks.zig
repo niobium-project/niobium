@@ -1,4 +1,4 @@
-//! `zig build fmt|lint|check|check:docs|check:commits`. All tools are host Zig executables.
+//! `zig build fmt|lint|check|check:docs|check:commits|check:each`. Host Zig executables.
 
 const std = @import("std");
 const evidence = @import("evidence.zig");
@@ -22,6 +22,7 @@ pub const Tools = struct {
     check: *std.Build.Step.Compile,
     check_docs: *std.Build.Step.Compile,
     check_commits: *std.Build.Step.Compile,
+    check_each: *std.Build.Step.Compile,
     check_binary: *std.Build.Step.Compile,
     gen_tokens: *std.Build.Step.Compile,
     vm_smoke: *std.Build.Step.Compile,
@@ -45,6 +46,7 @@ pub fn addTools(b: *std.Build, host: std.Build.ResolvedTarget) Tools {
         .check = tool(b, host, "check", shared),
         .check_docs = tool(b, host, "check-docs", shared),
         .check_commits = tool(b, host, "check-commits", shared),
+        .check_each = tool(b, host, "check-each", shared),
         .check_binary = tool(b, host, "check-binary", shared),
         .gen_tokens = tool(b, host, "gen-tokens", shared),
         .vm_smoke = tool(b, host, "vm-smoke", shared),

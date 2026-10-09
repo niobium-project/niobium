@@ -13,6 +13,7 @@ pub const names = [_][]const u8{
     "check",
     "check:docs",
     "check:commits",
+    "check:each",
     "check:binary",
     "check:size",
     "check:cross",

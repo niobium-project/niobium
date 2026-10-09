@@ -63,7 +63,7 @@ jobs:
             exit 1
           fi
           printf '%s\n' "$PR_TITLE" | grep -Eq \
-            '^(feat|fix|test|docs|refactor|chore|adr|build)\([a-z0-9/_-]+\): .+'
+            '^(feat|fix|test|docs|refactor|chore|adr|build|revert)\([a-z0-9/_-]+\): .+'
       - if: github.event_name == 'pull_request' && needs.changes.outputs.code == 'true'
         run: >
           zig build check:commits --
