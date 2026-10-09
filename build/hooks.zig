@@ -5,10 +5,16 @@ const std = @import("std");
 pub fn add(b: *std.Build, check_commits: *std.Build.Step.Compile) void {
     const hooks = executable(b);
     const install = run(b, hooks, "install");
-    const names = [_][]const u8{ "pre-commit", "commit-msg", "pre-push" };
-    for (names) |name| {
-        install.addFileInput(b.path(b.fmt(".githooks/{s}", .{name})));
-    }
+    const inputs = [_][]const u8{
+        ".githooks/posix/pre-commit",
+        ".githooks/posix/commit-msg",
+        ".githooks/posix/pre-push",
+        ".githooks/windows/launch.sh",
+        ".githooks/windows/pre-commit.cmd",
+        ".githooks/windows/commit-msg.cmd",
+        ".githooks/windows/pre-push.cmd",
+    };
+    for (inputs) |path| install.addFileInput(b.path(path));
     const installed = b.step("hooks:install", "Copy .githooks into .git/hooks");
     installed.dependOn(&install.step);
 

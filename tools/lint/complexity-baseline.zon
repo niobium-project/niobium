@@ -397,7 +397,7 @@
         .{ .path = "tools/fetch-deps/patch.zig", .tokens = 1825, .nodes = 923 },
         .{ .path = "tools/fetch-deps/zip.zig", .tokens = 804, .nodes = 408 },
         .{ .path = "tools/gen-tokens/main.zig", .tokens = 1996, .nodes = 956 },
-        .{ .path = "tools/git-hooks/main.zig", .tokens = 1925, .nodes = 961 },
+        .{ .path = "tools/git-hooks/main.zig", .tokens = 2364, .nodes = 1175 },
         .{ .path = "tools/lint/ast_rules.zig", .tokens = 1026, .nodes = 525 },
         .{ .path = "tools/lint/complexity.zig", .tokens = 580, .nodes = 262 },
         .{ .path = "tools/lint/context.zig", .tokens = 1281, .nodes = 605 },

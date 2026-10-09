@@ -2,6 +2,7 @@
 //! pre-commit formats staged Zig. pre-push checks commit subjects.
 
 const std = @import("std");
+const builtin = @import("builtin");
 
 const Dir = std.Io.Dir;
 const hook_names = [_][]const u8{ "pre-commit", "commit-msg", "pre-push" };
@@ -30,14 +31,53 @@ fn install(init: std.process.Init, arena: std.mem.Allocator) !void {
     const hooks = try gitPath(init, arena, "--git-path", "hooks");
     var dest = try Dir.cwd().createDirPathOpen(io, hooks, .{});
     defer dest.close(io);
-    for (hook_names) |name| {
-        const source = try std.fmt.allocPrint(arena, ".githooks/{s}", .{name});
-        const bytes = try Dir.cwd().readFileAlloc(io, source, arena, .limited(64 << 10));
-        var file = try dest.createFile(io, name, .{ .permissions = .executable_file });
-        defer file.close(io);
-        try file.writeStreamingAll(io, bytes);
-    }
+    try installHost(io, arena, &dest, builtin.os.tag == .windows);
     std.debug.print("installed git hooks in {s}\n", .{hooks});
+}
+
+fn installHost(io: std.Io, arena: std.mem.Allocator, dest: *Dir, windows: bool) !void {
+    if (windows) return installWindows(io, arena, dest);
+    for (hook_names) |name| {
+        const source = try hookSource(arena, false, name);
+        try copyHook(io, arena, dest, source, name);
+    }
+}
+
+fn installWindows(io: std.Io, arena: std.mem.Allocator, dest: *Dir) !void {
+    const launcher = try Dir.cwd().readFileAlloc(
+        io,
+        ".githooks/windows/launch.sh",
+        arena,
+        .limited(64 << 10),
+    );
+    for (hook_names) |name| {
+        const source = try hookSource(arena, true, name);
+        const cmd = try std.fmt.allocPrint(arena, "{s}.cmd", .{name});
+        try copyHook(io, arena, dest, source, cmd);
+        try writeHook(io, dest, name, launcher);
+    }
+}
+
+fn hookSource(arena: std.mem.Allocator, windows: bool, name: []const u8) ![]const u8 {
+    if (windows) return std.fmt.allocPrint(arena, ".githooks/windows/{s}.cmd", .{name});
+    return std.fmt.allocPrint(arena, ".githooks/posix/{s}", .{name});
+}
+
+fn copyHook(
+    io: std.Io,
+    arena: std.mem.Allocator,
+    dest: *Dir,
+    source: []const u8,
+    name: []const u8,
+) !void {
+    const bytes = try Dir.cwd().readFileAlloc(io, source, arena, .limited(64 << 10));
+    try writeHook(io, dest, name, bytes);
+}
+
+fn writeHook(io: std.Io, dest: *Dir, name: []const u8, bytes: []const u8) !void {
+    var file = try dest.createFile(io, name, .{ .permissions = .executable_file });
+    defer file.close(io);
+    try file.writeStreamingAll(io, bytes);
 }
 
 fn preCommit(init: std.process.Init, arena: std.mem.Allocator, zig_exe: []const u8) !void {
@@ -202,6 +242,15 @@ test "push lines name the commit range" {
     try std.testing.expect(!update.delete);
     try std.testing.expectEqualStrings(local, update.local_sha);
     try std.testing.expectError(error.BadRefLine, parseUpdate("only-three a b"));
+}
+
+test "hook scripts are split by platform" {
+    const posix = try hookSource(std.testing.allocator, false, "commit-msg");
+    defer std.testing.allocator.free(posix);
+    const windows = try hookSource(std.testing.allocator, true, "commit-msg");
+    defer std.testing.allocator.free(windows);
+    try std.testing.expectEqualStrings(".githooks/posix/commit-msg", posix);
+    try std.testing.expectEqualStrings(".githooks/windows/commit-msg.cmd", windows);
 }
 
 test "sha text is hex of a git length" {
