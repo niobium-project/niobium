@@ -1,6 +1,7 @@
-//! `zig build cross|check-binary|size-gate`: ReleaseSafe shipping artifacts for every target.
+//! `zig build check:cross`, `check:binary`, and `check:size`.
 
 const std = @import("std");
+const commands = @import("../commands.zig");
 const targets = @import("../targets.zig");
 const graph_mod = @import("../graph.zig");
 const artifacts = @import("artifacts.zig");
@@ -24,12 +25,21 @@ pub fn add(
     check_binary: *std.Build.Step.Compile,
     options: artifacts.Options,
 ) Steps {
-    const cross_step = b.step(
-        "cross",
+    const cross_step = commands.step(
+        b,
+        "check:cross",
         "Build ReleaseSafe setup + libdistribution for every target",
     );
-    const binary_step = b.step("check-binary", "Lint dynamic deps, PE flags and RWX sections");
-    const size_step = b.step("size-gate", "setup <= 30 MiB and <= 5% growth vs baseline");
+    const binary_step = commands.step(
+        b,
+        "check:binary",
+        "Lint dynamic deps, PE flags and RWX sections",
+    );
+    const size_step = commands.step(
+        b,
+        "check:size",
+        "setup <= 30 MiB and <= 5% growth vs baseline",
+    );
     const outputs = b.allocator.alloc(Output, targets.cross_targets.len) catch @panic("OOM");
     const size_run = b.addRunArtifact(check_binary);
     size_run.setCwd(b.path("."));

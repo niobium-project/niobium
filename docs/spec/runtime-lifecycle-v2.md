@@ -195,7 +195,7 @@ when external modification had already made the starting installation unhealthy.
 
 ## Validation and qualification
 
-`zig build kernel-test` runs the native lifecycle suite and a subprocess witness.
+`zig build test:kernel` runs the native lifecycle suite and a subprocess witness.
 `core-test` and `verify` depend on that step. Evidence is written under
 `.evidence/kernel/<UTC>/`, with source/binary provenance and per-command outcomes.
 

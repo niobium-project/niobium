@@ -10,14 +10,14 @@ Niobium 是面向安装与分发的 DSL，包含 AOT 编译器、预编译原生
 
 ## 构建与验证
 
-源码构建需要 Zig 0.17.0、Rust 1.96.1 及其 `wasm32-unknown-unknown` target，以及 Go 1.25 或更高版本和用于 Starlark worker 的主机 C 编译器。构建图获取固定版本的 Wasm 工具；产品组装消费预编译的 runtime 字节。还需安装与 Zig 主机 ABI 匹配的 Rust 原生 target，见[跨主机构建前置要求](docs/development/cross-host-builds.md#build-the-host-sdk-and-a-runtime-template)。
+源码构建需要 Zig 0.17.0。构建或测试步骤需要时，`zig build` 会把固定的 Rust 1.96.1 和 Go 1.26.8 安装到 `.cache/tools`。构建图还会获取固定版本的 Wasm 工具。产品组装消费预编译的 runtime 字节，不需要这些编译器。见[跨主机构建](docs/development/cross-host-builds.md#build-the-host-sdk-and-a-runtime-template)。
 
 ```sh
-zig build compiler-v2 runtime-v2  # 主机编译器与完整 runtime 模板
-zig build author-v2-test         # 原生 Zig、C 与 Starlark 作者入口一致性
-zig build component-test         # 标准 WIT、Canonical ABI 与隔离 worker
-zig build core-test              # 内容、权限、类型和编译器基础契约
-zig build core-e2e               # 最终 setup、生命周期、迁移和恢复
+zig build compiler:build runtime:build  # 主机编译器与完整 runtime 模板
+zig build test:author         # 原生 Zig、C 与 Starlark 作者入口一致性
+zig build test:component         # 标准 WIT、Canonical ABI 与隔离 worker
+zig build test:core              # 内容、权限、类型和编译器基础契约
+zig build core:e2e               # 最终 setup、生命周期、迁移和恢复
 zig build verify                # 当前门禁与保留的回归测试
 ```
 

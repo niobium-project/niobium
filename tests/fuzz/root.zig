@@ -1,4 +1,4 @@
-//! `zig build fuzz`: recorded corpus replay; add `-Dcontinuous-fuzz --fuzz` for native fuzzing.
+//! `zig build test:fuzz` replays the corpus. Add `-Dcontinuous-fuzz --fuzz` to fuzz.
 //! Corpus seeds live in tests/fuzz/corpus/<target>/.
 
 const std = @import("std");

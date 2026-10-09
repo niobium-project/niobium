@@ -1,5 +1,5 @@
-//! `zig build sim -Dseeds=N`: deterministic fault simulation. Each scenario runs once per seed;
-//! a failure prints the seed so `zig build sim -Dseeds=1 -Dseed-start=<seed>` replays it.
+//! `zig build test:sim -Dseeds=N` runs one deterministic fault pass per seed.
+//! a failure prints the seed so `zig build test:sim -Dseeds=1 -Dseed-start=<seed>` replays it.
 
 const std = @import("std");
 const options = @import("suite_options");

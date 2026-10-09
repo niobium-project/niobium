@@ -1,10 +1,12 @@
 //! Community Component Model qualification is separate from the retained WAMR profile.
 const std = @import("std");
+const commands = @import("commands.zig");
 const Compile = std.Build.Step.Compile;
 const toolchain = @import("component_tools.zig");
 const graph_mod = @import("graph.zig");
 const cpu = @import("component_cpu.zig");
 pub const Inputs = struct {
+    host: @import("host_tools.zig").Tools,
     wasm_tools: std.Build.LazyPath,
     wit_bindgen: std.Build.LazyPath,
     wasi_sysroot: std.Build.LazyPath,
@@ -29,7 +31,7 @@ pub const Artifacts = struct {
 };
 
 pub fn add(b: *std.Build, inputs: Inputs) Artifacts {
-    const native_build = native(b);
+    const native_build = native(b, inputs.host);
     const library = native_build.library;
     const engine = b.createModule(.{
         .root_source_file = b.path("third_party/wasmtime/session.zig"),
@@ -49,7 +51,7 @@ pub fn add(b: *std.Build, inputs: Inputs) Artifacts {
     const worker = b.addExecutable(.{ .name = "component-worker", .root_module = worker_module });
     const c_build = cGuest(b, inputs);
     const c_guest = c_build.binary;
-    const rust_guest = rustGuest(b, inputs.wasm_tools);
+    const rust_guest = rustGuest(b, inputs.host, inputs.wasm_tools);
     const provenance = b.createModule(.{
         .root_source_file = b.path("tests/aot/provenance.zig"),
         .target = b.graph.host,
@@ -80,7 +82,7 @@ pub fn add(b: *std.Build, inputs: Inputs) Artifacts {
         run.addFileArg(parse.addOutputFileArg(b.fmt("{s}.wasm", .{name})));
     }
     run.addFileArg(c_build.log);
-    const step = b.step("component-test", "Isolated WIT, Canonical ABI and Pulley qualification");
+    const step = commands.step(b, "test:component", "WIT, Canonical ABI, and Pulley qualification");
     step.dependOn(&run.step);
     const production = ipc(b, inputs, engine, provenance, worker, rust_guest);
     step.dependOn(production.step);
@@ -106,12 +108,11 @@ const Native = struct {
     log: std.Build.LazyPath,
 };
 
-fn native(b: *std.Build) Native {
+fn native(b: *std.Build, tools: @import("host_tools.zig").Tools) Native {
     const host = @import("publication.zig").baselineTarget(b).result;
     const triple = rustTarget(host);
-    const cargo = b.addSystemCommand(&.{
-        "cargo", "+1.96.1", "build", "-vv", "--release", "--locked", "--manifest-path",
-    });
+    const cargo = tools.cargo(b);
+    cargo.addArgs(&.{ "build", "-vv", "--release", "--locked", "--manifest-path" });
     cargo.addFileArg(b.path("third_party/wasmtime/adapter/Cargo.toml"));
     cargo.addArgs(&.{ "--target", triple });
     cargo.addArg("--target-dir");
@@ -185,9 +186,14 @@ fn cGuest(b: *std.Build, inputs: Inputs) GuestBuild {
     };
 }
 
-fn rustGuest(b: *std.Build, tool: std.Build.LazyPath) std.Build.LazyPath {
-    const cargo = b.addSystemCommand(&.{
-        "cargo",    "+1.96.1",                "build",           "--release", "--locked", "--quiet",
+fn rustGuest(
+    b: *std.Build,
+    tools: @import("host_tools.zig").Tools,
+    tool: std.Build.LazyPath,
+) std.Build.LazyPath {
+    const cargo = tools.cargo(b);
+    cargo.addArgs(&.{
+        "build",    "--release",              "--locked",        "--quiet",
         "--target", "wasm32-unknown-unknown", "--manifest-path",
     });
     cpu.guest(cargo);
@@ -279,7 +285,7 @@ fn ipc(
     run.setCwd(b.path("."));
     run.has_side_effects = true;
     run.addArtifactArg(caller);
-    const reference = packageGuest(b, inputs.wasm_tools, .{
+    const reference = packageGuest(b, inputs.host, inputs.wasm_tools, .{
         .source = "tests/component/reference",
         .wit = "api/wit/reference/reference.wit",
         .binary = "niobium_reference_library.wasm",
@@ -291,7 +297,7 @@ fn ipc(
     parse.addFileArg(b.path("tests/component/direct.wat"));
     parse.addArg("-o");
     run.addFileArg(parse.addOutputFileArg("direct.wasm"));
-    const files = packageGuest(b, inputs.wasm_tools, .{
+    const files = packageGuest(b, inputs.host, inputs.wasm_tools, .{
         .source = "libs/stdlib/files",
         .wit = "api/wit/files/files.wit",
         .binary = "niobium_stdlib_files.wasm",
@@ -308,7 +314,7 @@ fn ipc(
     run.addArtifactArg(probe);
     run.addArtifactArg(qualifier);
     run.addFileArg(qualifier_guest);
-    const reference_v2 = packageGuest(b, inputs.wasm_tools, .{
+    const reference_v2 = packageGuest(b, inputs.host, inputs.wasm_tools, .{
         .source = "tests/component/reference",
         .wit = "api/wit/reference/reference.wit",
         .binary = "niobium_reference_library.wasm",
@@ -349,7 +355,12 @@ const Package = struct {
     feature: ?[]const u8 = null,
 };
 
-fn packageGuest(b: *std.Build, tool: std.Build.LazyPath, package: Package) std.Build.LazyPath {
+fn packageGuest(
+    b: *std.Build,
+    tools: @import("host_tools.zig").Tools,
+    tool: std.Build.LazyPath,
+    package: Package,
+) std.Build.LazyPath {
     // Standard bindgen reads an isolated WIT package with its versioned dependency closure.
     const workspace = b.addWriteFiles();
     const manifest = workspace.addCopyFile(
@@ -365,8 +376,9 @@ fn packageGuest(b: *std.Build, tool: std.Build.LazyPath, package: Package) std.B
             "wit/deps/runtime/proposal.wit",
         ),
     };
-    const cargo = b.addSystemCommand(&.{
-        "cargo",    "+1.96.1",                "build",           "--release", "--locked", "--quiet",
+    const cargo = tools.cargo(b);
+    cargo.addArgs(&.{
+        "build",    "--release",              "--locked",        "--quiet",
         "--target", "wasm32-unknown-unknown", "--manifest-path",
     });
     cpu.guest(cargo);

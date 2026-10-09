@@ -50,7 +50,7 @@ Each package has a role owner, fixed input contracts and completion evidence. On
 
 Existing commands remain part of package verification: `zig build check test`, `zig build verify`, and the applicable `sim`, `fuzz`, `cross`, `check-binary`, `size-gate`, `golden` or `vm-smoke` lane. Each new package adds a named runnable conformance/e2e target to the build graph before declaring completion.
 
-The PoC commands are `zig build aot`, `zig build aot-test` and `zig build aot-e2e`. Package handoff records the exact command and target used; the command list is not a claim that every platform has run it.
+The PoC commands are `zig build aot:build`, `zig build aot:test` and `zig build aot:e2e`. Package handoff records the exact command and target used; the command list is not a claim that every platform has run it.
 
 ## Parallel execution and integration
 

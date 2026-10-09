@@ -1,5 +1,6 @@
 //! The consumable host SDK and complete runtime are published separately from product assembly.
 const std = @import("std");
+const commands = @import("commands.zig");
 pub const Inputs = struct {
     compiler: *std.Build.Step.Compile,
     runtime: *std.Build.Step.Compile,
@@ -17,8 +18,9 @@ pub const Inputs = struct {
 };
 
 pub fn add(b: *std.Build, inputs: Inputs) void {
-    const step = b.step(
-        "core-sdk",
+    const step = commands.step(
+        b,
+        "core:sdk",
         "Publish the host compiler/SDK and precompiled runtime profile",
     );
     step.dependOn(inputs.binary_check);

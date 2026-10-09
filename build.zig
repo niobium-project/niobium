@@ -2,6 +2,8 @@
 //! below are the build API for products that depend on Niobium (docs/development/consuming.md).
 
 const std = @import("std");
+const commands = @import("build/commands.zig");
+const host_tools = @import("build/host_tools.zig");
 const hooks = @import("build/hooks.zig");
 const graph_mod = @import("build/graph.zig");
 const artifacts = @import("build/steps/artifacts.zig");
@@ -64,7 +66,7 @@ pub fn build(b: *std.Build) void {
     const tsan = b.option(bool, "tsan", "ThreadSanitizer lane for test") orelse false;
     const coverage = b.option(bool, "coverage", "kcov on zig build test") orelse false;
     const seeds: SimSeeds = .{
-        .count = b.option(u32, "seeds", "Seeds for zig build sim") orelse 500,
+        .count = b.option(u32, "seeds", "Seeds for zig build test:sim") orelse 500,
         .start = b.option(u64, "seed-start", "First sim seed (replay a failure)") orelse 0,
     };
     const update = b.option([]const u8, "update", "Golden scope to rewrite (component name)");
@@ -127,23 +129,41 @@ fn addTestGates(
     workbench: *std.Build.Step.Compile,
     update: ?[]const u8,
 ) void {
+    const host = host_tools.add(b, tools.fetch_deps);
     const cross_steps = cross.add(b, graph.config.inputs, tools.check_binary, options);
-    const cross_tests = b.step("test-cross", "Compile unit + conformance tests for every target");
+    const cross_tests = commands.step(
+        b,
+        "test:cross",
+        "Compile unit + conformance tests for every target",
+    );
     tests.addCrossTests(b, graph.config.inputs, &app_tests, cross_tests);
-    const golden_step = b.step("golden", "UI IR / DisplayList / semantic / pixel goldens");
+    const golden_step = commands.step(
+        b,
+        "test:golden",
+        "UI IR / DisplayList / semantic / pixel goldens",
+    );
     golden_step.dependOn(ui.addGolden(b, graph, update, config));
-    b.step(
-        "gallery",
+    commands.step(
+        b,
+        "ui:gallery",
         "Render the UI catalog to .evidence/ui-gallery",
     ).dependOn(ui.addGallery(b, workbench));
 
-    const e2e_step = b.step("e2e", "install/update/rollback/repair/uninstall, online + offline");
+    const e2e_step = commands.step(
+        b,
+        "test:e2e",
+        "install/update/rollback/repair/uninstall, online + offline",
+    );
     e2e_step.dependOn(e2e.addE2e(b, graph, binaries, config));
-    const c_smoke = b.step("c-smoke", "C program against distribution.h + static library");
+    const c_smoke = commands.step(
+        b,
+        "test:c-smoke",
+        "C program against distribution.h + static library",
+    );
     c_smoke.dependOn(e2e.addCSmoke(b, graph, binaries.static_lib, config));
-    const example_step = addExampleSteps(b, graph.config.target, tools.vm_smoke);
-    const aot_step = aot.add(b, graph.config.inputs, tools.check_binary);
-    const core_step = vnext.add(b, graph.config.inputs, tools.fetch_deps, tools.check_binary);
+    const example_step = addExampleSteps(b, graph.config.target, tools.vm_smoke, host);
+    const aot_step = aot.add(b, graph.config.inputs, tools.check_binary, host);
+    const core_step = vnext.add(b, graph.config.inputs, tools.fetch_deps, tools.check_binary, host);
 
     addRunSteps(b, binaries.setup, workbench);
 
@@ -153,7 +173,11 @@ fn addTestGates(
         &.{ steps.unit, steps.conformance, e2e_step, steps.sim, golden_step, steps.fuzz, c_smoke },
         steps.tsan,
     );
-    const verify = b.step("verify", "Definition of Done gate (run with --cache-poison=disallowed)");
+    const verify = commands.step(
+        b,
+        "verify",
+        "Definition of Done gate (run with --cache-poison=disallowed)",
+    );
     if (selected.narrowed) {
         verify.dependOn(&b.addFail("verify rejects -Dsuite and -Dcase narrowing").step);
         return;
@@ -182,16 +206,20 @@ fn addExampleSteps(
     b: *std.Build,
     target: std.Build.ResolvedTarget,
     vm_smoke: *std.Build.Step.Compile,
+    host: host_tools.Tools,
 ) *std.Build.Step {
-    const example_step = b.step(
-        "example",
+    const example_step = commands.step(
+        b,
+        "example:hello",
         "Build examples/hello (a Niobium dependent) into zig-out/example",
     );
     example_step.dependOn(example.add(b, target));
-    b.step(
-        "vm-smoke",
+    const smoke = commands.step(
+        b,
+        "vm:smoke",
         "examples/hello bundles in Parallels Windows 11 + Ubuntu ARM64 (-- --start to boot VMs)",
-    ).dependOn(vm.add(b, vm_smoke));
+    );
+    smoke.dependOn(vm.add(b, vm_smoke, host));
     return example_step;
 }
 
@@ -215,31 +243,17 @@ fn addQualitySteps(
     coverage: bool,
     config: evidence.Config,
 ) QualitySteps {
-    const fmt = b.step("fmt", "zig fmt --check --ast-check");
-    fmt.dependOn(checks.addFmtCheck(b));
-    b.step("fmt-fix", "Rewrite sources with zig fmt").dependOn(checks.addFmtFix(b));
-
-    const lint = b.step("lint", "tools/lint (TigerStyle + crash-safety + boundary rules)");
-    lint.dependOn(&checks.addRepoRun(b, tools.lint, &checks.source_roots).step);
-    const baseline = b.step("lint-baseline", "Rewrite tools/lint/complexity-baseline.zon");
-    const baseline_run = checks.addRepoRun(b, tools.lint, &.{"--write-baseline"});
-    baseline_run.addArgs(&checks.source_roots);
-    baseline.dependOn(&baseline_run.step);
-    const docs = b.step("check-docs", "Docs links, ADR fields, acceptance IDs, English, URL hosts");
-    docs.dependOn(&checks.addRepoRun(b, tools.check_docs, &.{}).step);
-    const commits = b.step("check-commits", "Commit message lint on the branch range");
-    const commit_run = checks.addRepoRun(b, tools.check_commits, &.{});
-    commit_run.addPassthruArgs();
-    commits.dependOn(&commit_run.step);
+    const check = addStaticChecks(b, tools);
     hooks.add(b, tools.check_commits);
-
-    const check = b.step("check", "fmt + lint + repository checks + docs");
-    check.dependOn(fmt);
-    check.dependOn(lint);
-    check.dependOn(docs);
-    check.dependOn(&checks.addRepoRun(b, tools.check, &.{}).step);
-
     const test_step = privateStep(b, "unit");
+    const naming = b.addTest(.{
+        .name = "build-steps",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("build/commands.zig"),
+            .target = b.graph.host,
+        }),
+    });
+    test_step.dependOn(&b.addRunArtifact(naming).step);
     const conformance = privateStep(b, "host conformance");
     addAllTests(b, graph, test_step, conformance, coverage, config);
     checks.addToolTests(b, tools, test_step, config);
@@ -251,13 +265,17 @@ fn addQualitySteps(
     ) else null;
     if (tsan) test_step.dependOn(tsan_step.?);
 
-    const sim = b.step("sim", "Seeded VirtualPlatform fault simulation (-Dseeds=N)");
+    const sim = commands.step(b, "test:sim", "Seeded VirtualPlatform fault simulation (-Dseeds=N)");
     const sim_opts = b.addOptions();
     sim_opts.addOption(u32, "seeds", seeds.count);
     sim_opts.addOption(u64, "seed_start", seeds.start);
     sim.dependOn(&tests.addSuite(b, graph, "sim", sim_opts, config).step);
 
-    const fuzz = b.step("fuzz", "Fuzz corpus replay (continuous: -Dcontinuous-fuzz --fuzz)");
+    const fuzz = commands.step(
+        b,
+        "test:fuzz",
+        "Fuzz corpus replay (continuous: -Dcontinuous-fuzz --fuzz)",
+    );
     const continuous = b.option(bool, "continuous-fuzz", "Use Zig's native fuzz protocol") orelse
         false;
     const fuzz_binary = tests.compileSuite(b, graph, "fuzz", b.addOptions(), false);
@@ -277,6 +295,30 @@ fn addQualitySteps(
         .sim = sim,
         .tsan = tsan_step,
     };
+}
+
+fn addStaticChecks(b: *std.Build, tools: checks.Tools) *std.Build.Step {
+    const fmt = commands.step(b, "fmt", "zig fmt --check --ast-check");
+    fmt.dependOn(checks.addFmtCheck(b));
+    commands.step(b, "fmt:fix", "Rewrite sources with zig fmt").dependOn(checks.addFmtFix(b));
+    const lint = commands.step(b, "lint", "TigerStyle, crash safety, and boundary rules");
+    lint.dependOn(&checks.addRepoRun(b, tools.lint, &checks.source_roots).step);
+    const baseline = commands.step(b, "lint:baseline", "Rewrite the complexity baseline");
+    const baseline_run = checks.addRepoRun(b, tools.lint, &.{"--write-baseline"});
+    baseline_run.addArgs(&checks.source_roots);
+    baseline.dependOn(&baseline_run.step);
+    const docs = commands.step(b, "check:docs", "Links, ADR fields, acceptance IDs, and hosts");
+    docs.dependOn(&checks.addRepoRun(b, tools.check_docs, &.{}).step);
+    const commits = commands.step(b, "check:commits", "Commit message lint on the branch range");
+    const commit_run = checks.addRepoRun(b, tools.check_commits, &.{});
+    commit_run.addPassthruArgs();
+    commits.dependOn(&commit_run.step);
+    const check = commands.step(b, "check", "fmt + lint + repository checks + docs");
+    check.dependOn(fmt);
+    check.dependOn(lint);
+    check.dependOn(docs);
+    check.dependOn(&checks.addRepoRun(b, tools.check, &.{}).step);
+    return check;
 }
 
 fn addAllTests(
@@ -350,7 +392,11 @@ fn addTsan(b: *std.Build, graph: *const graph_mod.Graph, config: evidence.Config
         .sanitize_thread = true,
         .inputs = graph.config.inputs,
     });
-    const step = b.step("tsan", "ThreadSanitizer over engine, broker and UI-thread tests");
+    const step = commands.step(
+        b,
+        "test:tsan",
+        "ThreadSanitizer over engine, broker and UI-thread tests",
+    );
     const opts = b.addOptions();
     opts.addOption(u32, "seeds", 16);
     var sanitizer = config;
@@ -366,10 +412,10 @@ fn addRunSteps(
 ) void {
     const run_setup = b.addRunArtifact(setup);
     run_setup.addPassthruArgs();
-    b.step("run", "Run setup with passthrough args").dependOn(&run_setup.step);
+    commands.step(b, "run", "Run setup with passthrough args").dependOn(&run_setup.step);
     const run_bench = b.addRunArtifact(workbench);
     run_bench.addPassthruArgs();
-    b.step("workbench", "Run ui-workbench").dependOn(&run_bench.step);
+    commands.step(b, "ui:workbench", "Run ui-workbench").dependOn(&run_bench.step);
 }
 
 fn privateStep(b: *std.Build, name: []const u8) *std.Build.Step {

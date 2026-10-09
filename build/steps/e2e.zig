@@ -1,4 +1,4 @@
-//! `zig build e2e|c-smoke`: real binaries against a local HTTP / directory repository.
+//! `zig build test:e2e|c-smoke`: real binaries against a local HTTP / directory repository.
 
 const std = @import("std");
 const graph_mod = @import("../graph.zig");

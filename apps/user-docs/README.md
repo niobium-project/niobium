@@ -33,7 +33,7 @@ The Node.js major version is in `.nvmrc`. Dependencies are pinned to exact versi
 
 - Pages are Markdown in `src/content/docs/`; the sidebar is in `astro.config.mjs`, with its labels in `src/content/i18n/`. Keep each page one kind: tutorial, how-to guide, concept or reference.
 - Link to other pages by root-relative route with a trailing slash: `/guides/package/`, `/reference/exit-codes/#codes`. Do not add the version base; the build adds it.
-- Link to repository files by `https://github.com/niobium-project/niobium/blob/main/<path>`, or `tree/main/<path>` for a directory. `zig build check-docs` fails if the path does not exist.
+- Link to repository files by `https://github.com/niobium-project/niobium/blob/main/<path>`, or `tree/main/<path>` for a directory. `zig build check:docs` fails if the path does not exist.
 - The specifications in `docs/spec/` are the source of truth. Summarize and link to them instead of copying them.
 - Status claims use only `PASS`, `FAIL`, `BLOCKED`, `NOT_RUN` and `DEFERRED`. Current Component results come from [acceptance v0.3](../../docs/acceptance-plan-v0.3.md); [Core Wasm v1 records](../../docs/acceptance-plan-v0.2.md) and [historical N1 records](../../docs/acceptance-plan-v0.1.md) retain their original scopes.
 
@@ -41,7 +41,7 @@ The Node.js major version is in `.nvmrc`. Dependencies are pinned to exact versi
 
 The Chinese site is a translation of the English one ([ADR-0017](../../docs/adr/0017-chinese-user-documentation.md)).
 
-- Every page in `src/content/docs/` has a translation at the same path under `src/content/docs/zh/`; adding, moving or removing a page changes both, or `zig build check-docs` fails.
+- Every page in `src/content/docs/` has a translation at the same path under `src/content/docs/zh/`; adding, moving or removing a page changes both, or `zig build check:docs` fails.
 - Chinese pages link to `/zh/...` routes only.
 - A Chinese heading that other pages link to keeps the English ID: `## 事件错误码 { #event-error-codes }`.
 - Code, commands, identifiers, paths, JSON fields, error names and status words stay in English.

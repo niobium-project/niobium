@@ -7,21 +7,9 @@ description: 构建当前 SDK，为 Starlark 教程准备独立工作目录。
 
 ## 前置条件
 
-使用 macOS arm64、POSIX shell，以及以下源码构建工具：
+使用 macOS arm64、POSIX shell、Git 和 Zig 0.17.0。首次构建 SDK 需要网络。Zig 会安装发布 SDK 所用的固定 Rust 和 Go。编译已经准备好的产品时不需要它们。
 
-- Git 和 Zig 0.17.0。
-- Rust 1.96.1，已安装 `wasm32-unknown-unknown` 目标。
-- Go 1.25 或更高版本，以及宿主 C 工具链。
-- 首次构建时可下载固定版本上游依赖的网络连接。
-
-[SDK 构建流程](https://github.com/niobium-project/niobium/blob/main/docs/development/cross-host-builds.md)规定工具链和原生目标要求。编译已经准备好的产品时，安装后的作者工具不需要 Rust 或 Go。
-
-如果所需 Rust 工具链和客体目标尚未安装，执行：
-
-```sh
-rustup toolchain install 1.96.1 --profile minimal
-rustup +1.96.1 target add wasm32-unknown-unknown
-```
+[SDK 构建流程](https://github.com/niobium-project/niobium/blob/main/docs/development/cross-host-builds.md)规定原生目标要求。
 
 ## 构建 SDK
 
@@ -36,7 +24,7 @@ cd niobium
 
 ```sh
 NIOBIUM_REPO="$PWD"
-zig build core-sdk dsl-tutorial-tools --cache-poison=disallowed
+zig build core:sdk example:tutorial:tools --cache-poison=disallowed
 ```
 
 SDK 将 Starlark 工作进程、编译器、原生运行时模板、Component 工作进程和官方文件库安装到 `zig-out/`。教程构建另外提供 `zig-out/bin/niobium-tutorial-prepare`。

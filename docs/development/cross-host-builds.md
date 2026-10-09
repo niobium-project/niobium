@@ -8,26 +8,22 @@ execute the target or compile/link its runtime.
 
 ## Build the host SDK and a runtime template
 
-Source builds use Zig 0.17.0, Rust 1.96.1 and Go 1.25 or newer. Rust is needed to
-publish the Component engine/runtime; Go and a host C toolchain build the Starlark
-worker. Neither toolchain is needed inside isolated product assembly.
+Source builds need Zig 0.17.0. Rust 1.96.1 publishes the Component engine and
+runtime. Go 1.26.8 builds the Starlark worker. `zig build` installs both under
+`.cache/tools` ([ADR-0027](../adr/0027-zig-provisioned-host-tools.md)). Neither
+toolchain is needed inside isolated product assembly.
 
 ```sh
-rustup toolchain install 1.96.1 --profile minimal
-rustup +1.96.1 target add wasm32-unknown-unknown
-zig build core-sdk
-zig build core-test
+zig build tools:install
+zig build core:sdk
+zig build test:core
 ```
 
-The Rust native target must match the Zig host ABI. The graph passes that target
-explicitly instead of using rustup's default host. Linux GNU uses
-`x86_64-unknown-linux-gnu`, macOS arm64 uses `aarch64-apple-darwin`, and GNU Windows
-uses `x86_64-pc-windows-gnu`. On a Windows installation whose default Rust host is
-MSVC, add the GNU target before running the build:
-
-```sh
-rustup target add --toolchain 1.96.1 x86_64-pc-windows-gnu
-```
+The managed Rust toolchain matches the Zig host ABI and includes
+`wasm32-unknown-unknown`. Linux GNU uses `x86_64-unknown-linux-gnu`, macOS arm64
+uses `aarch64-apple-darwin`, and the Windows host toolchain is MSVC with the GNU
+and wasm32 standard libraries installed beside it. The graph passes the Rust
+target explicitly.
 
 GNU Windows also needs an x64 MinGW C toolchain and `dlltool` for the native
 publisher. CI checks and records its target and version. The internal Starlark
@@ -137,7 +133,7 @@ This does not establish publisher identity, Developer ID, Gatekeeper or notariza
 
 ## Reproduce the isolated matrix
 
-`zig build core-cross-tools compiler-linux-x64` builds the host fixture publisher,
+`zig build core:cross-tools compiler:linux-x64` builds the host fixture publisher,
 Linux assembly witness and target-side lifecycle witnesses. Runtime publishers may
 build the other native templates on their own hosts. The repository also provides
 cross-build entrypoints when pinned target engine static libraries are supplied:

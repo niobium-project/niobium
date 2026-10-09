@@ -216,8 +216,8 @@ runtime release.
 The current foundation commands are:
 
 ```sh
-zig build author-v2-test component-test core-test --cache-poison=disallowed
-zig build core-e2e --cache-poison=disallowed
+zig build test:author test:component test:core --cache-poison=disallowed
+zig build core:e2e --cache-poison=disallowed
 ```
 
 These are entry points for the slices described above. Their presence is not a

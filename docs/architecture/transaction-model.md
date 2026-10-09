@@ -84,4 +84,4 @@ Every `planner.Op` has `apply`, `rollback` and `verify`, all idempotent: rolling
 | uninstall's `remove_root` deletes `installation.json` first and `journal/` and the root last | If killed midway, recovery can still roll forward from the journal |
 | The single-transaction lock is an advisory exclusive file lock (`Lock.acquire`), released when the process exits | A crash never leaves a lock that needs manual cleanup |
 
-Verification: `libs/transaction/transaction_test.zig` kills at every platform mutation (N1-INV-01) and requires both outcomes, OLD and NEW, to appear; `zig build sim` mixes injected faults and kills across transactions and multiple rounds of recovery (N1-AC-07).
+Verification: `libs/transaction/transaction_test.zig` kills at every platform mutation (N1-INV-01) and requires both outcomes, OLD and NEW, to appear; `zig build test:sim` mixes injected faults and kills across transactions and multiple rounds of recovery (N1-AC-07).

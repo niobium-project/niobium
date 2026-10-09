@@ -1,6 +1,7 @@
 //! Build-time authoring tools. This graph never becomes a runtime dependency.
 
 const std = @import("std");
+const commands = @import("commands.zig");
 const graph_mod = @import("graph.zig");
 
 const Compile = std.Build.Step.Compile;
@@ -13,7 +14,11 @@ pub const Artifacts = struct {
     tests: *std.Build.Step,
 };
 
-pub fn add(b: *std.Build, graph: *const graph_mod.Graph) Artifacts {
+pub fn add(
+    b: *std.Build,
+    graph: *const graph_mod.Graph,
+    host: @import("host_tools.zig").Tools,
+) Artifacts {
     const compiler = b.addExecutable(.{
         .name = "niobium-compiler",
         .root_module = graph.root("apps/compiler/main.zig", &.{
@@ -30,12 +35,12 @@ pub fn add(b: *std.Build, graph: *const graph_mod.Graph) Artifacts {
         .root_module = graph.root("examples/aot/author.zig", &.{ "compiler", "contracts" }),
     });
     const author_c = cExample(b, graph, library);
-    const go_build = goCommand(b, library);
+    const go_build = goCommand(b, library, host);
     go_build.addArgs(&.{ "build", "-trimpath", "-buildvcs=false", "-mod=readonly", "-o" });
     const starlark = go_build.addOutputFileArg("niobium-starlark");
     go_build.addArg(".");
-    const tests = b.step("aot-authoring-test", "Compiler authoring and Starlark conformance");
-    const go_test = goCommand(b, library);
+    const tests = commands.step(b, "aot:authoring", "Compiler authoring and Starlark conformance");
+    const go_test = goCommand(b, library, host);
     // ABI v2 is tested by author-v2-test with its independently linked C library.
     go_test.addArgs(&.{ "test", "-mod=readonly", "-count=1", "." });
     tests.dependOn(&go_test.step);
@@ -70,8 +75,21 @@ fn cExample(b: *std.Build, graph: *const graph_mod.Graph, library: *Compile) *Co
     return b.addExecutable(.{ .name = "author-c", .root_module = module });
 }
 
-fn goCommand(b: *std.Build, library: *Compile) *std.Build.Step.Run {
-    const run = b.addSystemCommand(&.{"env"});
+fn goCommand(
+    b: *std.Build,
+    library: *Compile,
+    host: @import("host_tools.zig").Tools,
+) *std.Build.Step.Run {
+    const launcher = b.addExecutable(.{
+        .name = "go-author-build-v1",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("apps/starlark/build.zig"),
+            .target = b.graph.host,
+            .optimize = .safe,
+        }),
+    });
+    const run = b.addRunArtifact(launcher);
+    run.step.dependOn(host.install);
     const target = library.rootModuleTarget();
     if (target.os.tag == .macos) {
         const minimum = target.os.version_range.semver.min;
@@ -79,8 +97,8 @@ fn goCommand(b: *std.Build, library: *Compile) *std.Build.Step.Run {
             minimum.major, minimum.minor, minimum.patch,
         }));
     }
-    run.addPrefixedDirectoryArg("CGO_LDFLAGS=-L", library.getEmittedBinDirectory());
-    run.addArgs(&.{ "CGO_ENABLED=1", "GOPROXY=https://proxy.golang.org,direct", "go" });
+    run.addFileArg(library.getEmittedBin());
+    run.addArg(@import("host_tools.zig").goBinary(b));
     run.setCwd(b.path("apps/starlark"));
     run.addFileInput(library.getEmittedBin());
     run.addFileInput(b.path("api/c/compiler.h"));

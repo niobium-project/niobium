@@ -136,7 +136,7 @@ fn coverageDir(b: *std.Build, root: ?[]const u8, name: []const u8) ?[]const u8 {
     return b.fmt("{s}/{s}", .{ base, name });
 }
 
-/// `zig build test-cross`: every unit test binary and the conformance suite compiled for each
+/// `zig build test:cross`: every unit test binary and the conformance suite compiled for each
 /// cross target and installed under `zig-out/cross-tests/<target>/`, where vm-smoke runs them
 /// (host PlatformContract on real Windows and Linux). Compiling alone proves the per-OS backends
 /// type-check on every target.

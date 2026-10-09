@@ -1,5 +1,5 @@
 //! Size gate: each shipping `setup` is at most --limit bytes and grows at most 5% over
-//! tools/size-gate/baseline.zon. `--write` (zig build size-gate -- --write) rewrites the baseline.
+//! tools/size-gate/baseline.zon. `--write` (zig build check:size -- --write) rewrites the baseline.
 
 const std = @import("std");
 const repo = @import("repo");
@@ -62,7 +62,9 @@ pub fn evaluate(
             try report.add("{s}: {d} bytes > limit {d}", .{ entry.name, entry.bytes, limit });
         }
         const base = find(baseline, entry.name) orelse {
-            try report.add("{s}: no size baseline (zig build size-gate -- --write)", .{entry.name});
+            try report.add("{s}: no size baseline (zig build check:size -- --write)", .{
+                entry.name,
+            });
             continue;
         };
         const allowed = base.bytes + base.bytes * growth_percent / 100;
@@ -103,9 +105,9 @@ fn writeBaseline(
 ) !void {
     var out: std.Io.Writer.Allocating = .init(arena);
     const w = &out.writer;
-    try w.writeAll("// ReleaseSafe setup sizes. Growth over 5% fails `zig build size-gate`.\n");
+    try w.writeAll("// ReleaseSafe setup sizes. Growth over 5% fails `zig build check:size`.\n");
     try w.writeAll(
-        "// Rewrite with `zig build size-gate -- --write` in the commit that explains it.\n",
+        "// Rewrite with `zig build check:size -- --write` in the commit that explains it.\n",
     );
     try w.writeAll(".{\n    .targets = .{\n");
     for (entries) |entry| {

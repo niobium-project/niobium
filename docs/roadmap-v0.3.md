@@ -47,7 +47,7 @@ a custom Canonical ABI or reduced safety coverage
 
 ## Gates and evidence
 
-`zig build core-test` checks the shared content, access and compiler foundations.
+`zig build test:core` checks the shared content, access and compiler foundations.
 The existing `aot-test` and `aot-e2e` retain their v1 profile until explicit new
 lanes qualify replacement interfaces. Every implemented lane enters `verify`;
 unsupported targets remain visible rather than passing through a skip silently.
@@ -84,7 +84,7 @@ commands, negative results and the actual final artifact digest.
 - Deliverables: normalization/inspection/assembly stage caches, bounded concurrent
   scheduling, detailed type/dependency diagnostics, cache leases/quotas and performance baseline.
 - Non-goals: registry authorization, remote caches and product selection policy.
-- Acceptance: existing `zig build compiler-v2-test core-test`; **new gate**
+- Acceptance: existing `zig build test:compiler test:core`; **new gate**
   `zig build compiler-incremental-test`. Compare clean/cached outputs for changed
   source bytes, logical content, library, tool, runtime, target, limits and maps;
   interrupt every publication boundary and cancel active workers.
@@ -97,7 +97,7 @@ commands, negative results and the actual final artifact digest.
 - Deliverables: package inspection/publishing tools, independent test host,
   generated author conveniences, explicit unused-input type API and more guest languages.
 - Non-goals: ambient WASI, native plugin discovery or serialized-engine caches.
-- Acceptance: existing `zig build component-test author-v2-test core-e2e`;
+- Acceptance: existing `zig build test:component test:author core:e2e`;
   **new gate** `zig build library-package-test`. Independent consumers must prove
   exact values, version mismatches, lifetimes, resource boundaries and final setup output.
 
@@ -110,7 +110,7 @@ commands, negative results and the actual final artifact digest.
 - Deliverables: streaming content access/derivation, finer per-entry access,
   environment/registration/service primitives and their stdlib wrappers.
 - Non-goals: arbitrary shell execution, implicit privilege or shared-object adoption.
-- Acceptance: existing `zig build access-test kernel-test core-e2e`;
+- Acceptance: existing `zig build test:access test:kernel core:e2e`;
   **new gate** `zig build primitive-conformance`. Every operation needs own/foreign
   identity, unsupported scope/filesystem, drift, partial failure, restore and real-kill vectors.
 
@@ -122,7 +122,7 @@ commands, negative results and the actual final artifact digest.
 - Deliverables: distributable package, idiomatic deterministic lifetime management,
   diagnostics, lossless integers and an independent consumer project per language.
 - Non-goals: another semantic validator or a JSON/YAML author-expression language.
-- Acceptance: existing `zig build author-v2-test`; **new gates**
+- Acceptance: existing `zig build test:author`; **new gates**
   `zig build sdk-python-test`, `sdk-typescript-test`, `sdk-go-test`, `sdk-rust-test`.
   Each package must exercise foreign handles, cancellation, Unicode/binary/full-width
   values, clean release and a real equivalent setup. Source-map-only changes must not alter IR.
@@ -134,7 +134,7 @@ commands, negative results and the actual final artifact digest.
 - Deliverables: component families, workloads, parallel version layouts, detection
   policy and selection migration through replaceable libraries/presets.
 - Non-goals: component/channel enums in kernel or auto-installing detected prerequisites.
-- Acceptance: existing `zig build core-e2e`; **new gate** `zig build preset-scenarios`.
+- Acceptance: existing `zig build core:e2e`; **new gate** `zig build preset-scenarios`.
   Execute the [product journeys](design/product-journeys.md): different product
   policies, selected/unselected artifacts, coexistence conflicts and independent shared objects.
 
@@ -146,7 +146,7 @@ commands, negative results and the actual final artifact digest.
 - Deliverables: explicit bounded multi-edge paths, optional-state converters,
   framework-format converters and product-declared bridge orchestration.
 - Non-goals: inferred bridges, automatic replacement libraries or history rewriting.
-- Acceptance: existing `zig build kernel-test core-e2e`; **new gate**
+- Acceptance: existing `zig build test:kernel core:e2e`; **new gate**
   `zig build migration-matrix`. Include old-format fixtures, ambiguous/missing paths,
   retired rules, changed checksums, converter failure and every intermediate crash state.
 
@@ -178,7 +178,7 @@ commands, negative results and the actual final artifact digest.
   lacking the original failing extensions. Retain supplied-archive provenance and
   qualify prebuilt signing tools separately. Future specialized CPU profiles need
   new IDs and evidence; earlier native records retain their host-specific scope.
-- Acceptance: existing `zig build image-test core-e2e core-cross-tools`; **new gate**
+- Acceptance: existing `zig build test:image core:e2e core:cross-tools`; **new gate**
   `zig build release-profile-test`. Test final delivered bytes, prefix/code/payload
   tampering, wrong templates, signing interruption and each selected publisher policy.
 
@@ -208,7 +208,7 @@ commands, negative results and the actual final artifact digest.
   blind retries. Acceptance must show zero retained worker snapshots, preserved lifecycle
   results and exact final-image identities in each claimed context.
 - Non-goals: promoting a compile result or another OS's test to a support claim.
-- Acceptance: `zig build core-test verify`, the isolated Linux assembly witness,
+- Acceptance: `zig build test:core verify`, the isolated Linux assembly witness,
   transferred-image witness and `vm-smoke` where its scenario contract applies.
   Every added matrix cell must include unsupported outcomes and real process termination.
 

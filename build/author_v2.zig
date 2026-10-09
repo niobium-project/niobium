@@ -1,5 +1,6 @@
 //! Version-two author frontends share compiler.author.Builder through the public C ABI.
 const std = @import("std");
+const commands = @import("commands.zig");
 const graph_mod = @import("graph.zig");
 pub const Artifacts = struct {
     library: *std.Build.Step.Compile,
@@ -9,7 +10,11 @@ pub const Artifacts = struct {
     native: *std.Build.Step.Compile,
     c_author: *std.Build.Step.Compile,
 };
-pub fn add(b: *std.Build, graph: *const graph_mod.Graph) Artifacts {
+pub fn add(
+    b: *std.Build,
+    graph: *const graph_mod.Graph,
+    host: @import("host_tools.zig").Tools,
+) Artifacts {
     const published = graph_mod.create(b, .{
         .target = @import("publication.zig").baselineTarget(b),
         .optimize = .safe,
@@ -26,7 +31,11 @@ pub fn add(b: *std.Build, graph: *const graph_mod.Graph) Artifacts {
     });
     const run = b.addRunArtifact(suite);
     run.has_side_effects = true;
-    const tests = b.step("author-v2-test", "Typed native and C authoring contract conformance");
+    const tests = commands.step(
+        b,
+        "test:author",
+        "Typed native and C authoring contract conformance",
+    );
     tests.dependOn(&run.step);
     const launcher = b.addExecutable(.{
         .name = "go-author-build",
@@ -37,7 +46,7 @@ pub fn add(b: *std.Build, graph: *const graph_mod.Graph) Artifacts {
         }),
     });
     const go_flags = &.{ "-trimpath", "-buildvcs=false", "-mod=readonly" };
-    const go_build = goCommand(b, launcher, library);
+    const go_build = goCommand(b, launcher, library, host);
     go_build.addArg("build");
     go_build.addArgs(go_flags);
     go_build.addArg("-o");
@@ -46,7 +55,7 @@ pub fn add(b: *std.Build, graph: *const graph_mod.Graph) Artifacts {
     else
         "niobium-starlark-v2");
     go_build.addArg("./v2");
-    const go_test = goCommand(b, launcher, library);
+    const go_test = goCommand(b, launcher, library, host);
     // Share the completed cold CGO build; tests still execute on every invocation.
     go_test.step.dependOn(&go_build.step);
     go_test.addArg("test");
@@ -70,8 +79,10 @@ fn goCommand(
     b: *std.Build,
     launcher: *std.Build.Step.Compile,
     library: *std.Build.Step.Compile,
+    host: @import("host_tools.zig").Tools,
 ) *std.Build.Step.Run {
     const run = b.addRunArtifact(launcher);
+    run.step.dependOn(host.install);
     run.setCwd(b.path("apps/starlark"));
     const target = library.rootModuleTarget();
     @import("component_cpu.zig").author(b, run, target);
@@ -82,6 +93,7 @@ fn goCommand(
         }));
     }
     run.addFileArg(library.getEmittedBin());
+    run.addArg(@import("host_tools.zig").goBinary(b));
     run.addFileInput(b.path("api/c/compiler_v2.h"));
     for ([_][]const u8{
         "go.mod",

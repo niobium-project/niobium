@@ -1,0 +1,120 @@
+.{
+    .tools = .{
+        .{
+            .id = "rust",
+            .version = "1.96.1",
+            .platforms = .{
+                .{
+                    .id = "aarch64-apple-darwin",
+                    .artifacts = .{
+                        .{
+                            .url = "https://static.rust-lang.org/dist/2026-06-30/rustc-1.96.1-aarch64-apple-darwin.tar.gz",
+                            .sha256 = "ae50f64e1c843693b17cfde67d5589a7a5bec80377dbed1e15a8ee4698b10e53",
+                            .role = .rustc,
+                        },
+                        .{
+                            .url = "https://static.rust-lang.org/dist/2026-06-30/cargo-1.96.1-aarch64-apple-darwin.tar.gz",
+                            .sha256 = "93f8652cb015cad544c39e9e8b8fe7e56645e8a872b15ac92f593893a4c5cea5",
+                            .role = .cargo,
+                        },
+                        .{
+                            .url = "https://static.rust-lang.org/dist/2026-06-30/rust-std-1.96.1-aarch64-apple-darwin.tar.gz",
+                            .sha256 = "69c5f794e2804d801550aa28bb5f2a87176175f4f68b2fe7ffd1723d23952fb6",
+                            .role = .std,
+                        },
+                        .{
+                            .url = "https://static.rust-lang.org/dist/2026-06-30/rust-std-1.96.1-wasm32-unknown-unknown.tar.gz",
+                            .sha256 = "0236bda53460600bcda186dc090430199e849db9c07d0f8a112dc46dbc461a1b",
+                            .role = .std,
+                        },
+                    },
+                },
+                .{
+                    .id = "x86_64-unknown-linux-gnu",
+                    .artifacts = .{
+                        .{
+                            .url = "https://static.rust-lang.org/dist/2026-06-30/rustc-1.96.1-x86_64-unknown-linux-gnu.tar.gz",
+                            .sha256 = "4979b9ce46281de67d02ea0383400b00f9b83ec7d505b26b3c3646e12d98fee4",
+                            .role = .rustc,
+                        },
+                        .{
+                            .url = "https://static.rust-lang.org/dist/2026-06-30/cargo-1.96.1-x86_64-unknown-linux-gnu.tar.gz",
+                            .sha256 = "c656b46ffd1beec8c5396fa6bc275e552ebf22ccf12f1a14e6eefe2688ec977c",
+                            .role = .cargo,
+                        },
+                        .{
+                            .url = "https://static.rust-lang.org/dist/2026-06-30/rust-std-1.96.1-x86_64-unknown-linux-gnu.tar.gz",
+                            .sha256 = "aca04b57a389c215c21a8a71b6a44d8d083f8707888103682769d16155692ec4",
+                            .role = .std,
+                        },
+                        .{
+                            .url = "https://static.rust-lang.org/dist/2026-06-30/rust-std-1.96.1-wasm32-unknown-unknown.tar.gz",
+                            .sha256 = "0236bda53460600bcda186dc090430199e849db9c07d0f8a112dc46dbc461a1b",
+                            .role = .std,
+                        },
+                    },
+                },
+                .{
+                    .id = "x86_64-pc-windows-msvc",
+                    .artifacts = .{
+                        .{
+                            .url = "https://static.rust-lang.org/dist/2026-06-30/rustc-1.96.1-x86_64-pc-windows-msvc.tar.gz",
+                            .sha256 = "ed722426fb2c49f4d9abaacb70c4bf2faac16bfea3281de8463522da626812a0",
+                            .role = .rustc,
+                        },
+                        .{
+                            .url = "https://static.rust-lang.org/dist/2026-06-30/cargo-1.96.1-x86_64-pc-windows-msvc.tar.gz",
+                            .sha256 = "20ffaf382172d31c4c38b2c847faa5814ba6d2a12ae88bec6776fecfef411e87",
+                            .role = .cargo,
+                        },
+                        .{
+                            .url = "https://static.rust-lang.org/dist/2026-06-30/rust-std-1.96.1-x86_64-pc-windows-msvc.tar.gz",
+                            .sha256 = "168d60be62cefb80e67020307b3e9d854ec5836c6e62a4e2d3372574db4d6d4b",
+                            .role = .std,
+                        },
+                        .{
+                            .url = "https://static.rust-lang.org/dist/2026-06-30/rust-std-1.96.1-x86_64-pc-windows-gnu.tar.gz",
+                            .sha256 = "9909d975fc28754bc6dd4493b095287ffc9fd496a09af91f8b19fe36bc5802b5",
+                            .role = .std,
+                        },
+                        .{
+                            .url = "https://static.rust-lang.org/dist/2026-06-30/rust-std-1.96.1-wasm32-unknown-unknown.tar.gz",
+                            .sha256 = "0236bda53460600bcda186dc090430199e849db9c07d0f8a112dc46dbc461a1b",
+                            .role = .std,
+                        },
+                    },
+                },
+            },
+        },
+        .{
+            .id = "go",
+            .version = "1.26.8",
+            .platforms = .{
+                .{
+                    .id = "aarch64-apple-darwin",
+                    .artifacts = .{.{
+                        .url = "https://go.dev/dl/go1.26.8.darwin-arm64.tar.gz",
+                        .sha256 = "a012b25b571bd0138a03dcd25375ceba866fe5ca822f426d2c66a4de56fd3f4b",
+                        .role = .goroot,
+                    }},
+                },
+                .{
+                    .id = "x86_64-unknown-linux-gnu",
+                    .artifacts = .{.{
+                        .url = "https://go.dev/dl/go1.26.8.linux-amd64.tar.gz",
+                        .sha256 = "d0f743b33e8d8945e6b1f432edd15785c70507121d6e2a723b21285eddf8b57b",
+                        .role = .goroot,
+                    }},
+                },
+                .{
+                    .id = "x86_64-pc-windows-msvc",
+                    .artifacts = .{.{
+                        .url = "https://go.dev/dl/go1.26.8.windows-amd64.zip",
+                        .sha256 = "b92c3b2adae85a11ba71fe7216daf0d84e82af4c8ab6c5625807f28622043a59",
+                        .role = .goroot,
+                    }},
+                },
+            },
+        },
+    },
+}

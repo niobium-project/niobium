@@ -1,6 +1,7 @@
 //! `hooks:install`, `hooks:pre-commit`, and `hooks:pre-push`.
 
 const std = @import("std");
+const commands = @import("commands.zig");
 
 pub fn add(b: *std.Build, check_commits: *std.Build.Step.Compile) void {
     const hooks = executable(b);
@@ -15,17 +16,17 @@ pub fn add(b: *std.Build, check_commits: *std.Build.Step.Compile) void {
         ".githooks/windows/pre-push.cmd",
     };
     for (inputs) |path| install.addFileInput(b.path(path));
-    const installed = b.step("hooks:install", "Copy .githooks into .git/hooks");
+    const installed = commands.step(b, "hooks:install", "Copy .githooks into .git/hooks");
     installed.dependOn(&install.step);
 
     const pre_commit = run(b, hooks, "pre-commit");
     pre_commit.addArg(b.graph.zig_exe);
-    const commit = b.step("hooks:pre-commit", "Check zig fmt on staged Zig files");
+    const commit = commands.step(b, "hooks:pre-commit", "Check zig fmt on staged Zig files");
     commit.dependOn(&pre_commit.step);
 
     const pre_push = run(b, hooks, "pre-push");
     pre_push.addArtifactArg(check_commits);
-    const push = b.step("hooks:pre-push", "Check subjects that would be pushed");
+    const push = commands.step(b, "hooks:pre-push", "Check subjects that would be pushed");
     push.dependOn(&pre_push.step);
 }
 

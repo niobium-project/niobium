@@ -80,7 +80,7 @@ pub fn addComponent(
 }
 
 /// Shipping `setup` with `product_config` (from `nbpack config`) compiled in: ReleaseSafe and
-/// stripped ELF, the same settings `zig build cross` gates.
+/// stripped ELF, the same settings `zig build check:cross` gates.
 pub fn addSetup(
     tc: Toolchain,
     target: std.Build.ResolvedTarget,

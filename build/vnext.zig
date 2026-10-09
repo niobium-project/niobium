@@ -1,5 +1,6 @@
 //! Shared contract checks run on the build host independently of installer target selection.
 const std = @import("std");
+const commands = @import("commands.zig");
 const graph_mod = @import("graph.zig");
 const image = @import("image.zig");
 const component = @import("component.zig");
@@ -10,16 +11,17 @@ pub fn add(
     inputs: graph_mod.Inputs,
     fetcher: *std.Build.Step.Compile,
     checker: *std.Build.Step.Compile,
+    host: @import("host_tools.zig").Tools,
 ) *std.Build.Step {
     @import("runtime_v2.zig").cross(b, inputs, checker);
-    const step = b.step("core-test", "Content, access and compiler foundation conformance");
+    const step = commands.step(b, "test:core", "Content, access, and compiler foundations");
     step.dependOn(cpuSettings(b));
     const graph = graph_mod.create(b, .{
         .target = b.graph.host,
         .optimize = .safe,
         .inputs = inputs,
     });
-    const authors = @import("author_v2.zig").add(b, &graph);
+    const authors = @import("author_v2.zig").add(b, &graph, host);
     const compiler = @import("compiler_v2.zig").add(b, inputs);
     step.dependOn(compiler.tests);
     step.dependOn(authors.tests);
@@ -31,6 +33,7 @@ pub fn add(
         const publication_graph = publicationGraph(b, inputs);
         const tools = component_tools.add(b, fetcher);
         const qualified = component.add(b, .{
+            .host = host,
             .publication = &publication_graph,
             .wasm_tools = tools.wasm_tools,
             .wit_bindgen = tools.wit_bindgen,
@@ -64,21 +67,30 @@ pub fn add(
         step.dependOn(@import("tutorial.zig").add(b, &graph, product_inputs));
         step.dependOn(&runtime.step);
         step.dependOn(qualified.step);
-    } else {
-        const missing = b.addFail("No published Component tool profile for this build host");
-        step.dependOn(&missing.step);
-        authors.tests.dependOn(&missing.step);
-        b.step("component-test", "Component host qualification").dependOn(&missing.step);
-        b.step("runtime-v2", "Complete Component runtime template").dependOn(&missing.step);
-        b.step("core-e2e", "Delivered setup qualification").dependOn(&missing.step);
-        b.step("core-sdk", "Publish the standard host SDK").dependOn(&missing.step);
-        b.step("dsl-tutorial-test", "Execute tutorial authoring and installer lifecycle")
-            .dependOn(&missing.step);
-        b.step("dsl-tutorial-tools", "Build the DSL tutorial input preparation tool")
-            .dependOn(&missing.step);
-    }
+    } else missingProfile(b, step, authors.tests);
     contentInterop(b, &graph, step);
     return step;
+}
+
+fn missingProfile(
+    b: *std.Build,
+    step: *std.Build.Step,
+    author_tests: *std.Build.Step,
+) void {
+    const missing = b.addFail("No published Component tool profile for this build host");
+    step.dependOn(&missing.step);
+    author_tests.dependOn(&missing.step);
+    const unavailable = [_]struct { []const u8, []const u8 }{
+        .{ "test:component", "Component host qualification" },
+        .{ "runtime:build", "Complete Component runtime template" },
+        .{ "core:e2e", "Delivered setup qualification" },
+        .{ "core:sdk", "Publish the standard host SDK" },
+        .{ "example:tutorial", "Execute tutorial authoring and installer lifecycle" },
+        .{ "example:tutorial:tools", "Build the DSL tutorial input preparation tool" },
+    };
+    for (unavailable) |item| {
+        commands.step(b, item[0], item[1]).dependOn(&missing.step);
+    }
 }
 
 fn sdk(

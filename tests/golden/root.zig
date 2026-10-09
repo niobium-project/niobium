@@ -1,4 +1,4 @@
-//! Pixel and IR goldens (`zig build golden`). Every catalog case renders offscreen and must
+//! Pixel and IR goldens (`zig build test:golden`). Every catalog case renders offscreen and must
 //! match `tests/golden/kit/...png` pixel for pixel; every screen renders per platform and
 //! theme to `tests/golden/screens/...png`, with UiTree, DisplayList and SemanticTree text
 //! snapshots on macOS light. `-Dupdate=<scope>` rewrites one component (or `screens`);

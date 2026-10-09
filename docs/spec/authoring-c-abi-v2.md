@@ -143,7 +143,7 @@ own those decisions.
 
 ## Verification
 
-`zig build author-v2-test --cache-poison=disallowed` compiles an independent C
+`zig build test:author --cache-poison=disallowed` compiles an independent C
 consumer against the actual header, runs ABI ownership/type tests and evaluates
 native Zig, C and Starlark programs. The three reference authors exercise function
 and module composition, typed record bindings, machine observation, grants and a

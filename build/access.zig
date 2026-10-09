@@ -1,5 +1,6 @@
 //! Native permission verification belongs to the actual verify dependency graph.
 const std = @import("std");
+const commands = @import("commands.zig");
 const graph_mod = @import("graph.zig");
 
 pub fn add(b: *std.Build, graph: *const graph_mod.Graph) *std.Build.Step {
@@ -12,7 +13,11 @@ pub fn add(b: *std.Build, graph: *const graph_mod.Graph) *std.Build.Step {
     const suite = b.addTest(.{ .name = "access-native", .root_module = module });
     const run = b.addRunArtifact(suite);
     run.has_side_effects = true;
-    const step = b.step("access-test", "Native permission effects, receipts and restoration");
+    const step = commands.step(
+        b,
+        "test:access",
+        "Native permission effects, receipts and restoration",
+    );
     step.dependOn(&run.step);
     return step;
 }

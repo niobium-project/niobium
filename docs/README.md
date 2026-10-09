@@ -16,6 +16,8 @@ published runtimes and SDK artifacts.
 [ADR-0026](adr/0026-pinned-rust-component-wasm.md) keeps the Component engine
 and repository-owned guests on pinned Rust until a competing alternative is
 qualified.
+[ADR-0027](adr/0027-zig-provisioned-host-tools.md) has Zig install the Rust and
+Go tools that build and test use.
 
 ## Active contracts
 

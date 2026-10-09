@@ -46,7 +46,7 @@ The following checks apply to the retained TUF distribution profile and its libr
 
 ## Size and dependencies
 
-- [ ] `zig build size-gate`: setup ≤ 30 MiB, growth ≤ 5% (otherwise update the baseline in the same commit and explain).
+- [ ] `zig build check:size`: setup ≤ 30 MiB, growth ≤ 5% (otherwise update the baseline in the same commit and explain).
 - [ ] Retained `check-binary` rules stay unchanged. Component publication uses the exact OS/ABI policy in ADR-0024: no undeclared dependencies or interpreter; PE flags complete; no RWX segments or executable stack. Policy changes require measured imports and target evidence.
 - [ ] New third_party code has a LICENSE, PROVENANCE.md, and hand-written bindings.
 

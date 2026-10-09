@@ -1,8 +1,26 @@
 # Checks, lint and rule iteration
 
+`zig build` is the repository entry point ([ADR-0027](../adr/0027-zig-provisioned-host-tools.md)).
+Top-level steps are `fmt`, `lint`, `check`, `test`, `verify`, and `run`.
+Every other public step is `namespace:leaf`, or `namespace:leaf:detail` for the
+tutorial tools step. `build/commands.zig` is the closed list. `zig build -l`
+prints it.
+
+`zig build tools:install` places Rust 1.96.1 and Go 1.26.8 in `.cache/tools`.
+Build and test steps that need them depend on that install.
+`zig build tools:doctor` checks the installed versions. Example steps and
+`vm:smoke` do not install tools. A missing `prlctl` fails `vm:smoke` and points
+at [the VM runbook](../runbooks/vm-smoke.md). Node.js for the user-docs site
+stays on the host ([ADR-0015](../adr/0015-node-toolchain-for-user-docs.md)).
+
+`examples/hello` is its own package. `zig build example:hello` runs that
+package's `zig build`. `examples/dsl-tutorial/build.zig` calls back into
+`example:tutorial` and `example:tutorial:tools`, because those tools link this
+repository's module graph.
+
 All checks are Zig programs, driven by `zig build check`.
 
-`zig build hooks:install` copies [`.githooks/posix`](../../.githooks/posix/pre-commit) or [`.githooks/windows`](../../.githooks/windows/commit-msg.cmd) into `.git/hooks`. Pre-commit checks staged Zig formatting. The commit-message hook and pre-push check `<type>(<scope>): summary` through `check-commits`. New hook behavior goes through these steps. The platform scripts do not grow a second policy.
+`zig build hooks:install` copies [`.githooks/posix`](../../.githooks/posix/pre-commit) or [`.githooks/windows`](../../.githooks/windows/commit-msg.cmd) into `.git/hooks`. Pre-commit checks staged Zig formatting. The commit-message hook and pre-push check `<type>(<scope>): summary` through `zig build check:commits`. New hook behavior goes through these steps. The platform scripts do not grow a second policy.
 
 | Tool | Checks |
 |---|---|

@@ -8,8 +8,8 @@ Format: `<type>(<scope>): <summary>`, with an English summary of ≤ 72 characte
 
 Example: `feat(trust): implement root rotation`.
 
-`zig build check-commits -- origin/main..HEAD` validates the format.
+`zig build check:commits -- origin/main..HEAD` validates the format.
 
-`zig build check-commits -- --message-file <path>` validates one message file.
+`zig build check:commits -- --message-file <path>` validates one message file.
 
-`zig build hooks:install` copies `.githooks/posix` or `.githooks/windows` into `.git/hooks`. It does not change git config. Pre-commit runs `zig fmt --check` on staged Zig files. `commit-msg` checks the subject with `zig build check-commits`. Pre-push checks each commit that would be published, using `origin/main` as the base for a new branch. On Windows, Git for Windows starts `.githooks/windows/launch.sh`, which runs the sibling `.cmd` script.
+`zig build hooks:install` copies `.githooks/posix` or `.githooks/windows` into `.git/hooks`. It does not change git config. Pre-commit runs `zig fmt --check` on staged Zig files. `commit-msg` checks the subject with `zig build check:commits`. Pre-push checks each commit that would be published, using `origin/main` as the base for a new branch. On Windows, Git for Windows starts `.githooks/windows/launch.sh`, which runs the sibling `.cmd` script.

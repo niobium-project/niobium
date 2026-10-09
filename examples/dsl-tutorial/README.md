@@ -14,7 +14,7 @@ Build the published host SDK and the example's preparation tool from the
 repository root:
 
 ```sh
-zig build core-sdk dsl-tutorial-tools --cache-poison=disallowed
+zig build core:sdk example:tutorial:tools --cache-poison=disallowed
 ```
 
 The tool accepts `--sdk DIR --source DIR --out DIR`. It copies the SDK inputs and
@@ -26,7 +26,7 @@ steps, including all locked inputs and the signer required on macOS.
 Run the example's native lifecycle and diagnostic checks:
 
 ```sh
-zig build dsl-tutorial-test --cache-poison=disallowed
+zig build example:tutorial --cache-poison=disallowed
 ```
 
 Evidence is written to `.evidence/dsl-tutorial/`. Results describe the actual

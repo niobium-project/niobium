@@ -1,4 +1,4 @@
-//! Docs lint (zig build check-docs): relative links resolve, ADR fields, acceptance IDs, spec
+//! Docs lint (zig build check:docs): relative links resolve, ADR fields, acceptance IDs, spec
 //! filenames carry a version, docs are English, URLs only name public allowed hosts, and every
 //! build target has a tier on the Platform support page.
 
@@ -37,7 +37,9 @@ pub const allowed_hosts = [_][]const u8{
     "niobium.dev",
     "nsis.sourceforge.io",
     "raw.githubusercontent.com",
+    "go.dev", // Pinned Go toolchain archives (ADR-0027).
     "proxy.golang.org", // Public Go module acquisition for the build-time Starlark worker.
+    "static.rust-lang.org", // Pinned Rust toolchain archives (ADR-0027).
     "registry.npmjs.org",
     "schemas.microsoft.com",
     "sourceforge.net",

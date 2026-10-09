@@ -1,5 +1,6 @@
 //! Published runtime build. Product assembly depends on its emitted bytes only.
 const std = @import("std");
+const commands = @import("commands.zig");
 const graph_mod = @import("graph.zig");
 const component = @import("component.zig");
 pub const Publication = struct {
@@ -20,7 +21,7 @@ pub fn add(
     });
     const runtime = executable(b, &publication, library, "niobium-runtime-v2");
     const binary_check = checkBinary(b, runtime, checker);
-    const step = b.step("runtime-v2", "Build the complete Component runtime template");
+    const step = commands.step(b, "runtime:build", "Build the complete Component runtime template");
     step.dependOn(&b.addInstallArtifact(runtime, .{}).step);
     step.dependOn(binary_check);
     return .{ .runtime = runtime, .binary_check = binary_check };
@@ -112,7 +113,11 @@ pub fn cross(
     };
     inline for (targets) |target| {
         const option = "component-library-" ++ target[0];
-        const step = b.step("runtime-" ++ target[0], "Build a complete target runtime template");
+        const step = commands.step(
+            b,
+            "runtime:" ++ target[0],
+            "Build a complete target runtime template",
+        );
         if (b.option([]const u8, option, "Pinned target Wasmtime static library")) |path| {
             const graph = graph_mod.create(b, .{
                 .target = b.resolveTargetQuery(target[1]),

@@ -2,4 +2,4 @@
 # Installed by `zig build hooks:install`. Checks the commit subject.
 set -eu
 cd "$(git rev-parse --show-toplevel)"
-exec zig build check-commits -- --message-file "$1"
+exec zig build check:commits -- --message-file "$1"

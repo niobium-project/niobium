@@ -1,9 +1,10 @@
 //! Native kernel conformance and real-process recovery share the registered graph.
 const std = @import("std");
+const commands = @import("commands.zig");
 const graph_mod = @import("graph.zig");
 
 pub fn add(b: *std.Build, graph: graph_mod.Graph) *std.Build.Step {
-    const step = b.step("kernel-test", "Native multi-root lifecycle and crash recovery");
+    const step = commands.step(b, "test:kernel", "Native multi-root lifecycle and crash recovery");
     const imports = &.{ "kernel", "program", "content", "access", "platform" };
     const suite = b.addTest(
         .{
@@ -43,12 +44,13 @@ fn addWireConformance(
     const tests = b.addTest(.{ .name = "kernel-wire-contract", .root_module = module });
     kernel_step.dependOn(&b.addRunArtifact(tests).step);
     const executable = b.addExecutable(.{
-        .name = "kernel-wire-conformance",
+        .name = "test-kernel-wire",
         .root_module = module,
     });
     const install = b.addInstallArtifact(executable, .{});
-    const step = b.step(
-        "kernel-wire-conformance",
+    const step = commands.step(
+        b,
+        "test:kernel-wire",
         "Build the read-only durable wire decoder witness",
     );
     step.dependOn(&install.step);
