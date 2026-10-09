@@ -53,7 +53,7 @@ Normative requirements, current implementation and execution evidence are distin
 | Test lanes and evidence | [Testing lanes](development/testing-lanes.md) |
 | Checks, lint and skills | [Tooling and rules](development/tooling-and-rules.md) |
 | UI component lifecycle | [UI lifecycle](development/ui-component-lifecycle.md) |
-| Commit conventions | [Commits](development/commits.md) |
+| Commit and pull request rules | [Commits and pull requests](development/commits.md) |
 | Consumer boundaries and retained APIs | [Consuming](development/consuming.md) |
 | Distribution backlog | [Distribution milestones](development/distribution-backlog.md), [ADR-0020](adr/0020-distribution-delivery-milestones.md) |
 | CI evidence transport | [ADR-0021](adr/0021-ci-evidence-transport.md), [deployment/recovery](development/testing-lanes.md#r2-deployment-and-recovery) |

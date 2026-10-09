@@ -135,7 +135,7 @@ A failure prints the reason. Do not push.
 git push origin main
 ```
 
-The pre-push hook runs `check-commits --strict` for `refs/heads/main`. When the hook fails, do not comment that the pull request landed.
+The pre-push hook runs `check-commits --strict` for `refs/heads/main`. The Signed linear history ruleset rejects the push when a commit is unverified or the history is not linear. Admins do not bypass that ruleset. When the hook or the push fails, do not comment that the pull request landed.
 
 Then fetch `origin/main` and, for every sha just pushed:
 
