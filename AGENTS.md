@@ -97,5 +97,6 @@ Test lanes: L0 static (check/lint/schema/size), L1 pure core (VirtualPlatform), 
 | `niobium-platform-capability` | Contract-first flow and crash pitfalls for new capabilities / platform backends |
 | `review-niobium` | Security and boundary review checklist |
 | `niobium-build` | Git hooks installed by `zig build hooks:install` |
+| `merge-prs` | Land labeled pull requests onto main as a linear signed history |
 | `zig-0.17`, `zig-tiger-style` | External Zig language skills (pinned by `skills-lock.json`) |
 | `apple-hig`, `winui-app`, `gtk-ui-ux-engineer` | External platform design references (values and checklists only); sources in [docs/development/tooling-and-rules.md](docs/development/tooling-and-rules.md#external-skills) |
