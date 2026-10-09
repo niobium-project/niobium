@@ -34,7 +34,8 @@ pub fn addRun(
         const mkdir = b.addSystemCommand(&.{ "mkdir", "-p", dir });
         mkdir.has_side_effects = true;
         run.step.dependOn(&mkdir.step);
-        run.addArgs(&.{ "kcov", "--include-pattern=libs/|apps/|tools/|build/", dir });
+        // kcov matches comma-separated literal substrings, not a regex.
+        run.addArgs(&.{ "kcov", "--include-pattern=libs/,apps/,tools/,build/", dir });
     }
     run.addArtifactArg(exe);
     run.setEnvironmentVariable(

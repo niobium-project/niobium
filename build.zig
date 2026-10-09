@@ -257,7 +257,7 @@ fn addQualitySteps(
     const fuzz = b.step("fuzz", "Fuzz corpus replay (continuous: -Dcontinuous-fuzz --fuzz)");
     const continuous = b.option(bool, "continuous-fuzz", "Use Zig's native fuzz protocol") orelse
         false;
-    const fuzz_binary = tests.compileSuite(b, graph, "fuzz", b.addOptions());
+    const fuzz_binary = tests.compileSuite(b, graph, "fuzz", b.addOptions(), false);
     const fuzz_run = if (continuous) b.addRunArtifact(fuzz_binary) else evidence.addRun(
         b,
         config,
@@ -286,7 +286,7 @@ fn addAllTests(
 ) void {
     const root: ?[]const u8 = if (coverage) "zig-out/coverage" else null;
     tests.addUnitTests(b, graph, test_step, root, config);
-    const conformance = tests.compileSuite(b, graph, "conformance", b.addOptions());
+    const conformance = tests.compileSuite(b, graph, "conformance", b.addOptions(), coverage);
     const suite_dir = if (root) |base| b.fmt("{s}/suite-conformance", .{base}) else null;
     tests.dependOnTest(b, conformance_step, conformance, suite_dir, config, .conformance);
     tests.addAppTests(b, graph, test_step, &app_tests, root, config);

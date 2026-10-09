@@ -29,6 +29,7 @@ pub fn addUnitTests(
         const unit = b.addTest(.{
             .name = b.fmt("unit-{s}", .{spec.name}),
             .root_module = graph.modules[index],
+            .use_llvm = kcovLlvm(coverage_root != null),
         });
         const dir = coverageDir(b, coverage_root, b.fmt("unit-{s}", .{spec.name}));
         dependOnTest(b, step, unit, dir, config, .unit);
@@ -41,11 +42,16 @@ pub fn compileSuite(
     graph: *const graph_mod.Graph,
     suite: []const u8,
     extra: *std.Build.Step.Options,
+    kcov: bool,
 ) *std.Build.Step.Compile {
     const module = graph.root(b.fmt("tests/{s}/root.zig", .{suite}), &suite_imports);
     module.addOptions("suite_options", extra);
     evidence.addModule(b, module);
-    return b.addTest(.{ .name = b.fmt("suite-{s}", .{suite}), .root_module = module });
+    return b.addTest(.{
+        .name = b.fmt("suite-{s}", .{suite}),
+        .root_module = module,
+        .use_llvm = kcovLlvm(kcov),
+    });
 }
 
 /// tests/<suite>/root.zig, executed directly. sim, e2e and fuzz use this path.
@@ -61,7 +67,7 @@ pub fn addSuite(
         suite,
         "concurrency",
     )) evidence.catalog.Suite.unit else std.meta.stringToEnum(evidence.catalog.Suite, suite).?;
-    return evidence.addRun(b, config, identity, compileSuite(b, graph, suite, extra), null);
+    return evidence.addRun(b, config, identity, compileSuite(b, graph, suite, extra, false), null);
 }
 
 /// Tests that live next to an app (CLI frontend, C ABI).
@@ -70,11 +76,20 @@ pub const AppTest = struct {
     imports: []const []const u8,
     configure: *const fn (*std.Build, *std.Build.Module) void,
 
-    fn compile(t: AppTest, b: *std.Build, graph: *const graph_mod.Graph) *std.Build.Step.Compile {
+    fn compile(
+        t: AppTest,
+        b: *std.Build,
+        graph: *const graph_mod.Graph,
+        kcov: bool,
+    ) *std.Build.Step.Compile {
         const module = graph.root(t.source, t.imports);
         t.configure(b, module);
         const name = std.fs.path.basename(std.fs.path.dirname(t.source).?);
-        return b.addTest(.{ .name = b.fmt("app-{s}", .{name}), .root_module = module });
+        return b.addTest(.{
+            .name = b.fmt("app-{s}", .{name}),
+            .root_module = module,
+            .use_llvm = kcovLlvm(kcov),
+        });
     }
 };
 
@@ -87,7 +102,7 @@ pub fn addAppTests(
     config: evidence.Config,
 ) void {
     for (apps) |app| {
-        const exe = app.compile(b, graph);
+        const exe = app.compile(b, graph, coverage_root != null);
         const dir = coverageDir(b, coverage_root, exe.name);
         dependOnTest(b, step, exe, dir, config, .unit);
     }
@@ -107,6 +122,13 @@ pub fn dependOnTest(
 
 fn supports(spec: specs.ModuleSpec, target: std.Target) bool {
     return !spec.macos_arm64_only or (target.os.tag == .macos and target.cpu.arch == .aarch64);
+}
+
+/// kcov writes a breakpoint at each DWARF line address. On x86 that faults
+/// when the address is mid-instruction, which the self-hosted backend does
+/// for some switches. LLVM keeps those entries on instruction boundaries.
+fn kcovLlvm(kcov: bool) ?bool {
+    return if (kcov) true else null;
 }
 
 fn coverageDir(b: *std.Build, root: ?[]const u8, name: []const u8) ?[]const u8 {
@@ -151,7 +173,7 @@ pub fn addCrossTests(
         const golden = ui.addGoldenSuite(b, &graph, null);
         step.dependOn(&b.addInstallArtifact(golden, .{ .dest_dir = .{ .override = dir } }).step);
         for (apps) |app| {
-            const exe = app.compile(b, &graph);
+            const exe = app.compile(b, &graph, false);
             step.dependOn(&b.addInstallArtifact(exe, .{ .dest_dir = .{ .override = dir } }).step);
         }
     }
