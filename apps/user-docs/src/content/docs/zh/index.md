@@ -19,10 +19,12 @@ Runtime 绑定用户选择与机器事实，执行固定的 Wasm 能力库，再
 
 当前实验性方案采用标准 WIT/Component 契约、Wasmtime/Pulley、规范化 POSIX pax 内容，以及明确的可移植权限策略。原生 Zig、C 和 Starlark 构造相同模型。编译器解析完整输入类型和源码诊断，固定依赖，并组装预编译 runtime，不针对具体产品重新链接。
 
-CLI/用户范围基础已具备本地验收切片。PE/ELF/Mach-O 组装与本地原生或模拟执行分别记录，不能据此宣称原生 Windows/Linux CI、整机范围或发布者身份认证已经完成。当前证据边界见[状态与平台](/zh/status/)。
+CLI/用户范围基础已有原生托管 CI 和本地验收切片的记录。PE/ELF/Mach-O 组装与目标平台执行分别记录。原生 CI 验收限于记录中的 runner 上下文；整机范围和发布者身份认证仍是独立工作。证据边界见[状态与平台](/zh/status/)。
 
-请从[作者接口指南](https://github.com/niobium-project/niobium/blob/main/docs/development/authoring-v2.md)、[Component SDK](https://github.com/niobium-project/niobium/blob/main/docs/development/component-library-sdk.md)和[跨主机构建指南](https://github.com/niobium-project/niobium/blob/main/docs/development/cross-host-builds.md)开始。[路线图](/zh/roadmap/)及维护者[文档索引](https://github.com/niobium-project/niobium/blob/main/docs/README.md)区分基础机制、产品预设、完整语言 SDK 和后续平台验收。
+从 [DSL 入门教程](/zh/tutorial/)开始，构建、安装和更新一个小型 Starlark 产品，再学习如何编写与编译它的模型。
 
-现有[教程](/zh/start/)及 manifest/`nbpack` 参考页描述保留的旧实现。其 1 MiB 封装、ASCII 资源名称和 WAMR ABI 不是当前 Component/内容契约，旧验收结果也保留原有范围。[术语表](/zh/reference/glossary/)定义共享领域概念。
+SDK 细节见[作者接口指南](https://github.com/niobium-project/niobium/blob/main/docs/development/authoring-v2.md)、[Component SDK](https://github.com/niobium-project/niobium/blob/main/docs/development/component-library-sdk.md)和[跨主机构建指南](https://github.com/niobium-project/niobium/blob/main/docs/development/cross-host-builds.md)。[路线图](/zh/roadmap/)及维护者[文档索引](https://github.com/niobium-project/niobium/blob/main/docs/README.md)区分基础机制、产品预设、完整语言 SDK 和后续平台验收。
+
+侧边栏将旧版 v1 文档单独分组。保留的 [v1 教程](/zh/start/)及 manifest/`nbpack` 参考页描述它们原有的接口和证据。[术语表](/zh/reference/glossary/)定义当前领域概念。
 
 项目背景和维护方式见[关于本项目](/zh/about/)。

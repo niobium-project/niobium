@@ -8,4 +8,4 @@ Format: `<type>(<scope>): <summary>`, with an English summary of ≤ 72 characte
 
 Example: `feat(trust): implement root rotation`.
 
-`zig build check-commits -Drange=origin/main..HEAD` validates the format.
+`zig build check-commits -- origin/main..HEAD` validates the format.

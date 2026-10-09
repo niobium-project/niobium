@@ -1,9 +1,10 @@
 ---
 title: 清单与组件 schema
 description: 产品清单（product.json）和组件元数据（component.json）的字段。
+pagefind: false
 ---
 
-> 适用范围：此页描述保留的 v1 实现。新的 DSL/AOT 产品构建与能力库契约见[项目概览](/zh/)，验收证据见[状态与平台](/zh/status/)。
+> 适用范围：本页介绍保留的 v1 实现。当前的 Starlark 产品编写与编译请从 [DSL 入门教程](/zh/tutorial/)开始。验证范围见[状态与平台](/zh/status/)。
 
 权威来源：[manifest-v1](https://github.com/niobium-project/niobium/blob/main/docs/spec/manifest-v1.md) 和 [component-v1](https://github.com/niobium-project/niobium/blob/main/docs/spec/component-v1.md) 规范，以及它们的 JSON Schema [manifest-v1.schema.json](https://github.com/niobium-project/niobium/blob/main/api/schema/manifest-v1.schema.json) 和 [component-v1.schema.json](https://github.com/niobium-project/niobium/blob/main/api/schema/component-v1.schema.json)。本页是它们的摘要。
 

@@ -1,9 +1,10 @@
 ---
 title: nbpack 命令行
 description: 发布工具 nbpack 的命令和选项。
+pagefind: false
 ---
 
-> 适用范围：此页描述保留的 v1 实现。新的 DSL/AOT 产品构建与能力库契约见[项目概览](/zh/)，验收证据见[状态与平台](/zh/status/)。
+> 适用范围：本页介绍保留的 v1 实现。当前的 Starlark 产品编写与编译请从 [DSL 入门教程](/zh/tutorial/)开始。验证范围见[状态与平台](/zh/status/)。
 
 权威来源：[`apps/nbpack/cli.zig`](https://github.com/niobium-project/niobium/blob/main/apps/nbpack/cli.zig) 中的解析器和用法文本；操作流程见[发布签名运行手册](https://github.com/niobium-project/niobium/blob/main/docs/runbooks/release-signing.md)。`nbpack` 由 Niobium 检出目录中的 `zig build` 构建，或由你的 `build.zig` 中的 `niobium.nbpack(b)` 构建。
 

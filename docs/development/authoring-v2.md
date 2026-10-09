@@ -1,5 +1,9 @@
 # Develop a typed product author
 
+For a first product, follow the
+[Starlark tutorial](../../apps/user-docs/src/content/docs/tutorial/index.md).
+This guide describes the SDK boundary and frontend conformance.
+
 Native Zig and the [authoring C ABI v2](../spec/authoring-c-abi-v2.md) construct the
 same product model. The Starlark worker in
 [apps/starlark/v2](../../apps/starlark/v2/main.go) calls that public C API. Author

@@ -1,9 +1,10 @@
 ---
 title: Exit codes
 description: The stable exit codes of setup and nbpack, the matching C ABI status codes, and event error codes.
+pagefind: false
 ---
 
-> Scope: this page describes the retained v1 implementation. See the [project overview](/) for DSL/AOT authoring and capability contracts, and [Status and platforms](/status/) for evidence.
+> Scope: this page describes the retained v1 implementation. For current Starlark product authoring and compilation, start with the [DSL tutorial](/tutorial/). See [Status and platforms](/status/) for evidence.
 
 Canonical sources: the exit code table in [cli-v1](https://github.com/niobium-project/niobium/blob/main/docs/spec/cli-v1.md#exit-codes) and its implementation [`libs/core/exit_code.zig`](https://github.com/niobium-project/niobium/blob/main/libs/core/exit_code.zig). Exit codes are a public compatibility contract: a code never changes meaning.
 

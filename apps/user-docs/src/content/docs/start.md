@@ -1,9 +1,10 @@
 ---
-title: 'Tutorial: your first release'
+title: 'Legacy v1 tutorial: your first release'
 description: Build the sample product with the Niobium build API, sign it with development keys, install it, publish an update and uninstall it.
+pagefind: false
 ---
 
-> Scope: the guidance and platform records below apply to the retained v1 implementation. New DSL/AOT interfaces and qualification have separate evidence on [Status and platforms](/status/).
+> Scope: the guidance and platform records below apply to the retained v1 implementation. For current Starlark product authoring, start with the [DSL tutorial](/tutorial/). New DSL/AOT interfaces and qualification have separate evidence on [Status and platforms](/status/).
 
 In this tutorial you take the sample product `Hello`, build it as your own product repository would, sign it with throwaway development keys, install it from a local repository, publish a second release, update to it and uninstall it. It takes about fifteen minutes, most of it the first build.
 

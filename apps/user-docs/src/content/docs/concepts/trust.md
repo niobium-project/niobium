@@ -1,11 +1,12 @@
 ---
-title: Trust model
+title: Retained v1 trust model
 description: How TUF authorizes releases, and how that differs from operating-system code signing.
+pagefind: false
 ---
 
-> Scope: this page describes the retained v1 implementation. See the [project overview](/) for DSL/AOT authoring and capability contracts, and [Status and platforms](/status/) for evidence.
+> Scope: this page describes the retained manifest-era v1 implementation. Use the [DSL tutorial](/tutorial/) for current product authoring and installation. These distribution or bootstrap mechanisms are not APIs of the Component-v2 tutorial profile; platform evidence is on [Status and platforms](/status/).
 
-Niobium separates two questions. Is this release one the publisher authorized, current, and not older than what I already have? That is answered by TUF (The Update Framework) metadata signed with the publisher's keys. Does the operating system trust this executable's publisher? That is answered by platform signatures such as Authenticode or Apple Developer ID. The first protects the update channel; the second is what the OS shows the user.
+The retained v1 distribution profile separates two questions. Is this release one the publisher authorized, current, and not older than what I already have? That is answered by TUF (The Update Framework) metadata signed with the publisher's keys. Does the operating system trust this executable's publisher? That is answered by platform signatures such as Authenticode or Apple Developer ID. The first protects the update channel; the second is what the OS shows the user.
 
 ## Release authorization with TUF
 
@@ -39,7 +40,7 @@ Keeping them apart means a publisher can respond to a bad release by publishing 
 
 ## Platform signatures
 
-Operating systems decide whether to warn about or block an executable based on code signing: Authenticode on Windows, Developer ID and notarization on macOS. Platform signing changes the binary bytes, so it must happen before artifacts are packed and hashed. Niobium v0.1 has no certificates wired in, and its `setup` and artifacts carry no platform signature; this is DEFERRED on [Status and platforms](/status/). The intended order is in [Sign and manage keys](/guides/sign-and-keys/#platform-code-signing).
+Operating systems decide whether to warn about or block an executable based on code signing: Authenticode on Windows, Developer ID and notarization on macOS. Platform signing changes the binary bytes, so it must happen before artifacts are packed and hashed. Publisher certificates and notarization are separate from the TUF authorization described here. The retained signing order is in [Sign and manage keys](/guides/sign-and-keys/#platform-code-signing); current installer assembly is in the [compilation tutorial](/tutorial/compilation-diagnostics/).
 
 ## Where the trust root comes from
 

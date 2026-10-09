@@ -1,0 +1,16 @@
+:root {
+  --sl-content-width: 64rem;
+}
+
+@media (min-width: 72rem) {
+  [data-has-sidebar][data-has-toc] .main-pane {
+    --sl-content-margin-inline: 0 auto;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .right-sidebar-container {
+    width: var(--sl-sidebar-width);
+    flex-shrink: 0;
+  }
+}

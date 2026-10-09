@@ -1,9 +1,10 @@
 ---
 title: Implement App Bootstrap
 description: Handle the installer's activate and deactivate requests in your application.
+pagefind: false
 ---
 
-> Scope: this page describes the retained v1 implementation. See the [project overview](/) for DSL/AOT authoring and capability contracts, and [Status and platforms](/status/) for evidence.
+> Scope: this page describes the retained v1 implementation. For current Starlark product authoring and compilation, start with the [DSL tutorial](/tutorial/). See [Status and platforms](/status/) for evidence.
 
 This guide adds App Bootstrap to your application so it can migrate its own data after an install, update or repair, and clean up before an uninstall. Read [Installer and App Bootstrap](/concepts/app-bootstrap/) first for why this lives in your application.
 

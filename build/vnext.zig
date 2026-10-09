@@ -46,7 +46,7 @@ pub fn add(
         const signer = @import("signing.zig").add(b, fetcher);
         const metadata = @import("delivery_v2.zig").runtimePackage(b, compiler.compiler, runtime);
         sdk(b, publication, compiler.compiler, authors, qualified, signer, metadata);
-        step.dependOn(@import("core_e2e.zig").add(b, &publication_graph, .{
+        const product_inputs: @import("core_e2e.zig").Inputs = .{
             .runtime = runtime,
             .binary_check = publication.binary_check,
             .worker = qualified.caller,
@@ -59,7 +59,9 @@ pub fn add(
             .native_author = authors.native,
             .c_author = authors.c_author,
             .starlark = authors.starlark,
-        }));
+        };
+        step.dependOn(@import("core_e2e.zig").add(b, &publication_graph, product_inputs));
+        step.dependOn(@import("tutorial.zig").add(b, &graph, product_inputs));
         step.dependOn(&runtime.step);
         step.dependOn(qualified.step);
     } else {
@@ -70,6 +72,10 @@ pub fn add(
         b.step("runtime-v2", "Complete Component runtime template").dependOn(&missing.step);
         b.step("core-e2e", "Delivered setup qualification").dependOn(&missing.step);
         b.step("core-sdk", "Publish the standard host SDK").dependOn(&missing.step);
+        b.step("dsl-tutorial-test", "Execute tutorial authoring and installer lifecycle")
+            .dependOn(&missing.step);
+        b.step("dsl-tutorial-tools", "Build the DSL tutorial input preparation tool")
+            .dependOn(&missing.step);
     }
     contentInterop(b, &graph, step);
     return step;

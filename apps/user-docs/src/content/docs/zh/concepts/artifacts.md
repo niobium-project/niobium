@@ -1,43 +1,45 @@
 ---
-title: 制品与便携运行
-description: 不可变的组件制品、它们如何被标识，以及不安装就运行一个组件。
+title: 内容与制品身份
+description: 区分可部署内容、能力库、运行时模板和最终安装器字节。
 ---
 
-> 适用范围：此页描述保留的 v1 实现。新的 DSL/AOT 产品构建与能力库契约见[项目概览](/zh/)，验收证据见[状态与平台](/zh/status/)。
+编译后的安装器固定多个身份：产品模型、运行时模板、能力库、内容容器和最终可执行文件。每个身份描述各自的字节和兼容性契约。
 
-制品是一个由其 SHA-256 摘要标识的不可变文件。一旦某次发布引用了一个摘要，其背后的字节就永远不能改变；新的构建就是新的制品。正因如此，Niobium 可以测试它之后实际发布的那些字节，并在通道之间晋升一次发布而无需重新构建。
+[DSL 教程](/zh/tutorial/)将 `README.txt` 打包为内容，并调用官方文件能力库请求部署它。能力库是可执行的 Wasm Component 代码；内容容器是要部署的文件逻辑树。
 
-## 组件制品
+## 逻辑内容容器
 
-组件是一个可部署的单元：一组文件加上若干具名入口点。它的制品是一个布局固定的 `tar.zst` 文件：
+当前内容运行配置包含普通文件、目录和显式相对符号链接。带版本的 POSIX pax 配置定义其规范未压缩 tar 流。条目顺序、普通模式、文件字节、空目录和精确链接文本共同决定该流的身份。
 
-```text
-component.json      metadata: id, version, platform, entrypoints, executables
-files/...           everything that is installed under current/<component>/
-```
+`ContainerRef` 记录此规范流的格式、SHA-256 和字节长度。源位置、下载哈希和压缩传输字节拥有独立身份。两个源归档不会仅因文件名相同就获得相同内容身份。
 
-`component.json` 是元数据（id、版本、平台、入口点、可执行文件）；`files/` 下是安装到 `current/<component>/` 之下的全部内容。
+解析器拒绝不安全的名称、越界链接、冲突条目、不支持的归档特征和超出限制的大小。部署时，逻辑验证之后还会检查原生目标名称和文件系统。解析出有效容器不构成向机器写入的授权。
 
-条目经过排序，时间戳和属主都被清零，因此相同的输入会产生相同的字节。一个制品只针对一个平台构建（`macos-aarch64`、`windows-x86_64` 等）；在三个平台上发布的组件有三个制品。
+归档模式仍属于内容元数据。显式请求的访问策略和[授权](/zh/concepts/privilege/)控制部署后的访问。完整表示与规范化规则见[内容契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/content-container-v1.md)。
 
-组件不携带安装脚本，也不拥有任何绝对路径。哪个文件可执行由 `component.json` 中的 `executables` 列表决定，而不是由归档中存储的权限位决定。
+## 锁定输入与最终字节
 
-## 制品如何获得信任
+编译器锁文件记录运行时、运行时元数据、库、内容和构建工具的精确版本、长度及 SHA-256 身份。编译器验证所提供的字节，不会将缺失输入解析为替代版本。
 
-发布清单在每个平台键下以 `sha256:<digest>` 列出每个制品，已签名的 TUF targets 元数据列出同一个摘要及其长度。安装程序下载制品，检查长度和摘要，然后才用一个严格的解包器解包；该解包器拒绝链接、设备文件、不安全的路径和压缩炸弹（[安全](/zh/security/#extraction-safety)）。
+组装器将预编译运行时模板复制到输出映像，不执行或重新链接它。最终签名改变交付映像的身份。资格验证必须标识这些最终字节；单独的内容摘要或模板摘要不认证发布者身份。
 
-## 便携运行 { #portable-run }
+[编译器输入契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/compiler-inputs-v1.md)规定锁定规则。[安装器映像契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/setup-image-v2.md)规定组装和最终映像度量。
 
-有些工具不需要安装。`setup run <product>:<component>.<entrypoint>` 通过同一个已签名的仓库解析发布，把组件解包到一个按用户划分、按内容寻址的缓存中并运行它，而不创建安装根目录：
+## 保留的便携运行 { #portable-run }
+
+<details data-pagefind-ignore>
+<summary>清单时代的便携运行与离线包</summary>
+
+本节描述基于清单的 v1 运行时。它的 `setup run` 命令与 Component-v2 教程安装器属于不同的配置。
+
+v1 可部署组件拥有包含 `component.json` 和 `files/` 的 `tar.zst` 制品。便携运行通过签名仓库解析发布，将其提取到按用户划分、按内容寻址的缓存，并在不创建安装根目录的情况下运行具名入口点：
 
 ```sh
 setup run com.example.hello:runtime.main --repo repo -- --some-argument
 ```
 
-缓存的组件按摘要复用，因此第二次运行不会再次下载；每次运行都会删除 30 天内未使用的缓存条目。程序的退出码原样返回。
+保留的运行时按摘要复用缓存组件，移除 30 天未使用的条目，并返回程序退出码。其[制品参考](/zh/reference/artifact-format/)和 [CLI 参考](/zh/reference/setup-cli/)保留此适用范围。
 
-便携运行、已安装的应用和嵌入式更新是相互独立的配置：一个配置允许做的事，另一个配置不会继承。面向 Electron 宿主的嵌入式更新配置在 v0.1 中尚未实现。
+v1 离线包将 `setup` 放在完整的签名 `repository/` 目录旁边。见保留的[发布指南](/zh/guides/publish-and-host/#ship-an-offline-bundle)。当前教程将固定输入直接打包到交付的安装器中。
 
-## 离线包
-
-离线包是一个目录，而不是自解压归档：`setup` 旁边放着已签名仓库的完整副本。`setup` 会找到与它并列的 `repository/`，并以验证在线仓库完全相同的方式验证它。参见[发布与托管](/zh/guides/publish-and-host/#ship-an-offline-bundle)。
+</details>

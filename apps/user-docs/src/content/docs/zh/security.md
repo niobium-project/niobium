@@ -1,13 +1,32 @@
 ---
 title: 安全
-description: Niobium 防御什么、不防御什么，以及如何报告漏洞。
+description: Component 授权、完整性与发布者信任、保留的 v1 防御措施，以及漏洞报告。
+tableOfContents:
+  maxHeadingLevel: 2
 ---
 
-> 适用范围：以下指南及平台记录适用于保留的 v1 实现。DSL/AOT 的新接口和资格验收独立记录在[状态与平台](/zh/status/)中。
+## 当前 Component 方案 { #current-component-profile }
+
+当前安装程序封装类型化产品模型、固定的能力 Component，以及身份经过检查的内容。作者源码在构建时执行。能力库接收有界的类型化输入与明确授予的权限；它们没有默认的文件系统、网络、进程或提权权限。
+
+宿主先验证期望资源和原生访问权限，再冻结持久化计划。恢复使用该计划，不重新执行作者代码或 Component。这些边界见[授权与访问权限](/zh/concepts/privilege/)和[事务与恢复](/zh/concepts/transactions/)。
+
+## 完整性与发布者信任 { #integrity-and-publisher-trust }
+
+锁定摘要标识输入字节。Setup 镜像中的哈希检查内部一致性；自行声明的哈希不能认证发布者身份。构建过程信任作者源码、选定的依赖、工具链与 runtime 发布者。
+
+[锁定输入契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/compiler-inputs-v1.md)和 [setup 镜像契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/setup-image-v2.md)定义这些检查。当前执行证据，以及尚待完成的签名、公证和整机范围工作，见[状态与平台](/zh/status/)。下面保留的 TUF 工作流有独立的契约和证据。
+
+## 保留的 v1 安全方案 { #retained-v1-security-profile }
+
+<details data-pagefind-ignore>
+<summary>清单时代的安全细节</summary>
+
+> 适用范围：以下防御措施和 N1 记录描述保留的 v1 实现。
 
 Niobium 的设计目标是：被攻陷的下载服务器、被篡改或重放的仓库、恶意归档文件或一次崩溃，都不能让发布者未授权的软件被安装，也不能让机器停留在更新了一半的状态。它不防御被攻陷的发布者、被攻陷的用户会话，或发布者合法签名的恶意应用。下面每项防御都注明了规范出处；是否已经验证见[状态与平台](/zh/status/)。
 
-## 威胁模型
+### 威胁模型
 
 假定的攻击者：
 
@@ -21,7 +40,7 @@ Niobium 的设计目标是：被攻陷的下载服务器、被篡改或重放的
 - 用户启动的 `setup` 可执行文件，包括编译在其中的信任根；
 - 操作系统和管理员账户。
 
-## 非目标
+### 非目标
 
 - **恶意或被攻陷的发布者。** 密钥签了什么就安装什么。请让密钥保持离线（[签名与密钥管理](/zh/guides/sign-and-keys/)）。
 - **恶意的应用代码。** Niobium 验证字节正是发布者发布的那些，而不验证它们运行起来是否安全。
@@ -29,7 +48,7 @@ Niobium 的设计目标是：被攻陷的下载服务器、被篡改或重放的
 - **被替换的 `setup` 下载。** 信任根就在 `setup` 里；请通过用户已经信任的渠道分发它，并在平台签名可用后对其签名。
 - **机密性。** 仓库和制品不加密。
 
-## TUF 配置防御哪些攻击
+### TUF 配置防御哪些攻击
 
 | 攻击 | 防御 |
 |---|---|
@@ -44,15 +63,15 @@ Niobium 的设计目标是：被攻陷的下载服务器、被篡改或重放的
 
 由验收条目 N1-INV-05、N1-INV-06 以及 N1-AC-02 到 N1-AC-03 验证。规范：[tuf-profile-v1](https://github.com/niobium-project/niobium/blob/main/docs/spec/tuf-profile-v1.md)。
 
-## 清单中没有代码
+### 清单中没有代码
 
 清单和组件元数据按严格模式解析：未知字段、重复的键、过深的嵌套和超大的文档都会被拒绝，且 `pre_install`、`post_install`、`script`、`exec`、`shell` 和 `command` 字段在任何位置都会被拒绝。不存在能让安装程序运行命令的字段（N1-INV-03、N1-AC-01）。
 
-## 权限边界
+### 权限边界
 
 整机范围安装使用一个短生命周期的提权助手。它只接受 `<install base>/<product id>` 内带类型的文件与系统集成操作，并带有会话认证和防重放保护。它不能运行程序、加载库或建立网络连接。细节和已接受的剩余风险见[权限边界](/zh/concepts/privilege/)（N1-INV-04）。
 
-## 解包安全 { #extraction-safety }
+### 解包安全 { #extraction-safety }
 
 制品由一个严格的解包器解包，它只能在暂存目录之下创建普通文件和目录：
 
@@ -63,9 +82,11 @@ Niobium 的设计目标是：被攻陷的下载服务器、被篡改或重放的
 
 由 N1-INV-02 和 N1-AC-04 使用逐字节构造的恶意归档验证。规范：[artifact-format-v1](https://github.com/niobium-project/niobium/blob/main/docs/spec/artifact-format-v1.md)。
 
-## 崩溃保证
+### 崩溃保证
 
 在任何时刻中断之后，下一次运行 `setup` 会恢复到旧版本或新版本，绝不会是两者的混合（[事务](/zh/concepts/transactions/)，N1-INV-01）。致命错误会写入一份崩溃记录，其中只包含版本、产品、引擎阶段、事务编号、时间和返回地址（[故障排查](/zh/troubleshooting/#logs-and-crash-records)）。
+
+</details>
 
 ## 报告漏洞 { #report-a-vulnerability }
 

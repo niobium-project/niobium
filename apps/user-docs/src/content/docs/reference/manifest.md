@@ -1,9 +1,10 @@
 ---
 title: Manifest and component schema
 description: Fields of the product manifest (product.json) and component metadata (component.json).
+pagefind: false
 ---
 
-> Scope: this page describes the retained v1 implementation. See the [project overview](/) for DSL/AOT authoring and capability contracts, and [Status and platforms](/status/) for evidence.
+> Scope: this page describes the retained v1 implementation. For current Starlark product authoring and compilation, start with the [DSL tutorial](/tutorial/). See [Status and platforms](/status/) for evidence.
 
 Canonical sources: the [manifest-v1](https://github.com/niobium-project/niobium/blob/main/docs/spec/manifest-v1.md) and [component-v1](https://github.com/niobium-project/niobium/blob/main/docs/spec/component-v1.md) specifications and their JSON Schemas, [manifest-v1.schema.json](https://github.com/niobium-project/niobium/blob/main/api/schema/manifest-v1.schema.json) and [component-v1.schema.json](https://github.com/niobium-project/niobium/blob/main/api/schema/component-v1.schema.json). This page summarizes them.
 

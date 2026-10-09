@@ -1,9 +1,10 @@
 ---
 title: 仓库与安装布局
 description: Niobium 仓库、离线包、安装根目录和每用户缓存中的文件，以及它们的默认位置。
+pagefind: false
 ---
 
-> 适用范围：此页描述保留的 v1 实现。新的 DSL/AOT 产品构建与能力库契约见[项目概览](/zh/)，验收证据见[状态与平台](/zh/status/)。
+> 适用范围：本页介绍保留的 v1 实现。当前的 Starlark 产品编写与编译请从 [DSL 入门教程](/zh/tutorial/)开始。验证范围见[状态与平台](/zh/status/)。
 
 权威来源：仓库见 [tuf-profile-v1](https://github.com/niobium-project/niobium/blob/main/docs/spec/tuf-profile-v1.md)，安装根目录见[事务模型](https://github.com/niobium-project/niobium/blob/main/docs/architecture/transaction-model.md)，路径策略见 [`libs/planner/paths.zig`](https://github.com/niobium-project/niobium/blob/main/libs/planner/paths.zig)。
 

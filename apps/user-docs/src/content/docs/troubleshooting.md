@@ -1,13 +1,47 @@
 ---
 title: Troubleshooting and FAQ
-description: Find logs, map exit codes to causes and fixes, and recover after an interruption.
+description: Diagnose current DSL compilation and maintenance errors, with retained v1 troubleshooting details.
+tableOfContents:
+  maxHeadingLevel: 2
 ---
 
-> Scope: the guidance and platform records below apply to the retained v1 implementation. New DSL/AOT interfaces and qualification have separate evidence on [Status and platforms](/status/).
+## Compiler diagnostics
+
+For the current DSL, begin with [compilation and diagnostics](/tutorial/compilation-diagnostics/).
+The Starlark frontend produces a source map; compiler diagnostic JSON on stderr identifies
+binding and type errors at the author source when a mapped diagnostic is available.
+A locked-input capture failure can report `LockMismatch` with `diagnostic: null`.
+Check the actual error and command stage before looking for a source location.
+
+The tutorial demonstrates both failures and verifies that a failed compile preserves
+an existing setup. Compiler diagnostics describe build-time errors; the retained
+`nbpack` exit-code table below applies to a separate interface.
+
+## Runtime maintenance
+
+Use the same complete `--root` mapping for install and later maintenance. Runtime
+`--set` binds declared installation inputs; Starlark `--arg` changes build-time author
+arguments. [Values and bindings](/tutorial/values-bindings/) explains that distinction.
+
+`KernelBusy` means a cooperating maintenance operation holds a root lock. Let it
+finish before retrying. Every invocation, including `status`, can finish a compatible
+pending transaction from its frozen plan. Preserve the ownership, plan, and receipt
+files when reporting a failure; deleting them can prevent safe recovery.
+
+The [lifecycle contract](https://github.com/niobium-project/niobium/blob/main/docs/spec/runtime-lifecycle-v2.md)
+owns recovery and compatibility checks. The tutorial's
+[configuration and update steps](/tutorial/configure-update-remove/) use the current CLI.
+
+## Retained v1 troubleshooting
+
+<details data-pagefind-ignore>
+<summary>Manifest-era logs, exit codes, and FAQ</summary>
+
+> Scope: the following commands and records describe the retained v1 implementation.
 
 Start from the exit code: every `setup` and `nbpack` failure ends with one, and with `--json` also with an `error` event whose `code` names the cause.
 
-## Logs and crash records
+### Logs and crash records
 
 - **Progress and errors** go to standard error as readable lines. Add `--json` to get structured [events](/reference/events/) on standard output instead.
 - **Crash records** are written when `setup` panics or hits a fatal signal: `crash-<UTC time>.json` in the `logs` directory of the per-user cache.
@@ -20,7 +54,7 @@ Start from the exit code: every `setup` and `nbpack` failure ends with one, and 
 
 The same directory holds the transaction lock and downloads. A crash record contains the version, product, engine phase, transaction number, time and up to 32 return addresses; attach it to a bug report. On Linux, shipped binaries carry no debug information, so addresses must be resolved with an unstripped build of the same commit.
 
-## Exit codes: cause and fix
+### Exit codes: cause and fix
 
 | Code | Cause | What to do |
 |---|---|---|
@@ -40,13 +74,13 @@ The same directory holds the transaction lock and downloads. A crash record cont
 
 The full table, shared by the C ABI as negative values, is in [exit codes](/reference/exit-codes/).
 
-## After an interruption
+### After an interruption
 
 Run `setup` again with any command. Before anything else it recovers the interrupted transaction: back to the old version if the interruption came before the commit, forward to the new one if it came after ([Transactions](/concepts/transactions/)). Do not delete files from the install root by hand; that is what `setup repair` is for.
 
 If a transaction ended with exit code 8, the installation is complete and only App Bootstrap is pending; `setup status --json` shows `"bootstrap"` as pending until a later run succeeds.
 
-## FAQ
+### FAQ
 
 **Is there a download of `setup` or `nbpack`?** No. Both are built from source with Zig 0.17.0, by your product's build through the Niobium build API or by `zig build` in a Niobium checkout.
 
@@ -57,3 +91,5 @@ If a transaction ended with exit code 8, the installation is complete and only A
 **`setup` without arguments printed help instead of opening a window.** It does that on Linux without `DISPLAY`, and in a `setup` built without a product configuration. Build a branded `setup` ([Publish and host](/guides/publish-and-host/#point-setup-at-the-repository)).
 
 **Does the installer window support Wayland?** The Linux window backend is X11; a native Wayland backend is deferred ([Status and platforms](/status/)).
+
+</details>

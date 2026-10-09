@@ -1,9 +1,10 @@
 ---
 title: setup command line
 description: Commands, options and setting precedence of the setup executable.
+pagefind: false
 ---
 
-> Scope: this page describes the retained v1 implementation. See the [project overview](/) for DSL/AOT authoring and capability contracts, and [Status and platforms](/status/) for evidence.
+> Scope: this page describes the retained v1 implementation. For current Starlark product authoring and compilation, start with the [DSL tutorial](/tutorial/). See [Status and platforms](/status/) for evidence.
 
 Canonical source: [cli-v1](https://github.com/niobium-project/niobium/blob/main/docs/spec/cli-v1.md#commands); the parser is [`apps/setup/cli.zig`](https://github.com/niobium-project/niobium/blob/main/apps/setup/cli.zig).
 

@@ -1,11 +1,12 @@
 ---
-title: 信任模型
+title: 保留的 v1 信任模型
 description: TUF 如何授权发布，以及这与操作系统代码签名有何不同。
+pagefind: false
 ---
 
-> 适用范围：此页描述保留的 v1 实现。新的 DSL/AOT 产品构建与能力库契约见[项目概览](/zh/)，验收证据见[状态与平台](/zh/status/)。
+> 适用范围：此页描述保留的基于清单的 v1 实现。当前产品编写与安装流程见 [DSL 教程](/zh/tutorial/)。这些分发或应用引导机制不是 Component-v2 教程配置的 API；平台证据见[状态与平台](/zh/status/)。
 
-Niobium 把两个问题分开。这次发布是否经发布者授权、是否是最新的、是否不比我已有的更旧？这由使用发布者密钥签名的 TUF（The Update Framework）元数据回答。操作系统是否信任这个可执行文件的发布者？这由 Authenticode 或 Apple Developer ID 等平台签名回答。前者保护更新通道；后者决定操作系统向用户显示什么。
+保留的 v1 分发配置把两个问题分开。这次发布是否经发布者授权、是否是最新的、是否不比我已有的更旧？这由使用发布者密钥签名的 TUF（The Update Framework）元数据回答。操作系统是否信任这个可执行文件的发布者？这由 Authenticode 或 Apple Developer ID 等平台签名回答。前者保护更新通道；后者决定操作系统向用户显示什么。
 
 ## 用 TUF 授权发布
 
@@ -39,7 +40,7 @@ Niobium 仓库为五类角色保存已签名的元数据：
 
 ## 平台签名
 
-操作系统根据代码签名决定是否对一个可执行文件发出警告或阻止它运行：Windows 上是 Authenticode，macOS 上是 Developer ID 和公证。平台签名会改变二进制字节，因此必须在制品打包和计算哈希之前完成。Niobium v0.1 没有接入证书，其 `setup` 和制品都不带平台签名；这在[状态与平台](/zh/status/)上标为 DEFERRED。预期的顺序见[签名与密钥管理](/zh/guides/sign-and-keys/#platform-code-signing)。
+操作系统根据代码签名决定是否对一个可执行文件发出警告或阻止它运行：Windows 上是 Authenticode，macOS 上是 Developer ID 和公证。平台签名会改变二进制字节，因此必须在制品打包和计算哈希之前完成。发布者证书和公证与本页描述的 TUF 授权相互独立。保留流程中的签名顺序见[签名与密钥管理](/zh/guides/sign-and-keys/#platform-code-signing)；当前安装器组装见[编译教程](/zh/tutorial/compilation-diagnostics/)。
 
 ## 信任根从哪里来
 

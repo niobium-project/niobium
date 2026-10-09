@@ -1,9 +1,10 @@
 ---
 title: setup 命令行
 description: setup 可执行文件的命令、选项和设置优先级。
+pagefind: false
 ---
 
-> 适用范围：此页描述保留的 v1 实现。新的 DSL/AOT 产品构建与能力库契约见[项目概览](/zh/)，验收证据见[状态与平台](/zh/status/)。
+> 适用范围：本页介绍保留的 v1 实现。当前的 Starlark 产品编写与编译请从 [DSL 入门教程](/zh/tutorial/)开始。验证范围见[状态与平台](/zh/status/)。
 
 权威来源：[cli-v1](https://github.com/niobium-project/niobium/blob/main/docs/spec/cli-v1.md#commands)；解析器是 [`apps/setup/cli.zig`](https://github.com/niobium-project/niobium/blob/main/apps/setup/cli.zig)。
 

@@ -1,13 +1,34 @@
 ---
 title: 故障排查与常见问题
-description: 找到日志，把退出码对应到原因和解决办法，并在中断后恢复。
+description: 排查当前 DSL 的编译与维护错误，并查阅保留的 v1 故障排查细节。
+tableOfContents:
+  maxHeadingLevel: 2
 ---
 
-> 适用范围：以下指南及平台记录适用于保留的 v1 实现。DSL/AOT 的新接口和资格验收独立记录在[状态与平台](/zh/status/)中。
+## 编译器诊断 { #compiler-diagnostics }
+
+当前 DSL 的排错请从[编译与诊断](/zh/tutorial/compilation-diagnostics/)开始。Starlark 前端生成源码映射；当错误具备映射诊断时，编译器向标准错误输出的诊断 JSON 将绑定和类型错误定位到作者源码。锁定输入的捕获失败可能报告 `LockMismatch`，同时 `diagnostic: null`。先检查实际错误和命令阶段，再寻找源码位置。
+
+教程演示了这两类失败，并验证编译失败会保留已有的 setup。编译器诊断描述构建时错误；下面保留的 `nbpack` 退出码表适用于另一套接口。
+
+## Runtime 维护 { #runtime-maintenance }
+
+安装及后续维护使用相同、完整的 `--root` 映射。Runtime 的 `--set` 绑定已声明的安装输入；Starlark 的 `--arg` 改变构建时的作者参数。两者的区别见[值与绑定](/zh/tutorial/values-bindings/)。
+
+`KernelBusy` 表示协作的维护操作持有根目录锁。等待它结束后再重试。每次调用，包括 `status`，都可能从冻结计划完成兼容的待处理事务。报告故障时请保留所有权、计划和回执文件；删除这些文件可能使安全恢复无法继续。
+
+[生命周期契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/runtime-lifecycle-v2.md)定义恢复和兼容性检查。教程中的[配置与更新步骤](/zh/tutorial/configure-update-remove/)使用当前 CLI。
+
+## 保留的 v1 故障排查 { #retained-v1-troubleshooting }
+
+<details data-pagefind-ignore>
+<summary>清单时代的日志、退出码与常见问题</summary>
+
+> 适用范围：以下命令和记录描述保留的 v1 实现。
 
 从退出码入手：`setup` 和 `nbpack` 的每次失败都以一个退出码结束；使用 `--json` 时，还会输出一个 `error` 事件，其 `code` 指明原因。
 
-## 日志与崩溃记录 { #logs-and-crash-records }
+### 日志与崩溃记录 { #logs-and-crash-records }
 
 - **进度和错误**以可读的文本行输出到标准错误。加上 `--json` 后，会改为在标准输出上输出结构化的[事件](/zh/reference/events/)。
 - **崩溃记录**在 `setup` 发生 panic 或遇到致命信号时写入：位于每用户缓存的 `logs` 目录中的 `crash-<UTC time>.json`。
@@ -20,7 +41,7 @@ description: 找到日志，把退出码对应到原因和解决办法，并在�
 
 同一个目录还存放事务锁和下载内容。崩溃记录包含版本、产品、引擎阶段、事务编号、时间以及最多 32 个返回地址；请把它附在缺陷报告中。在 Linux 上，发布的二进制文件不带调试信息，因此需要用同一提交的未剥离构建来解析地址。
 
-## 退出码：原因与解决办法 { #exit-codes-cause-and-fix }
+### 退出码：原因与解决办法 { #exit-codes-cause-and-fix }
 
 | 代码 | 原因 | 怎么做 |
 |---|---|---|
@@ -40,13 +61,13 @@ description: 找到日志，把退出码对应到原因和解决办法，并在�
 
 完整的表格（C ABI 以负值共用）见[退出码](/zh/reference/exit-codes/)。
 
-## 中断之后
+### 中断之后
 
 用任意命令再次运行 `setup`。它会首先恢复被中断的事务：如果中断发生在提交之前，就回到旧版本；如果发生在提交之后，就前进到新版本（[事务](/zh/concepts/transactions/)）。不要手动删除安装根目录中的文件；那是 `setup repair` 的工作。
 
 如果一个事务以退出码 8 结束，说明安装已经完成，只是 App Bootstrap 尚待执行；在之后的某次运行成功之前，`setup status --json` 会把 `"bootstrap"` 显示为待执行。
 
-## 常见问题
+### 常见问题
 
 **有没有 `setup` 或 `nbpack` 的下载？** 没有。两者都用 Zig 0.17.0 从源码构建：由你的产品构建通过 Niobium 构建 API 完成，或在 Niobium 检出目录中运行 `zig build`。
 
@@ -57,3 +78,5 @@ description: 找到日志，把退出码对应到原因和解决办法，并在�
 **不带参数运行 `setup` 时打印了帮助，而不是打开窗口。** 在没有 `DISPLAY` 的 Linux 上，以及在没有产品配置的 `setup` 构建中，它都会这样做。请构建一个带品牌的 `setup`（[发布与托管](/zh/guides/publish-and-host/#point-setup-at-the-repository)）。
 
 **安装程序窗口支持 Wayland 吗？** Linux 窗口后端是 X11；原生 Wayland 后端已推迟（[状态与平台](/zh/status/)）。
+
+</details>

@@ -1,41 +1,45 @@
 ---
-title: Artifacts and Portable Run
-description: Immutable component artifacts, how they are identified, and running a component without installing it.
+title: Content and artifact identities
+description: Distinguish deployable content, capability libraries, runtime templates, and final installer bytes.
 ---
 
-> Scope: this page describes the retained v1 implementation. See the [project overview](/) for DSL/AOT authoring and capability contracts, and [Status and platforms](/status/) for evidence.
+A compiled installer fixes several identities: its product model, runtime template, capability libraries, content containers, and final executable. Each identity describes its own bytes and compatibility contract.
 
-An artifact is an immutable file identified by its SHA-256 digest. Once a release names a digest, the bytes behind it can never change; a new build is a new artifact. This is what lets Niobium test the exact bytes it later ships, and promote a release between channels without rebuilding it.
+The [DSL tutorial](/tutorial/) packages `README.txt` as content and invokes the official files capability library to request its deployment. A capability library is executable Wasm Component code; a content container is the logical tree of files to deploy.
 
-## Component artifacts
+## Logical content containers
 
-A component is a deployable unit: a set of files plus named entrypoints. Its artifact is a `tar.zst` file with a fixed layout:
+The current content profile contains regular files, directories, and explicit relative symbolic links. A versioned POSIX pax profile defines its canonical uncompressed tar stream. Entry order, ordinary modes, file bytes, empty directories, and exact link text contribute to that stream's identity.
 
-```text
-component.json      metadata: id, version, platform, entrypoints, executables
-files/...           everything that is installed under current/<component>/
-```
+A `ContainerRef` records the format, SHA-256, and byte length of this canonical stream. Source locations, download hashes, and compressed transport bytes have separate identities. Two source archives do not acquire the same content identity merely because their filenames match.
 
-Entries are sorted and timestamps and owners are zeroed, so the same inputs produce the same bytes. An artifact is built for one platform (`macos-aarch64`, `windows-x86_64`, and so on); a component that ships on three platforms has three artifacts.
+The parser rejects unsafe names, escaping links, conflicting entries, unsupported archive features, and excessive sizes. Logical validation is followed by native target-name and filesystem checks during deployment. Parsing a valid container does not authorize a write to the machine.
 
-A component carries no install scripts and owns no absolute paths. Which file is executable is decided by the `executables` list in `component.json`, not by modes stored in the archive.
+Archive modes remain content metadata. Explicit requested access policies and [grants](/concepts/privilege/) control deployed access. The full representation and normalization rules are in the [content contract](https://github.com/niobium-project/niobium/blob/main/docs/spec/content-container-v1.md).
 
-## How an artifact is trusted
+## Locked inputs and final bytes
 
-The release manifest lists each artifact as `sha256:<digest>` under its platform key, and the signed TUF targets metadata lists the same digest with its length. The installer downloads the artifact, checks length and digest, and only then unpacks it with a strict extractor that refuses links, devices, unsafe paths and archive bombs ([Security](/security/#extraction-safety)).
+A compiler lock records exact versions, lengths, and SHA-256 identities for the runtime, runtime metadata, libraries, content, and build tools. The compiler verifies the supplied bytes and does not resolve a missing input to a replacement version.
 
-## Portable Run
+The assembler copies a precompiled runtime template into the output image without executing or relinking it. Final signing changes the delivered image's identity. Qualification must identify those final bytes; a content digest or template digest alone does not authenticate a publisher.
 
-Some tools do not need installing. `setup run <product>:<component>.<entrypoint>` resolves the release through the same signed repository, unpacks the component into a per-user, content-addressed cache and runs it, without creating an install root:
+The [compiler input contract](https://github.com/niobium-project/niobium/blob/main/docs/spec/compiler-inputs-v1.md) owns locking. The [setup image contract](https://github.com/niobium-project/niobium/blob/main/docs/spec/setup-image-v2.md) owns assembly and final-image measurements.
+
+## Retained Portable Run { #portable-run }
+
+<details data-pagefind-ignore>
+<summary>Manifest-era Portable Run and offline bundles</summary>
+
+This section describes the manifest-era v1 runtime. Its `setup run` command is separate from the Component-v2 tutorial installer.
+
+A v1 deployable component has a `tar.zst` artifact containing `component.json` and `files/`. Portable Run resolves its release through the signed repository, extracts it into a per-user content-addressed cache, and runs a named entrypoint without creating an installation root:
 
 ```sh
 setup run com.example.hello:runtime.main --repo repo -- --some-argument
 ```
 
-Cached components are reused by digest, so a second run does not download again; each run removes cache entries unused for 30 days. The program's exit code is returned unchanged.
+The retained runtime reuses cached components by digest, removes entries unused for 30 days, and returns the program's exit code. Its [artifact reference](/reference/artifact-format/) and [CLI reference](/reference/setup-cli/) retain that scope.
 
-Portable Run, installed applications and embedded updates are separate profiles: what one is allowed to do is not inherited by another. The embedded-update profile for Electron hosts is not implemented in v0.1.
+A v1 offline bundle places `setup` beside a complete signed `repository/` directory. See the retained [publishing guide](/guides/publish-and-host/#ship-an-offline-bundle). The current tutorial packages its fixed inputs directly into the delivered installer.
 
-## Offline bundles
-
-An offline bundle is a directory, not a self-extracting archive: `setup` next to a complete copy of the signed repository. `setup` finds `repository/` beside itself and verifies it exactly as it would verify an online repository. See [Publish and host](/guides/publish-and-host/#ship-an-offline-bundle).
+</details>

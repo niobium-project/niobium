@@ -1,9 +1,10 @@
 ---
 title: Sign and manage keys
 description: Generate TUF signing keys, keep them safe, refresh expiring metadata, and order platform code signing.
+pagefind: false
 ---
 
-> Scope: this page describes the retained v1 implementation. See the [project overview](/) for DSL/AOT authoring and capability contracts, and [Status and platforms](/status/) for evidence.
+> Scope: this page describes the retained v1 implementation. For current Starlark product authoring and compilation, start with the [DSL tutorial](/tutorial/). See [Status and platforms](/status/) for evidence.
 
 Niobium signs every release with TUF keys you generate and keep. Whoever holds them can publish to your users, so treat them like a code-signing certificate. This guide covers generating them, where they may live, keeping metadata from expiring, and where OS code signing fits.
 

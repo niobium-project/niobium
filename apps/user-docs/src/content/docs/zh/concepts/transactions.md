@@ -1,59 +1,55 @@
 ---
-title: 事务
-description: Niobium 如何保证被中断的安装、更新或卸载最终停在旧版本或新版本。
+title: 事务与恢复
+description: Component-v2 内核如何冻结安装计划，并在中断后恢复发布。
 ---
 
-> 适用范围：此页描述保留的 v1 实现。新的 DSL/AOT 产品构建与能力库契约见[项目概览](/zh/)，验收证据见[状态与平台](/zh/status/)。
+Component-v2 内核在改变部署资源前验证并冻结安装计划。持久化提交决定确定恢复时保留旧发布还是完成新发布。
 
-每一次安装、更新、修复和卸载都作为一个事务运行，且只有一个不可回退点。在该点之前，旧版本保持生效，恢复时回滚；在该点之后，新版本生效，恢复时前滚。无论在任何时刻杀掉进程、切断电源或写满磁盘：下一次运行 `setup` 都会停在旧版本或新版本，绝不会是两者的混合。
+这些概念适用于 [DSL 教程](/zh/tutorial/)展示的当前用户范围运行配置。[运行时生命周期契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/runtime-lifecycle-v2.md)规定协议；[状态与平台](/zh/status/)记录执行证据。
 
-## 安装根目录
+## 已拥有的根目录与代
+
+每个逻辑根目录拥有所有权记录和未发布代目录。产品声明的一个状态根目录协调所有参与根目录的事务。
 
 ```text
-<install root>/
-  installation.json        what is installed: product, release, manifest, integrations
-  current -> versions/<n>  the active version (a symlink, or a junction on Windows)
-  versions/<n>/<component>/...
-  maintainer/              a copy of setup, used for later update, repair and uninstall
-  trust/state.json         the TUF versions this installation has accepted
-  journal/                 the transaction journal
+<root>/
+  current -> .niobium-v2/generations/<transaction>/data/
+  .niobium-v2/
+    owner.json
+    generations/<transaction>/data/...
+    installation.json    in the coordinator root
 ```
 
-- `installation.json`：已安装的内容，包括产品、发布、清单和系统集成；
-- `current`：当前生效的版本（符号链接，在 Windows 上是目录联接）；
-- `maintainer/`：一份 `setup` 副本，用于之后的更新、修复和卸载；
-- `trust/state.json`：此安装已接受的 TUF 版本；
-- `journal/`：事务日志。
+`current` 通过 Unix 符号链接或 Windows 目录联接发布代内容。协调器还保存冻结内容、待处理计划和提交决定。这些记录绑定安装实例和完整根目录映射。
 
-快捷方式、文件关联和服务都通过 `current` 指向路径，因此在切换前后都保持有效。
+内核只接管不存在或为空的未拥有根目录。已有所有权必须与产品、安装账户及根目录映射匹配。非阻塞根目录锁排除协作进程的并发操作；忙碌根目录报告 `KernelBusy`。
 
-## 步骤
+## 准备与发布
 
-1. **暂存。** 经过验证的制品被解包到 `versions/<new>/`。当前生效版本使用的任何内容都不会被触碰。
-2. **执行。** 计划中的操作逐一运行。每个操作只写入新版本或特定于版本的临时集成文件，并且每个操作都有回滚。
-3. **提交。** `current` 以一个原子步骤切换到新版本。这就是不可回退点。
-4. **收尾。** 运行 App Bootstrap，清理旧版本和事务日志。
+内核首先求值固定能力调用，验证其期望资源。它先捕获并验证内容，再持久化完整待处理计划。
 
-进度记录在一个只追加的事务日志中（`begin`、每个已完成操作一条记录、`ready_to_commit`、`commit`、引导开始与结束、`finalized`），每写一条记录都会刷到磁盘。
+随后，它为每个根目录准备未发布代，检查文件内容和原生访问，并持久化回执。只有所有根目录都准备完成后，协调器才持久化提交决定。
 
-## 恢复
+决定持久化之后，内核发布每个准备好的代，并持久化下一安装快照。清理移除未改变的退役资源，完成事务。卸载则移除已发布指针和活动快照。
 
-`setup` 总是先运行恢复，然后才做其他事情。它读取事务日志的最后一条记录：
+跨根目录发布逐个进行。观察者可能短暂看到不同根目录处于不同发布版本；恢复保证不意味着跨文件系统的同时可见性。
 
-| 中断时机 | 恢复 | 结果 |
+## 恢复结果
+
+每次调用先完成兼容的待处理工作，再执行请求的操作。这包括 `status`，因此它也可能执行恢复。
+
+| 持久化事务状态 | 恢复 | 发布结果 |
 |---|---|---|
-| 在提交记录之前 | 按相反顺序回滚已完成的操作，删除暂存内容 | 旧版本 |
-| 在提交记录之后 | 重做切换和提交后的操作（它们都是幂等的） | 新版本 |
-| 在 App Bootstrap 运行期间 | 把引导标记为待执行；之后会重试 | 新版本 |
+| 没有提交决定 | 中止已完成的未发布准备 | 先前的发布 |
+| 有效提交决定及所需回执 | 完成发布和快照持久化 | 下一个发布 |
+| 不兼容或不一致的记录 | 拒绝不安全重放，保留证据 | 不推断恢复结果 |
 
-写了一半的最后一行日志视为未写入。每个产品和用户同一时间只运行一个事务；第二个事务会得到退出码 10。进程结束时，锁由操作系统释放，因此崩溃永远不会留下需要手动清理的锁。
+恢复使用冻结的宿主计划。它不重新执行作者代码或能力库，不获取替代输入，也不猜测缺失资源。重复已完成的恢复具有幂等性。
 
-## App Bootstrap 在提交之后
+卸载保留所有权记录和已验证内容存储。由于清理要求记录的身份和内容匹配，被修改或未知的文件可能保留在退役代中。修复产生新的期望代，不会在任意外部损坏后建立旧的完好状态。
 
-你的应用的 [App Bootstrap](/zh/concepts/app-bootstrap/) 入口点在切换之后运行。如果它失败，新版本保持生效，`setup` 以退出码 8（`bootstrap_pending`）退出，引导会在之后的运行中重试。在应用可能已经迁移了数据之后再回滚文件，比重试迁移更糟。
+## 应用数据与兼容性
 
-## 如何测试
+产品模型变化和调用状态变化各自需要显式兼容性声明。内核在变更前独立于发布序号检查这些声明。
 
-崩溃注入测试在每一次文件系统变更之后、每一条事务日志记录之后都会杀掉事务，并要求旧、新两种结果都会出现；一个带种子的模拟把注入的故障与反复的恢复混合在一起。结果列在[状态与平台](/zh/status/)的不变式 N1-INV-01 下。完整的状态机在[事务模型](https://github.com/niobium-project/niobium/blob/main/docs/architecture/transaction-model.md)中规定。
-
-一个已知的限制：两个不同的用户在同一时刻操作同一个整机范围的产品时，彼此之间不会互斥。
+应用数据库和其他业务数据仍归产品所有。部署恢复不意味着数据库回滚，保留的 [App Bootstrap 协议](/zh/concepts/app-bootstrap/)也不是当前 Component-v2 运行配置中的钩子。
