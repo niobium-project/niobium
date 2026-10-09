@@ -6,8 +6,12 @@ const std = @import("std");
 const repo = @import("repo");
 
 pub const types = [_][]const u8{
-    "feat", "fix", "test", "docs", "refactor", "chore", "adr", "build",
+    "feat", "fix", "test", "docs", "refactor", "chore", "adr", "build", "revert",
 };
+
+/// `git commit --fixup`, `--squash`, and `--amend` subjects. The text after the prefix
+/// still has to be a valid subject. Strict history checks reject the prefix itself.
+pub const fixup_prefixes = [_][]const u8{ "fixup! ", "squash! ", "amend! " };
 
 pub const max_subject_bytes = 200;
 
@@ -82,7 +86,19 @@ fn messageSubject(text: []const u8) ?[]const u8 {
 }
 
 /// Returns null when the subject is valid, else the reason.
+/// A fixup, squash, or amend prefix is accepted when the remainder is a valid subject.
 pub fn validate(subject: []const u8) ?[]const u8 {
+    return validateCore(subjectBody(subject));
+}
+
+fn subjectBody(subject: []const u8) []const u8 {
+    for (fixup_prefixes) |prefix| {
+        if (std.mem.startsWith(u8, subject, prefix)) return subject[prefix.len..];
+    }
+    return subject;
+}
+
+fn validateCore(subject: []const u8) ?[]const u8 {
     if (subject.len > max_subject_bytes) return "subject too long";
     const open = std.mem.findScalar(u8, subject, '(') orelse return "missing (<scope>)";
     const kind = subject[0..open];
@@ -110,6 +126,15 @@ test "commit subjects" {
     try std.testing.expect(validate("feat: missing scope") != null);
     try std.testing.expect(validate("wip(core): x") != null);
     try std.testing.expect(validate("fix(Core): x") != null);
+}
+
+test "fixup prefixes and the revert type" {
+    try std.testing.expect(validate("fixup! feat(repo): add hooks") == null);
+    try std.testing.expect(validate("squash! fix(core): keep the pointer") == null);
+    try std.testing.expect(validate("amend! docs(repo): describe hooks") == null);
+    try std.testing.expect(validate("fixup! wip") != null);
+    try std.testing.expect(validate("revert(trust): revert root rotation") == null);
+    try std.testing.expect(acceptMessage("fixup! feat(repo): add hooks\n") == null);
 }
 
 test "message files skip comments, empty text, and merges" {
