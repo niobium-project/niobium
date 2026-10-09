@@ -1,5 +1,6 @@
-//! Size gate: each shipping `setup` is at most --limit bytes and grows at most 5% over
-//! tools/size-gate/baseline.zon. `--write` (zig build check:size -- --write) rewrites the baseline.
+//! Size gate: each published runtime template is at most --limit bytes and grows at most 5% over
+//! tools/size-gate/component-baseline.zon.
+//! `--write` (zig build check:size -- --write) rewrites the baseline.
 
 const std = @import("std");
 const repo = @import("repo");
@@ -42,7 +43,9 @@ pub fn command(arena: std.mem.Allocator, io: std.Io, args: []const []const u8) !
     while (cursor < pairs.items.len) : (cursor += 2) {
         const stat = try std.Io.Dir.cwd().statFile(io, pairs.items[cursor + 1], .{});
         try measured.append(arena, .{ .name = pairs.items[cursor], .bytes = stat.size });
-        std.debug.print("size-gate: {s} setup = {d} bytes\n", .{ pairs.items[cursor], stat.size });
+        std.debug.print("size-gate: {s} runtime = {d} bytes\n", .{
+            pairs.items[cursor], stat.size,
+        });
     }
     if (write) return writeBaseline(arena, io, path, measured.items);
     const baseline = try load(arena, io, path);
@@ -105,7 +108,9 @@ fn writeBaseline(
 ) !void {
     var out: std.Io.Writer.Allocating = .init(arena);
     const w = &out.writer;
-    try w.writeAll("// ReleaseSafe setup sizes. Growth over 5% fails `zig build check:size`.\n");
+    try w.writeAll(
+        "// ReleaseSafe runtime template sizes. Growth over 5% fails `zig build check:size`.\n",
+    );
     try w.writeAll(
         "// Rewrite with `zig build check:size -- --write` in the commit that explains it.\n",
     );

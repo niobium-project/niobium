@@ -1,113 +1,107 @@
-//! Headless precompiled runtime profile. Product bytes are inserted into the reserved section
-//! after this executable is built; startup reads them from its executable file.
-
+//! Complete published runtime. Compiler assembly inserts data without relinking this executable.
 const std = @import("std");
-const program = @import("program");
-const runtime = @import("runtime");
+const builtin = @import("builtin");
+const image = @import("image");
+const kernel = @import("kernel");
+const platform = @import("platform");
+const component_worker = @import("component_worker");
+const primitives = @import("host_primitives");
+const product = @import("product.zig");
+const arguments = @import("arguments.zig");
+const section = if (builtin.os.tag == .macos) "__DATA,__nbproduct" else ".nbprod";
+pub export var niobium_product_slot: [image.descriptor.size]u8 linksection(section) =
+    image.templateSlot();
 
-const slot_size = program.image.capacity;
-pub export var niobium_product_slot: [slot_size]u8 linksection("__DATA,__nbproduct") = slot();
-
-fn slot() [program.image.capacity]u8 {
-    var bytes: [program.image.capacity]u8 = @splat(0);
-    @memcpy(bytes[0..8], program.image.runtime_magic);
-    std.mem.writeInt(u32, bytes[8..12], 1, .little);
-    std.mem.writeInt(u32, bytes[12..16], program.image.capacity, .little);
-    return bytes;
-}
-
-pub fn main(init: std.process.Init) !void {
+pub fn main(init: std.process.Init) void {
     execute(init) catch |err| {
         std.log.err("{s}", .{@errorName(err)});
         std.process.exit(1);
     };
 }
 
-const Arguments = struct {
-    action: runtime.Action,
-    root: []const u8,
-    inputs: []const runtime.state.Value,
-    failpoint: ?[]const u8,
-};
-
 fn execute(init: std.process.Init) !void {
     std.mem.doNotOptimizeAway(&niobium_product_slot);
     const arena = init.arena.allocator();
     const argv = try init.minimal.args.toSlice(arena);
-    if (argv.len == 2 and std.mem.eql(u8, argv[1], "version")) {
-        try std.Io.File.stdout().writeStreamingAll(
-            init.io,
-            "niobium-runtime abi=1 macos-aarch64\n",
-        );
-        return;
+    if (argv.len == 2 and std.mem.eql(u8, argv[1], "--component-worker")) {
+        return component_worker.serve(arena, init.io);
     }
-    const args = try arguments(arena, argv);
-    const model = if (args.action.needsProduct()) try ownProgram(init) else null;
-    var fault: Fault = .{ .io = init.io, .name = args.failpoint };
-    const result = try runtime.run(.{
+    if (argv.len == 2 and std.mem.eql(u8, argv[1], "profile")) {
+        return output(arena, init.io, primitives.runtimeProfile(try primitives.currentTarget()));
+    }
+    const args = try arguments.parse(arena, argv);
+    const executable = try std.process.executablePathAlloc(init.io, arena);
+    const loaded_slot: *volatile [image.descriptor.size]u8 = &niobium_product_slot;
+    const expected = loaded_slot.*;
+    var packaged: ?product.Product = if (args.action.needsProduct())
+        try product.Product.open(arena, init.io, executable, try temporary(init), &expected)
+    else
+        null;
+    defer if (packaged) |value| value.deinit(init.io);
+    var host = platform.Host.init(init.io, .{ .env = .{} });
+    var fault: Fault = .{ .io = init.io, .expected = args.failpoint };
+    const model = if (packaged) |value| value.model else null;
+    const state_root = args.state_root orelse state: {
+        if (model) |value| break :state value.state_root;
+        if (args.roots.len == 1) break :state args.roots[0].id;
+        return error.StateRootRequired;
+    };
+    if (model == null and args.inputs.len != 0) return error.Usage;
+    const result = kernel.run(.{
         .io = init.io,
         .arena = arena,
-        .root = args.root,
-        .action = args.action,
         .model = model,
-        .inputs = args.inputs,
+        .action = args.action,
+        .roots = args.roots,
+        .state_root = state_root,
+        .inputs = if (model) |value| try arguments.inputs(arena, args, value) else &.{},
+        .evaluator = if (packaged) |*value| value.evaluator.evaluation() else .{},
+        .content = if (packaged) |*value| value.evaluator.provider() else .{},
+        .platform = host.platform(),
         .checkpoint = .{ .context = &fault, .call = Fault.checkpoint },
-    });
-    const bytes = try std.json.Stringify.valueAlloc(arena, result, .{});
-    try std.Io.File.stdout().writeStreamingAll(init.io, bytes);
-    try std.Io.File.stdout().writeStreamingAll(init.io, "\n");
-}
-
-fn ownProgram(init: std.process.Init) !program.Program {
-    const arena = init.arena.allocator();
-    const path = try std.process.executablePathAlloc(init.io, arena);
-    const bytes = try std.Io.Dir.cwd().readFileAlloc(init.io, path, arena, .limited(64 << 20));
-    return program.decode(arena, try program.image.productFromExecutable(bytes));
-}
-
-fn arguments(arena: std.mem.Allocator, argv: []const []const u8) !Arguments {
-    if (argv.len < 4 or argv.len > 136) return error.Usage;
-    const action = std.meta.stringToEnum(runtime.Action, argv[1]) orelse return error.Usage;
-    var root: ?[]const u8 = null;
-    var failpoint: ?[]const u8 = null;
-    var inputs: std.ArrayList(runtime.state.Value) = .empty;
-    var index: usize = 2;
-    while (index < argv.len) : (index += 2) {
-        if (index + 1 >= argv.len) return error.Usage;
-        const flag = argv[index];
-        const value = argv[index + 1];
-        if (std.mem.eql(u8, flag, "--root")) {
-            if (root != null) return error.Usage;
-            root = value;
-        } else if (std.mem.eql(u8, flag, "--set")) {
-            const equal = std.mem.indexOfScalar(u8, value, '=') orelse return error.Usage;
-            try inputs.append(arena, .{ .id = value[0..equal], .value = value[equal + 1 ..] });
-        } else if (std.mem.eql(u8, flag, "--failpoint")) {
-            if (failpoint != null) return error.Usage;
-            failpoint = value;
-        } else return error.Usage;
-    }
-    return .{
-        .action = action,
-        .root = root orelse return error.Usage,
-        .inputs = inputs.items,
-        .failpoint = failpoint,
+    }) catch |err| {
+        if (packaged) |value| if (value.evaluator.diagnostic) |diagnostic| {
+            try output(arena, init.io, .{ .status = "error", .diagnostic = diagnostic });
+        };
+        return err;
     };
+    try output(arena, init.io, result);
+}
+
+fn output(arena: std.mem.Allocator, io: std.Io, value: anytype) !void {
+    const bytes = try std.json.Stringify.valueAlloc(arena, value, .{});
+    try std.Io.File.stdout().writeStreamingAll(io, bytes);
+    try std.Io.File.stdout().writeStreamingAll(io, "\n");
 }
 
 const Fault = struct {
     io: std.Io,
-    name: ?[]const u8,
+    expected: ?[]const u8,
 
-    fn checkpoint(context: ?*anyopaque, name: []const u8) void {
-        const self: *Fault = @ptrCast(@alignCast(context orelse return));
-        const expected = self.name orelse return;
-        if (!std.mem.eql(u8, expected, name)) return;
+    fn checkpoint(opaque_context: ?*anyopaque, name: []const u8, root: ?[]const u8) void {
+        const self: *Fault = @ptrCast(@alignCast(opaque_context orelse return));
+        const expected = self.expected orelse return;
+        var buffer: [256]u8 = undefined; // SAFETY: bufPrint initializes the compared slice.
+        const qualified = if (root) |id| std.fmt.bufPrint(&buffer, "{s}:{s}", .{ name, id }) catch
+            std.process.exit(2) else name;
+        if (!std.mem.eql(u8, expected, qualified)) return;
         std.Io.File.stderr().writeStreamingAll(self.io, "NIOBIUM_FAILPOINT\n") catch
             std.process.exit(2);
-        // The acceptance parent receives the marker, then terminates the stopped child.
-        if (raise(17) != 0) std.process.exit(2);
+        // The acceptance parent kills this process; a missing parent never resumes mutation.
+        for (0..300) |_| std.Io.sleep(self.io, .fromMilliseconds(100), .awake) catch
+            std.process.exit(2);
+        std.process.exit(2);
     }
 };
 
-extern "c" fn raise(signal: c_int) c_int;
+test {
+    _ = arguments;
+}
+
+fn temporary(init: std.process.Init) ![]const u8 {
+    return if (builtin.os.tag == .windows)
+        init.environ_map.get("TEMP") orelse init.environ_map.get("TMP") orelse
+            error.TemporaryDirectoryMissing
+    else
+        init.environ_map.get("TMPDIR") orelse "/tmp";
+}

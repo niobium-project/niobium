@@ -16,7 +16,7 @@ pub fn main(init: std.process.Init) !void {
         fixture.version = 2;
         try fixture.setContent("second");
     }
-    var host: platform.Host = .init(init.io, .{ .env = .{}, .system_managers = false });
+    var host: platform.Host = .init(init.io, .{ .env = .{} });
     var options = try fixture.options(&host, action);
     if (!action.needsProduct()) {
         options.model = null;

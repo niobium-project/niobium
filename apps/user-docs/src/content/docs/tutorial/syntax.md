@@ -59,10 +59,10 @@ declare_inputs(["cli", "examples"], {"cli": True, "examples": False},
 Evaluate it twice into fresh files:
 
 ```sh
-"$NIOBIUM_REPO/zig-out/bin/niobium-starlark-v2" \
+"$NIOBIUM_REPO/zig-out/bin/nb-starlark-v2" \
   --source "$TUTORIAL_WORK/syntax.star" \
   --out "$TUTORIAL_WORK/syntax.program.json"
-"$NIOBIUM_REPO/zig-out/bin/niobium-starlark-v2" \
+"$NIOBIUM_REPO/zig-out/bin/nb-starlark-v2" \
   --source "$TUTORIAL_WORK/syntax.star" --arg docs=true \
   --out "$TUTORIAL_WORK/syntax-docs.program.json"
 cat "$TUTORIAL_WORK/syntax.program.json"
@@ -101,6 +101,6 @@ The worker exposes Starlark and Niobium author builtins. It does not expose Pyth
 
 At installation time, input bindings and host observations supply values to fixed capability calls. Product behavior that must run then belongs to the capability library, such as the files library's choice to deploy content when `enabled` is true.
 
-See [Authoring v2](https://github.com/niobium-project/niobium/blob/main/docs/development/authoring-v2.md) for the author API and worker limits.
+See [Authoring v2](https://github.com/niobium-project/niobium/blob/main/docs/development/authoring.md) for the author API and worker limits.
 
 Next: [Values, bindings and installation inputs](/tutorial/values-bindings/).

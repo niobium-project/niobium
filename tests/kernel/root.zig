@@ -21,7 +21,7 @@ test "N2-KERNEL-01: two named roots install reconfigure migrate and uninstall" {
     var tmp = std.testing.tmpDir(.{});
     defer tmp.cleanup();
     var fixture = try Fixture.init(arena.allocator(), io, tmp.dir, 2);
-    var host: platform.Host = .init(io, .{ .env = .{}, .system_managers = false });
+    var host: platform.Host = .init(io, .{ .env = .{} });
     var options = try fixture.options(&host, .install);
     const installed = try kernel.run(options);
     try std.testing.expectEqual(@as(usize, 2), installed.state.?.roots.len);
@@ -58,7 +58,7 @@ test "N2-KERNEL-02: optional empty desired tree clears state and preserves user-
     var tmp = std.testing.tmpDir(.{});
     defer tmp.cleanup();
     var fixture = try Fixture.init(arena.allocator(), io, tmp.dir, 1);
-    var host: platform.Host = .init(io, .{ .env = .{}, .system_managers = false });
+    var host: platform.Host = .init(io, .{ .env = .{} });
     const first = try kernel.run(try fixture.options(&host, .install));
     const old = try std.fs.path.join(
         arena.allocator(),
@@ -87,7 +87,7 @@ test "N2-KERNEL-03: grant escalation digest mismatch and missing migration fail 
     var tmp = std.testing.tmpDir(.{});
     defer tmp.cleanup();
     var fixture = try Fixture.init(arena.allocator(), io, tmp.dir, 1);
-    var host: platform.Host = .init(io, .{ .env = .{}, .system_managers = false });
+    var host: platform.Host = .init(io, .{ .env = .{} });
     fixture.escalate = true;
     try std.testing.expectError(
         error.ProgramAuthority,
@@ -143,7 +143,7 @@ test "N2-KERNEL-04: unknown plan versions and foreign roots are rejected without
     var tmp = std.testing.tmpDir(.{});
     defer tmp.cleanup();
     var fixture = try Fixture.init(arena.allocator(), io, tmp.dir, 1);
-    var host: platform.Host = .init(io, .{ .env = .{}, .system_managers = false });
+    var host: platform.Host = .init(io, .{ .env = .{} });
     const installed = try kernel.run(try fixture.options(&host, .install));
     try std.testing.expect(installed.state != null);
     const pending = try std.fs.path.join(
@@ -186,7 +186,7 @@ test "N2-KERNEL-06: read-only payload access is restored and source modes grant 
     var fixture = try Fixture.init(arena.allocator(), io, tmp.dir, 1);
     fixture.file_policy.owner.write = false;
     fixture.directory_policy.owner.write = false;
-    var host: platform.Host = .init(io, .{ .env = .{}, .system_managers = false });
+    var host: platform.Host = .init(io, .{ .env = .{} });
     const installed = try kernel.run(try fixture.options(&host, .install));
     try fixture.expectFiles("first");
     const actual_dir = try std.Io.Dir.cwd().openDir(
@@ -223,7 +223,7 @@ test "N2-KERNEL-07: legacy or nonempty unowned roots cannot be adopted" {
     var tmp = std.testing.tmpDir(.{});
     defer tmp.cleanup();
     var fixture = try Fixture.init(arena.allocator(), io, tmp.dir, 1);
-    var host: platform.Host = .init(io, .{ .env = .{}, .system_managers = false });
+    var host: platform.Host = .init(io, .{ .env = .{} });
     try std.Io.Dir.cwd().createDir(io, fixture.roots[0].path, .default_dir);
     const old = try std.fs.path.join(
         arena.allocator(),
@@ -272,7 +272,7 @@ test "N2-KERNEL-08: confined symlink is exact or explicitly unsupported before p
         .{},
     );
     fixture.tar = output.written();
-    var host: platform.Host = .init(io, .{ .env = .{}, .system_managers = false });
+    var host: platform.Host = .init(io, .{ .env = .{} });
     const installed = kernel.run(try fixture.options(&host, .install)) catch |err| {
         if (@import("builtin").os.tag != .windows or err != error.KernelUnsupported) return err;
         std.debug.print("Native file-link context: unsupported before publication\n", .{});
@@ -314,7 +314,7 @@ test "N2-KERNEL-09: repair restores desired bytes while retaining modified prior
     var tmp = std.testing.tmpDir(.{});
     defer tmp.cleanup();
     var fixture = try Fixture.init(arena.allocator(), io, tmp.dir, 1);
-    var host: platform.Host = .init(io, .{ .env = .{}, .system_managers = false });
+    var host: platform.Host = .init(io, .{ .env = .{} });
     const installed = try kernel.run(try fixture.options(&host, .install));
     const old = try std.fs.path.join(
         arena.allocator(),
@@ -342,7 +342,7 @@ test "N2-KERNEL-10: preexisting pointer work files survive rejection" {
     var tmp = std.testing.tmpDir(.{});
     defer tmp.cleanup();
     var fixture = try Fixture.init(arena.allocator(), io, tmp.dir, 1);
-    var host: platform.Host = .init(io, .{ .env = .{}, .system_managers = false });
+    var host: platform.Host = .init(io, .{ .env = .{} });
     const installed = try kernel.run(try fixture.options(&host, .install));
     try std.testing.expect(installed.state != null);
     const next = try std.fs.path.join(
@@ -372,7 +372,7 @@ test "N2-KERNEL-11: malformed durable model migration history is rejected" {
     var tmp = std.testing.tmpDir(.{});
     defer tmp.cleanup();
     var fixture = try Fixture.init(arena.allocator(), io, tmp.dir, 1);
-    var host: platform.Host = .init(io, .{ .env = .{}, .system_managers = false });
+    var host: platform.Host = .init(io, .{ .env = .{} });
     const installed = try kernel.run(try fixture.options(&host, .install));
     var state = installed.state.?;
     state.model_migrations = &.{.{ .id = "invalid", .from = 0, .to = 1 }};
@@ -405,7 +405,7 @@ test "N2-KERNEL-12: a stateless plan cannot discard capability ownership" {
         defer tmp.cleanup();
         var fixture = try Fixture.init(arena.allocator(), io, tmp.dir, 1);
         fixture.empty = true;
-        var host: platform.Host = .init(io, .{ .env = .{}, .system_managers = false });
+        var host: platform.Host = .init(io, .{ .env = .{} });
         const installed = try kernel.run(try fixture.options(&host, .install));
         try std.testing.expect(installed.state != null);
         fixture.version = 2;
@@ -433,7 +433,7 @@ test "N2-KERNEL-13: null private state retains version and refuses value-consumi
     defer tmp.cleanup();
     var fixture = try Fixture.init(arena.allocator(), io, tmp.dir, 1);
     fixture.empty = true;
-    var host: platform.Host = .init(io, .{ .env = .{}, .system_managers = false });
+    var host: platform.Host = .init(io, .{ .env = .{} });
     const first = try kernel.run(try fixture.options(&host, .install));
     try std.testing.expectEqual(@as(usize, 1), first.state.?.calls.len);
     try std.testing.expect(first.state.?.calls[0].value == null);
@@ -484,7 +484,7 @@ test "N2-KERNEL-16: target names follow the native filesystem contract" {
         .{},
     );
     fixture.tar = output.written();
-    var host: platform.Host = .init(io, .{ .env = .{}, .system_managers = false });
+    var host: platform.Host = .init(io, .{ .env = .{} });
     if (@import("builtin").os.tag == .windows) {
         try std.testing.expectError(
             error.ProgramPath,
@@ -532,7 +532,7 @@ test "N2-KERNEL-17: native alias collisions reject before publication without gl
         .{ .path = "a", .body = .bytes("lower") },
     } }, &output.writer, .{});
     fixture.tar = output.written();
-    var host: platform.Host = .init(io, .{ .env = .{}, .system_managers = false });
+    var host: platform.Host = .init(io, .{ .env = .{} });
     if (sensitive) {
         const installed = try kernel.run(try fixture.options(&host, .install));
         try std.testing.expectEqual(@as(usize, 2), installed.state.?.roots[0].resources.len);
@@ -559,7 +559,7 @@ test "N2-KERNEL-05: state cannot cross selectors or library identities" {
     var tmp = std.testing.tmpDir(.{});
     defer tmp.cleanup();
     var fixture = try Fixture.init(arena.allocator(), io, tmp.dir, 1);
-    var host: platform.Host = .init(io, .{ .env = .{}, .system_managers = false });
+    var host: platform.Host = .init(io, .{ .env = .{} });
     const installed = try kernel.run(try fixture.options(&host, .install));
     try std.testing.expect(installed.state != null);
     fixture.version = 2;

@@ -14,7 +14,7 @@ Build the published host SDK and the example's preparation tool from the
 repository root:
 
 ```sh
-zig build core:sdk example:tutorial:tools --cache-poison=disallowed
+zig build sdk:build example:tutorial:tools --cache-poison=disallowed
 ```
 
 The tool accepts `--sdk DIR --source DIR --out DIR`. It copies the SDK inputs and

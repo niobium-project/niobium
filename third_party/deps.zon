@@ -4,38 +4,6 @@
 .{
     .packages = .{
         .{
-            .name = "wamr",
-            .version = "WAMR-2.4.5",
-            .sources = .{.{
-                .url = "https://codeload.github.com/bytecodealliance/wasm-micro-runtime/tar.gz/refs/tags/WAMR-2.4.5",
-                .sha256 = "1ab09d51099f276ca4a1d6629f6b589aab2bd0caa01445e05031a4bed22c199b",
-                .archive = .tar_gz,
-                .strip_components = 1,
-                .extract = .{ "LICENSE", "core/" },
-            }},
-            .patches = .{ "shared-instruction-budget.patch", "table-alignment.patch" },
-        },
-        .{
-            .name = "zstd",
-            .version = "1.5.7",
-            .sources = .{
-                .{
-                    .url = "https://codeload.github.com/facebook/zstd/tar.gz/refs/tags/v1.5.7",
-                    .sha256 = "37d7284556b20954e56e1ca85b80226768902e2edabd3b649e9e72c0c9012ee3",
-                    .archive = .tar_gz,
-                    .strip_components = 1,
-                    .extract = .{
-                        "LICENSE",
-                        "lib/zstd.h",
-                        "lib/zstd_errors.h",
-                        "lib/common/",
-                        "lib/compress/",
-                    },
-                },
-            },
-            .patches = .{},
-        },
-        .{
             .name = "stb_truetype",
             .version = "2c980bb59875b0d32144a71867fbdebb2f77cd20",
             .sources = .{

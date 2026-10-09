@@ -49,7 +49,7 @@ content = value("record", {
 
 这里的全零散列只演示字节值。可运行的产品使用根据实际规范内容生成的 `CONTENT_DIGEST` 和 `CONTENT_BYTES`。十六进制字符串与 32 个原始散列字节是不同的值。
 
-复合值的元素是带类型的值，而不是普通 Starlark 元素。例如，`value("list", [value("string", "Hello")])` 是一个带类型的列表。API 还提供元组、variant、option、result 和 flags，构造器细节见 [Authoring v2](https://github.com/niobium-project/niobium/blob/main/docs/development/authoring-v2.md#starlark-api)。
+复合值的元素是带类型的值，而不是普通 Starlark 元素。例如，`value("list", [value("string", "Hello")])` 是一个带类型的列表。API 还提供元组、variant、option、result 和 flags，构造器细节见 [Authoring v2](https://github.com/niobium-project/niobium/blob/main/docs/development/authoring.md#starlark-api)。
 
 带类型的 record 是固定数据。record 绑定可以组合不同来源：
 
@@ -75,7 +75,7 @@ request = binding("record", {
 不修改安装器，验证中间一行：
 
 ```sh
-"$NIOBIUM_REPO/zig-out/bin/niobium-starlark-v2" \
+"$NIOBIUM_REPO/zig-out/bin/nb-starlark-v2" \
   --source "$TUTORIAL_WORK/release1/product.star" \
   --arg enabled=false --out "$TUTORIAL_WORK/values-args.program.json"
 cmp "$TUTORIAL_WORK/release1/product.program.json" \
@@ -112,6 +112,6 @@ cmp "$NIOBIUM_REPO/examples/dsl-tutorial/payload/README.txt" \
 
 未使用的布尔值、整数或类型完整的 record 可以提供足够的类型推断信息。未使用的空泛型列表、缺失值的 option、enum、flags、variant 或 result 则不能。例如，`input("unused", value("list", []))` 可以生成作者 IR，但编译时会以 `InputTypeAmbiguous` 失败。把这类输入绑定到真实的带类型参数，不要自行编造序列化类型字段。输入覆盖值和保存的输入都会根据编译器解析出的类型检查。
 
-规则见 [Parameter types](https://github.com/niobium-project/niobium/blob/main/docs/development/authoring-v2.md#parameter-types)，类型错误实验见[编译与诊断](/zh/tutorial/compilation-diagnostics/)。
+规则见 [Parameter types](https://github.com/niobium-project/niobium/blob/main/docs/development/authoring.md#parameter-types)，类型错误实验见[编译与诊断](/zh/tutorial/compilation-diagnostics/)。
 
 下一章：[内容、权限与能力调用](/zh/tutorial/content-capabilities/)。

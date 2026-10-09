@@ -22,7 +22,7 @@ The product has a small set of independent objects:
 
 The `member` values, such as `libs/files.wasm` and `content/hello.tar`, name members of the installer payload. They are not installation paths. The root and the request's `prefix="hello"` determine where the proposed `README.txt` goes.
 
-The preparation tool encodes `payload/README.txt` as canonical POSIX pax content. `container()` declares its identity; the request's typed `content` record passes that same identity to the library. The compiler input lock separately fixes the source bytes used to assemble the installer. See the [content contract](https://github.com/niobium-project/niobium/blob/main/docs/spec/content-container-v1.md) for normalization and identity rules.
+The preparation tool encodes `payload/README.txt` as canonical POSIX pax content. `container()` declares its identity; the request's typed `content` record passes that same identity to the library. The compiler input lock separately fixes the source bytes used to assemble the installer. See the [content contract](https://github.com/niobium-project/niobium/blob/main/docs/spec/content-container.md) for normalization and identity rules.
 
 ## Grant ceilings and desired access
 
@@ -56,7 +56,7 @@ file_access = value("record", {
 })
 ```
 
-The directory policy has `kind="directory"` and the same rights. Both appear in the request under the exact WIT field names `file-access` and `directory-access`. A desired policy must fit its grant's ceiling. Archive mode `0644` is content metadata; it does not grant installed access. Directory `execute` must be false in this portable policy. See [Portable access policy](https://github.com/niobium-project/niobium/blob/main/docs/spec/access-policy-v1.md) for native mappings and rejection rules.
+The directory policy has `kind="directory"` and the same rights. Both appear in the request under the exact WIT field names `file-access` and `directory-access`. A desired policy must fit its grant's ceiling. Archive mode `0644` is content metadata; it does not grant installed access. Directory `execute` must be false in this portable policy. See [Portable access policy](https://github.com/niobium-project/niobium/blob/main/docs/spec/access-policy.md) for native mappings and rejection rules.
 
 ## Values and plans
 
@@ -109,11 +109,11 @@ FLOW_BUILD="$TUTORIAL_WORK/flow"
 "$NIOBIUM_REPO/zig-out/bin/niobium-tutorial-prepare" \
   --sdk "$NIOBIUM_REPO/zig-out" \
   --source "$NIOBIUM_REPO/examples/dsl-tutorial" --out "$FLOW_BUILD"
-"$NIOBIUM_REPO/zig-out/bin/niobium-starlark-v2" \
+"$NIOBIUM_REPO/zig-out/bin/nb-starlark-v2" \
   --source "$FLOW_BUILD/product_flow.star" \
   --out "$FLOW_BUILD/product.program.json" \
   --source-map "$FLOW_BUILD/product.sources.json"
-"$NIOBIUM_REPO/zig-out/bin/niobium-compiler-v2" compile \
+"$NIOBIUM_REPO/zig-out/bin/nb-builder" compile \
   --program "$FLOW_BUILD/product.program.json" \
   --source-map "$FLOW_BUILD/product.sources.json" \
   --lock "$FLOW_BUILD/inputs.lock.json" \

@@ -3,6 +3,11 @@ title: Niobium
 description: An installation and distribution DSL with an AOT compiler and precompiled native runtime.
 ---
 
+**Early draft: Niobium is not usable yet and does not accept external contributions.**
+Framework APIs, formats, persistent state and tools have no compatibility guarantee.
+Breaking changes may happen at any time. Product upgrade recognition, explicit
+migration, incompatible-state refusal and transactional recovery remain required.
+
 Niobium lets product teams program their installer model through language SDKs or Starlark. Its compiler validates capability contracts, fixes library and artifact identities, and packages a complete precompiled runtime into a product setup.
 
 The runtime binds user choices and machine facts, evaluates fixed Wasm capability libraries, and applies a durable host plan. Official libraries and product libraries use the same checked interface. Product policies such as optional components, SDK coexistence and upgrade paths belong to libraries and presets.
@@ -30,7 +35,7 @@ remain separate work. Check [Status and platforms](/status/) for the evidence bo
 
 Start with the [DSL tutorial](/tutorial/) to build, install and update a small
 Starlark product, then learn how to write and compile its model.
-For SDK details, use the [authoring guide](https://github.com/niobium-project/niobium/blob/main/docs/development/authoring-v2.md),
+For SDK details, use the [authoring guide](https://github.com/niobium-project/niobium/blob/main/docs/development/authoring.md),
 [Component SDK](https://github.com/niobium-project/niobium/blob/main/docs/development/component-library-sdk.md)
 and [cross-host build guide](https://github.com/niobium-project/niobium/blob/main/docs/development/cross-host-builds.md).
 The [roadmap](/roadmap/) and maintainer
@@ -38,8 +43,6 @@ The [roadmap](/roadmap/) and maintainer
 separate the foundation from product presets, complete language SDKs and further
 platform qualification.
 
-The sidebar groups legacy v1 documentation separately. The [retained v1 tutorial](/start/)
-and manifest/`nbpack` references describe their original interfaces and evidence.
-The [glossary](/reference/glossary/) defines the current domain terms.
+The [glossary](/reference/glossary/) defines current domain terms.
 
 Project background and maintenance expectations are on [About the project](/about/).

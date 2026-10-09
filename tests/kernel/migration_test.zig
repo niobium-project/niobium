@@ -13,7 +13,7 @@ test "N2-KERNEL-20: applied converter checksum cannot change on an otherwise sta
     var tmp = std.testing.tmpDir(.{});
     defer tmp.cleanup();
     var fixture = try Fixture.init(arena.allocator(), io, tmp.dir, 1);
-    var host: platform.Host = .init(io, .{ .env = .{}, .system_managers = false });
+    var host: platform.Host = .init(io, .{ .env = .{} });
     const first = try kernel.run(try fixture.options(&host, .install));
     try std.testing.expect(first.state != null);
     fixture.version = 2;
@@ -48,7 +48,7 @@ test "N2-KERNEL-20: product migration identity cannot be reused for a different 
     var tmp = std.testing.tmpDir(.{});
     defer tmp.cleanup();
     var fixture = try Fixture.init(arena.allocator(), io, tmp.dir, 1);
-    var host: platform.Host = .init(io, .{ .env = .{}, .system_managers = false });
+    var host: platform.Host = .init(io, .{ .env = .{} });
     const first = try kernel.run(try fixture.options(&host, .install));
     try std.testing.expect(first.state != null);
     fixture.version = 2;

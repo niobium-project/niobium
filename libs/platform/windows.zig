@@ -1,14 +1,10 @@
-//! Windows host integrations (docs/spec/platform-contract-v1.md#windows):
+//! Windows host integrations (docs/spec/platform-contract.md#windows):
 //! - shortcut: MS-SHLLINK `.lnk` under `Start Menu\Programs` (roaming `%APPDATA%` for user,
 //!   `%ProgramData%` for machine), written by hand so no COM/shell32 is needed;
-//! - file association: ProgID `<product>.<ext>` under `Software\Classes` plus
-//!   `.<ext>\OpenWithProgids`; the extension default is only claimed when unset or ours;
-//! - service: SCM, machine scope only;
-//! - registration: `Software\Microsoft\Windows\CurrentVersion\Uninstall\<product>`;
+//! - registry, services and registration: CapabilityUnsupported;
 //! - `current` pointer: a directory junction (no symlink privilege needed), swapped with two
 //!   renames. A crash between them leaves no `current`; rollback or roll-forward re-runs the
 //!   swap, which tolerates the missing link.
-//! Registry and SCM entries carry `NiobiumManaged`/the product prefix; foreign ones are refused.
 
 const std = @import("std");
 const builtin = @import("builtin");
@@ -17,8 +13,6 @@ const api = @import("api.zig");
 const files = @import("files.zig");
 const host = @import("host.zig");
 const names = @import("names.zig");
-const registry = @import("windows_registry.zig");
-const service = @import("windows_service.zig");
 const util = @import("windows_util.zig");
 
 const Error = api.Error;
@@ -290,31 +284,8 @@ pub fn prepare(
     arena: Allocator,
     request: *const api.IntegrationRequest,
 ) Error!void {
-    switch (request.integration.kind) {
-        .shortcut => return files.prepare(h.local, try shortcutSpec(h, arena, request), request.tx),
-        // Registry and SCM entries are written at activation; validate names now.
-        .file_association => {
-            const prog = try registry.progId(
-                arena,
-                try names.token(request.product_id),
-                try names.extension(request.integration.id),
-            );
-            std.debug.assert(prog.len > 0);
-            if (!h.options.system_managers) return error.CapabilityUnsupported;
-        },
-        .registration => {
-            const target = try names.target(request.integration.target);
-            std.debug.assert(target.len > 0);
-            if (!h.options.system_managers) return error.CapabilityUnsupported;
-        },
-        .service => {
-            if (request.scope != .machine or !h.options.system_managers) {
-                return error.CapabilityUnsupported;
-            }
-            const name = try service.serviceName(arena, request.product_id, request.integration.id);
-            std.debug.assert(name.len > 0);
-        },
-    }
+    if (request.integration.kind != .shortcut) return error.CapabilityUnsupported;
+    return files.prepare(h.local, try shortcutSpec(h, arena, request), request.tx);
 }
 
 pub fn discard(
@@ -322,7 +293,7 @@ pub fn discard(
     arena: Allocator,
     request: *const api.IntegrationRequest,
 ) Error!void {
-    if (request.integration.kind != .shortcut) return;
+    if (request.integration.kind != .shortcut) return error.CapabilityUnsupported;
     return files.discard(h.local, (try shortcutSpec(h, arena, request)).final, request.tx);
 }
 
@@ -331,19 +302,10 @@ pub fn activate(
     arena: Allocator,
     request: *const api.IntegrationRequest,
 ) Error![]const u8 {
-    if (request.integration.kind == .shortcut) {
-        const s = try shortcutSpec(h, arena, request);
-        try files.activate(h.local, s, request.tx);
-        return arena.dupe(u8, s.final);
-    }
-    if (!h.options.system_managers) return error.CapabilityUnsupported;
-    if (builtin.os.tag != .windows) return error.CapabilityUnsupported;
-    return switch (request.integration.kind) {
-        .file_association => registry.activateAssociation(arena, request),
-        .registration => registry.activateRegistration(arena, request),
-        .service => service.activateService(arena, request),
-        .shortcut => unreachable,
-    };
+    if (request.integration.kind != .shortcut) return error.CapabilityUnsupported;
+    const s = try shortcutSpec(h, arena, request);
+    try files.activate(h.local, s, request.tx);
+    return arena.dupe(u8, s.final);
 }
 
 pub fn remove(
@@ -351,15 +313,9 @@ pub fn remove(
     arena: Allocator,
     installed: contracts.installation.Integration,
 ) Error!void {
-    if (installed.kind == .shortcut) return files.remove(h.local, installed.location, lnk_owner);
-    if (!h.options.system_managers) return error.CapabilityUnsupported;
-    if (builtin.os.tag != .windows) return error.CapabilityUnsupported;
-    return switch (installed.kind) {
-        .file_association => registry.removeAssociation(arena, installed),
-        .registration => registry.removeRegistration(arena, installed),
-        .service => service.removeService(arena, installed),
-        .shortcut => unreachable,
-    };
+    _ = arena;
+    if (installed.kind != .shortcut) return error.CapabilityUnsupported;
+    return files.remove(h.local, installed.location, lnk_owner);
 }
 
 test "shell link layout" {
@@ -413,4 +369,31 @@ test "N1-AC-14 junction reparse buffer normalizes Windows path forms" {
     const length = std.mem.readInt(u16, data[4..6], .little);
     try std.testing.expectEqual(data.len - 8, length);
     try std.testing.expectEqual(@as(u16, 0), std.mem.readInt(u16, data[8..10], .little));
+}
+
+test "N1-AC-14 unqualified Windows manager integrations fail before mutation" {
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const h: host.Host = .init(std.testing.io, .{ .env = .{} });
+    for ([_]contracts.installation.IntegrationKind{
+        .file_association, .service, .registration,
+    }) |kind| {
+        const request: api.IntegrationRequest = .{
+            .integration = .{ .kind = kind, .id = "refused", .label = "Refused", .target = "x" },
+            .product_id = "refused.product",
+            .product_name = "Refused",
+            .scope = .machine,
+            .root = "C:\\refused",
+            .tx = 1,
+        };
+        try std.testing.expectError(error.CapabilityUnsupported, prepare(&h, a, &request));
+        try std.testing.expectError(error.CapabilityUnsupported, discard(&h, a, &request));
+        try std.testing.expectError(error.CapabilityUnsupported, activate(&h, a, &request));
+        try std.testing.expectError(error.CapabilityUnsupported, remove(&h, a, .{
+            .kind = kind,
+            .id = "refused",
+            .location = "foreign",
+        }));
+    }
 }

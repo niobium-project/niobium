@@ -1,4 +1,4 @@
-//! Host platform backend: Local filesystem mutations plus the native integrations of the OS
+//! File-backed host profile: Local filesystem mutations and integration files for the OS
 //! the binary was compiled for (macos.zig, linux.zig, windows.zig). All system locations derive
 //! from injected `Options`, so the PlatformContract suite runs it inside a temp directory.
 
@@ -23,10 +23,6 @@ pub const Options = struct {
     /// Prefix for machine-scope system directories (`/Applications`, `/etc/systemd/system`,
     /// `/usr/local/share`). Empty in production; a temp directory in contract tests.
     machine_root: []const u8 = "",
-    /// Talk to system managers (launchctl, systemctl, desktop caches, the Windows registry and
-    /// SCM). Off in contract tests: file-backed integrations are still written, and
-    /// integrations that exist only inside a system manager report CapabilityUnsupported.
-    system_managers: bool = true,
 };
 
 /// Scratch space for vtable calls that do not receive an arena (paths and small file bodies).
@@ -73,7 +69,7 @@ pub const Host = struct {
     }
 
     /// Directories machine-scope integration files are written into (the privilege helper's
-    /// policy). Registry keys and SCM services have no file location and are not listed.
+    /// policy). OS manager integrations are outside this file-backed profile.
     pub fn machineIntegrationDirs(h: *const Host, arena: Allocator) Error![]const []const u8 {
         return native.machineDirs(h, arena);
     }
@@ -199,7 +195,7 @@ pub const Host = struct {
     }
 };
 
-/// `base` joined with parts using the host separator. Parts from manifests are validated by
+/// `base` joined with parts using the host separator. Integration parts are validated by
 /// the caller (names.zig); here only traversal and separators are refused.
 pub fn joinAbsolute(
     arena: Allocator,
@@ -233,7 +229,7 @@ pub fn executable(
 }
 
 test "host vtable binds the native backend" {
-    var h: Host = .init(std.testing.io, .{ .env = .{}, .system_managers = false });
+    var h: Host = .init(std.testing.io, .{ .env = .{} });
     const p = h.platform();
     try std.testing.expect(p.now() > 0);
 }

@@ -22,7 +22,7 @@ pub fn add(b: *std.Build, graph: *const graph_mod.Graph, inputs: Inputs) *std.Bu
     const module = graph.root("tests/core_e2e/main.zig", &.{
         "compiler", "program", "content", "host_primitives", "image", "kernel",
     });
-    module.addImport("suite_provenance", graph.root("tests/aot/provenance.zig", &.{"core"}));
+    module.addImport("suite_provenance", graph.root("tests/component/provenance.zig", &.{"core"}));
     const suite = b.addExecutable(.{ .name = "core-e2e", .root_module = module });
     const run = b.addRunArtifact(suite);
     run.setCwd(b.path("."));
@@ -104,7 +104,7 @@ fn delivered(
     const module = graph.root("tests/core_e2e/delivered.zig", &.{
         "compiler", "program", "content", "host_primitives", "image", "kernel",
     });
-    module.addImport("suite_provenance", graph.root("tests/aot/provenance.zig", &.{"core"}));
+    module.addImport("suite_provenance", graph.root("tests/component/provenance.zig", &.{"core"}));
     const artifact = b.addExecutable(.{
         .name = b.fmt("core-delivered-{s}", .{name}),
         .root_module = module,

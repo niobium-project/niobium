@@ -1,7 +1,7 @@
 //! X11 window over the core protocol on the local socket (no libX11, no libc). Requests are
 //! encoded by x11_wire; replies are awaited synchronously and events that arrive meanwhile are
 //! queued. A self-pipe wakes `poll` from other threads. Crash traps
-//! (docs/spec/platform-contract-v1.md): a closed connection and protocol error packets are
+//! (docs/spec/platform-contract.md): a closed connection and protocol error packets are
 //! errors returned from `next`, never panics; every length from the server is checked.
 
 const std = @import("std");

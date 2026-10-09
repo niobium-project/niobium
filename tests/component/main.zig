@@ -18,6 +18,9 @@ pub fn main(init: std.process.Init) !void {
     var run = try provenance.Run.startForSuite(arena, init.io, argv, "component");
     execute(&run, argv) catch |err| {
         try run.finish(@errorName(err));
+        std.log.err("Component qualification failed: {s}; evidence {s}", .{
+            @errorName(err), run.evidence,
+        });
         return err;
     };
     try run.finish(null);

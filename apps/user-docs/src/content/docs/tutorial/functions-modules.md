@@ -55,7 +55,7 @@ def make_product(release_sequence):
 
 The author root is the directory containing the entrypoint supplied to `--source`. Module paths are relative to that root, including loads performed by nested modules. They do not change to the loading module's own directory. For example, an entrypoint in `release1/` loads `lib/policy.star` from `release1/lib/policy.star`; a load inside that module still starts from `release1/`.
 
-Loaded module globals are frozen by Starlark. Export functions and immutable data rather than depending on mutations of a shared dictionary after import. The worker caches modules within one evaluation and rejects load cycles, absolute paths and paths that lexically escape the author root. Its module and execution budgets are documented in [Authoring v2](https://github.com/niobium-project/niobium/blob/main/docs/development/authoring-v2.md#starlark-api).
+Loaded module globals are frozen by Starlark. Export functions and immutable data rather than depending on mutations of a shared dictionary after import. The worker caches modules within one evaluation and rejects load cycles, absolute paths and paths that lexically escape the author root. Its module and execution budgets are documented in [Authoring v2](https://github.com/niobium-project/niobium/blob/main/docs/development/authoring.md#starlark-api).
 
 ## Exercise: verify the extraction
 
@@ -64,11 +64,11 @@ Evaluate the flat and modular authors from the same prepared inputs and compare 
 The complete solution uses the supplied `product_modular.star` and `model.star`:
 
 ```sh
-"$NIOBIUM_REPO/zig-out/bin/niobium-starlark-v2" \
+"$NIOBIUM_REPO/zig-out/bin/nb-starlark-v2" \
   --source "$TUTORIAL_WORK/release1/product.star" \
   --out "$TUTORIAL_WORK/flat.program.json" \
   --source-map "$TUTORIAL_WORK/flat.sources.json"
-"$NIOBIUM_REPO/zig-out/bin/niobium-starlark-v2" \
+"$NIOBIUM_REPO/zig-out/bin/nb-starlark-v2" \
   --source "$TUTORIAL_WORK/release1/product_modular.star" \
   --out "$TUTORIAL_WORK/modular.program.json" \
   --source-map "$TUTORIAL_WORK/modular.sources.json"
@@ -84,6 +84,6 @@ If the comparison fails, compare the declarations before compiling an installer.
 
 Use functions for repeated construction and modules for coherent groups of author code. Module filenames organize source. The product identity, `Call.id`, `Library.id` and the interface/function selector identify runtime ownership. Moving `deploy` into another file preserves its ID. Renaming that call changes the owning instance and is not an equivalent refactor.
 
-The [compiled product contract](https://github.com/niobium-project/niobium/blob/main/docs/spec/program-image-v2.md#state-and-explicit-migration) defines call state ownership and explicit migration. Keep those changes separate from this byte-preserving source extraction.
+The [compiled product contract](https://github.com/niobium-project/niobium/blob/main/docs/spec/program-image.md#state-and-explicit-migration) defines call state ownership and explicit migration. Keep those changes separate from this byte-preserving source extraction.
 
 Next: [Compilation and diagnostics](/tutorial/compilation-diagnostics/).

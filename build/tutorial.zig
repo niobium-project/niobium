@@ -19,11 +19,11 @@ pub fn add(b: *std.Build, graph: *const graph_mod.Graph, inputs: Inputs) *std.Bu
     const staged = [_]std.Build.LazyPath{
         sdk.addCopyFile(
             inputs.runtime.getEmittedBin(),
-            b.fmt("bin/niobium-runtime-v2{s}", .{suffix}),
+            b.fmt("bin/niobium-runtime{s}", .{suffix}),
         ),
         sdk.addCopyFile(
             inputs.worker.getEmittedBin(),
-            b.fmt("bin/niobium-component-worker{s}", .{suffix}),
+            b.fmt("bin/nb-component-worker{s}", .{suffix}),
         ),
         sdk.addCopyFile(inputs.metadata, "share/niobium/runtime-package.json"),
         sdk.addCopyFile(inputs.files, "lib/niobium/stdlib/files.wasm"),
@@ -32,7 +32,7 @@ pub fn add(b: *std.Build, graph: *const graph_mod.Graph, inputs: Inputs) *std.Bu
     const module = graph.root("tests/dsl_tutorial/main.zig", &.{
         "compiler", "program", "kernel", "image", "contracts",
     });
-    module.addImport("suite_provenance", graph.root("tests/aot/provenance.zig", &.{"core"}));
+    module.addImport("suite_provenance", graph.root("tests/component/provenance.zig", &.{"core"}));
     const suite = b.addExecutable(.{ .name = "example-tutorial", .root_module = module });
     const run = b.addRunArtifact(suite);
     run.setCwd(b.path("."));

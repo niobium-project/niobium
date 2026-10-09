@@ -1,6 +1,6 @@
-//! Platform capability interface (docs/spec/platform-contract-v1.md). Only mutations go through
+//! Platform capability interface (docs/spec/platform-contract.md). Only mutations go through
 //! it: reads of install roots are unprivileged and use std.Io directly. Every method maps onto
-//! the closed privilege IPC op set (docs/spec/ipc-v1.md), so the privilege broker is just another
+//! the closed privilege IPC op set (docs/spec/ipc.md), so the privilege broker is just another
 //! implementation. Paths are absolute; callers build them from validated relative parts.
 
 const std = @import("std");
@@ -81,7 +81,7 @@ pub const VTable = struct {
     deletePointer: *const fn (*anyopaque, []const u8) Error!void,
     prepareIntegration: *const fn (*anyopaque, *const IntegrationRequest) Error!void,
     discardIntegration: *const fn (*anyopaque, *const IntegrationRequest) Error!void,
-    /// Idempotent; returns the platform location recorded in installation.json.
+    /// Idempotent file activation; returns the location recorded by the caller.
     activateIntegration: *const fn (
         *anyopaque,
         std.mem.Allocator,

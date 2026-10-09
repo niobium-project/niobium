@@ -20,7 +20,7 @@ test "N2-KERNEL-21: resolved directory links have native kind and unlink without
         .{ .path = "file-link", .kind = .symlink, .link_target = "original" },
     } }, &output.writer, .{});
     fixture.tar = output.written();
-    var host: platform.Host = .init(io, .{ .env = .{}, .system_managers = false });
+    var host: platform.Host = .init(io, .{ .env = .{} });
     const installed = kernel.run(try fixture.options(&host, .install)) catch |err| {
         if (@import("builtin").os.tag != .windows or err != error.KernelUnsupported) return err;
         std.debug.print("Native directory-link context: unsupported before publication\n", .{});

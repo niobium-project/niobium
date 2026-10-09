@@ -2,11 +2,20 @@
 
 Niobium is an installation and distribution DSL with an AOT compiler, a precompiled native runtime and host-controlled Wasm capability libraries ([ADR-0022](docs/adr/0022-installer-dsl-and-aot-toolchain.md)). This file holds the repository's hard constraints, forbidden patterns and review gates. Procedures live in `.agents/skills/`; contracts and trade-offs live in `docs/spec/` and `docs/adr/`. A requirement is stated once and linked, never copied in full to several places.
 
+Niobium is an early draft and is not usable yet. External contributions are not
+accepted. Framework APIs, formats, durable state and tools have no compatibility
+guarantee; breaking changes may happen at any time. Product upgrade recognition,
+explicit migration, refusal before mutation and transactional recovery remain
+required safety mechanisms.
+
+This project does not use CodeGraph because it does not currently support Zig.
+Use native text search, the build module graph and source inspection.
+
 ## 1. Rule precedence and sources of truth
 
-Current explicit user instruction > this file > accepted ADRs > active versioned specs (listed in `docs/README.md`) > descriptive architecture documentation > general engineering practice. When you find a conflict, pause the affected change and record the conflict and a proposed ADR first; never change architectural semantics silently through code.
+Current explicit user instruction > this file > accepted ADRs > active specs (listed in `docs/README.md`) > descriptive architecture documentation > general engineering practice. When you find a conflict, pause the affected change and record the conflict and a proposed ADR first; never change architectural semantics silently through code.
 
-- `docs/source/` is the original architecture input, a read-only archive; current decisions are the ADRs and specs.
+- Keep one current document per topic. Git history preserves earlier versions.
 - `docs/implementation/YYYY-MM-DD-*.md` are optional implementation traces; they go stale and are not a source of truth.
 - How each document kind changes and retires, including replacing an ADR: [docs-management](docs/development/docs-management.md) ([ADR-0016](docs/adr/0016-documentation-lifecycle.md)).
 - Docs, skills, code comments and commit summaries are written in English. The only Chinese documents are [README.zh.md](README.zh.md), which must track [README.md](README.md), and the user site's Chinese pages, which mirror its English pages ([ADR-0017](docs/adr/0017-chinese-user-documentation.md)). APIs, code identifiers and JSON fields are English.
@@ -18,19 +27,19 @@ Current explicit user instruction > this file > accepted ADRs > active versioned
 
 1. **Author programs execute at build time.** Native-language SDKs and Starlark construct the same typed product model. Serialized program data is a compiler output.
 2. **The compiler packages a complete precompiled runtime.** Product builds must preserve the template input and executable code sections, and must not relink or execute a target runtime. The host-independent image assembler and final signer change only the output image.
-3. **Capability contracts bind libraries.** Official and product/third-party Wasm Components use the same WIT and upstream Canonical ABI implementation. No ambient WASI, filesystem, network, process or elevation authority is granted. The retained Core Wasm v1 ABI keeps its historical scope. Wasmtime, `wit-bindgen`, `wasm-tools` and libraries maintained in this repository stay on the pinned Rust implementations until a competing alternative is qualified ([ADR-0026](docs/adr/0026-pinned-rust-component-wasm.md)).
+3. **Capability contracts bind libraries.** Official and product/third-party Wasm Components use the same WIT and upstream Canonical ABI implementation. No ambient WASI, filesystem, network, process or elevation authority is granted. Wasmtime, `wit-bindgen`, `wasm-tools` and libraries maintained in this repository stay on the pinned Rust implementations until a competing alternative is qualified ([ADR-0026](docs/adr/0026-pinned-rust-component-wasm.md)).
 4. **Core provides mechanisms.** Product distribution, component selection, coexistence, channels and layout policies belong to libraries, presets and templates.
 5. **Machine effects are transactional.** The host validates and freezes outputs before mutation; recovery uses durable plans and reaches only old-good or new-good.
-6. **Compatibility is explicit.** Product migration/bridge policy belongs to the product. Framework and library state have independent versioned compatibility contracts.
+6. **Compatibility is explicit.** Product migration/bridge policy belongs to the product. Framework versions are not compatibility promises; product and library identities must still be checked explicitly.
 7. **Release bytes are fixed.** Runtime, program, libraries and artifacts have distinct identities. Final signing and qualification apply to the delivered bytes.
 8. **Content and authority are distinct.** Logical content uses the versioned POSIX pax profile. Archive modes do not grant access; explicit host access policies control installed resources. Unsupported native semantics must be rejected rather than approximated.
 
-The pre-release reset does not require compatibility with old manifest/API/state formats. It does not waive compatibility checks for new product releases. Retained manifest/engine v1 specs and N1 product evidence describe the legacy implementation. Shared test-system evidence retains its own stated scope.
+The pre-release reset does not require compatibility with old manifest/API/state formats. It does not waive compatibility checks for new product releases. Shared test-system evidence retains its own stated scope.
 
 ## 3. Repository boundaries and dependency direction
 
 ```text
-apps/ process assembly (compiler, runtime, language/ABI adapters, legacy apps), no business logic
+apps/ process assembly (compiler, runtime, SDK adapters, UI gallery and documentation), no business logic
 libs/ implementation; one owner directory per module
 api/ machine-readable contracts (JSON Schema, C header, versioned WIT)
 tools/ checks, generators and gates written in Zig
@@ -75,7 +84,7 @@ Test lanes: L0 static (check/lint/schema/size), L1 pure core (VirtualPlatform), 
 
 - Crash-injection invariant: after recovery from any kill point, `Active == OLD` or `Active == NEW`, never MIXED.
 - No artifact can write outside the staging root through extraction.
-- New standard-core evidence uses N2 IDs in [acceptance-plan-v0.3](docs/acceptance-plan-v0.3.md). Prior N2 and N1 records retain their original profiles and cannot establish new contract completion; shared test-system evidence retains its declared scope.
+- New standard-core evidence uses N2 IDs in [acceptance plan](docs/acceptance-plan.md). Prior N2 and N1 records retain their original profiles and cannot establish new contract completion; shared test-system evidence retains its declared scope.
 - Acceptance status uses only `PASS`/`FAIL`/`BLOCKED`/`NOT_RUN`/`DEFERRED`; without real evidence, never write "supported" or "passed".
 - Compiling, mocks succeeding, screenshots and an agent's own claims do not constitute completion. Evidence goes to `.evidence/<suite>/<UTC>/`.
 - Goldens are never updated wholesale: `zig build test:golden -Dupdate=<component>` must name a scope, and the diff is inspected in review.

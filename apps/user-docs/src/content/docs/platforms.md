@@ -3,7 +3,7 @@ title: Platform support
 description: Which platforms Niobium targets, what each support tier commits to, and what comes next.
 ---
 
-This page records platform tier obligations and remaining qualification work. Current Component evidence and retained v1 records have separate scopes on [Status and platforms](/status/).
+This page records platform tier obligations and remaining qualification work. Current Component evidence and independent component records have separate scopes on [Status and platforms](/status/).
 
 Niobium sorts the platforms it builds for into three tiers. A tier states what the project commits to on that platform; whether the commitment is met today is recorded on [Status and platforms](/status/), the only page that reports results.
 
@@ -43,7 +43,7 @@ Each Tier 1 platform still has a gap between its commitment and its test lanes:
 - **`x86_64-linux`:** native hosted Ubuntu 24.04 x64 CI is recorded for the current Component profile. Older distributions and generic physical-CPU portability remain outside that evidence.
 - **`x86_64-windows`:** native hosted CI runs on Windows Server 2025 x64. That runner context does not qualify the Windows 11 x64 reference OS or a native standard-user token. The Windows 11 ARM64/x64-emulated standard-user record keeps its separate scope.
 - **All platforms:** current qualification covers user scope; machine scope and the standard v2 UI remain separate work packages.
-- **`aarch64-macos`:** native hosted macOS 15.7.9 arm64 CI is recorded. The minimum supported macOS version remains unpinned; the retained v1 graphical walkthrough remains a historical `NOT_RUN` record.
+- **`aarch64-macos`:** native hosted macOS 15.7.9 arm64 CI is recorded. The minimum supported macOS version remains unpinned; the UI gallery is independent of runtime installation.
 
 ### Candidates
 
@@ -54,7 +54,7 @@ Each Tier 1 platform still has a gap between its commitment and its test lanes:
 
 ### Not planned
 
-- **A native Wayland backend for the retained v1 window.** On Wayland sessions that window runs through XWayland ([ADR-0010](https://github.com/niobium-project/niobium/blob/main/docs/adr/0010-x11-now-wayland-deferred.md)). The current Component runtime is headless; the standard v2 UI has separate implementation and qualification work.
+- **A native Wayland backend for the independent UI window.** On Wayland sessions that window runs through XWayland ([ADR-0010](https://github.com/niobium-project/niobium/blob/main/docs/adr/0010-x11-now-wayland-deferred.md)). The current Component runtime is headless; the standard v2 UI has separate implementation and qualification work.
 
 ## Moving between tiers
 

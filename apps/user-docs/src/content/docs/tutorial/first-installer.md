@@ -67,7 +67,7 @@ The access records request owner read/write and everyone read access. The grant 
 The prepare tool copied this source into release 1 alongside its generated `inputs.star`. Execute that copy:
 
 ```sh
-zig-out/bin/niobium-starlark-v2 \
+zig-out/bin/nb-starlark-v2 \
   --source "$TUTORIAL_WORK/release1/product.star" \
   --out "$TUTORIAL_WORK/release1/product.program.json" \
   --source-map "$TUTORIAL_WORK/release1/product.sources.json" \
@@ -81,7 +81,7 @@ zig-out/bin/niobium-starlark-v2 \
 Pass the emitted model and the locked input files to the compiler:
 
 ```sh
-zig-out/bin/niobium-compiler-v2 compile \
+zig-out/bin/nb-builder compile \
   --program "$TUTORIAL_WORK/release1/product.program.json" \
   --source-map "$TUTORIAL_WORK/release1/product.sources.json" \
   --lock "$TUTORIAL_WORK/release1/inputs.lock.json" \
@@ -121,7 +121,7 @@ Hello from the Niobium DSL tutorial, release 1.
 
 The product declares the logical name `application`; `--root` supplies its absolute physical path. The runtime claims only an absent or empty unowned root, so use the dedicated tutorial directory.
 
-`current` points to the published generation's content. Its `hello` prefix comes from the library request. The runtime stores ownership and transaction data separately under `.niobium-v2/`; the [lifecycle contract](https://github.com/niobium-project/niobium/blob/main/docs/spec/runtime-lifecycle-v2.md) owns that layout.
+`current` points to the published generation's content. Its `hello` prefix comes from the library request. The runtime stores ownership and transaction data separately under `.niobium-v2/`; the [lifecycle contract](https://github.com/niobium-project/niobium/blob/main/docs/spec/runtime-lifecycle.md) owns that layout.
 
 ## Exercise: find the installed path
 

@@ -45,7 +45,7 @@ zig-out/bin/niobium-tutorial-prepare \
   --sdk "$NIOBIUM_REPO/zig-out" \
   --source "$TUTORIAL_WORK/source" \
   --out "$TUTORIAL_WORK/release2"
-zig-out/bin/niobium-starlark-v2 \
+zig-out/bin/nb-starlark-v2 \
   --source "$TUTORIAL_WORK/release2/product.star" \
   --out "$TUTORIAL_WORK/release2/product.program.json" \
   --source-map "$TUTORIAL_WORK/release2/product.sources.json" \
@@ -57,7 +57,7 @@ zig-out/bin/niobium-starlark-v2 \
 组装第二个安装器：
 
 ```sh
-zig-out/bin/niobium-compiler-v2 compile \
+zig-out/bin/nb-builder compile \
   --program "$TUTORIAL_WORK/release2/product.program.json" \
   --source-map "$TUTORIAL_WORK/release2/product.sources.json" \
   --lock "$TUTORIAL_WORK/release2/inputs.lock.json" \
@@ -92,7 +92,7 @@ cat "$TUTORIAL_WORK/installation/current/hello/README.txt"
 Hello from the Niobium DSL tutorial, release 2.
 ```
 
-根目录映射保持不变。运行时发布包含新内容的代，并持久化新的发布版本。[迁移契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/migration-v2.md)分别规定模型版本和调用状态版本改变时的规则。
+根目录映射保持不变。运行时发布包含新内容的代，并持久化新的发布版本。[迁移契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/migration.md)分别规定模型版本和调用状态版本改变时的规则。
 
 ## 卸载并检查结果
 

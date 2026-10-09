@@ -1,4 +1,4 @@
-//! The closed node vocabulary (docs/spec/ui-ir-v1.md) and the bound UiTree: a flat preorder
+//! The closed node vocabulary (docs/spec/ui-ir.md) and the bound UiTree: a flat preorder
 //! array where `end` is one past a node's last descendant.
 
 const std = @import("std");

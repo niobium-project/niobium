@@ -1,4 +1,4 @@
-//! `setup --priv-helper-v1` (ADR-0007, docs/spec/ipc-v1.md): a closed-op server over one
+//! Authenticated helper profile (docs/spec/ipc.md): a closed-op server over one
 //! length-prefixed JSON stream. Every request must carry the session's tx and nonce and a
 //! strictly increasing id; every path must lie inside a managed root (or, for copy sources, a
 //! declared staging root or the helper's own executable). Mutations go to `backend`, the host
@@ -21,7 +21,7 @@ pub const Expect = struct {
     nonce: []const u8,
 };
 
-/// Decided by `apps/setup` from the framework's path policy, never by the broker.
+/// Supplied by the trusted protocol host, never by the broker.
 pub const Policy = struct {
     /// Machine install bases; a managed root must be `<base><sep><product id>`.
     install_bases: []const []const u8,
@@ -243,10 +243,8 @@ fn integrationRequest(
 }
 
 fn integrationLocation(s: *const Session, location: []const u8) bool {
-    // Registry keys and SCM names are validated (and ownership-checked) by the backend.
-    if (!std.fs.path.isAbsolute(location)) return true;
-    const parent = std.fs.path.dirname(location) orelse return false;
     if (!normalized(location)) return false;
+    const parent = std.fs.path.dirname(location) orelse return false;
     for (s.policy.integration_dirs) |dir| if (eqlPath(dir, parent)) return true;
     return inAny(s.managed, location);
 }
@@ -426,4 +424,33 @@ test "path containment" {
     try std.testing.expect(managedRoot(policy, "/opt/com.example.hello"));
     try std.testing.expect(!managedRoot(policy, "/etc"));
     try std.testing.expect(!managedRoot(policy, "/opt/x/y"));
+}
+
+test "N1-INV-04 relative and unscoped integration receipts cannot remove files" {
+    if (builtin.os.tag == .windows) return error.SkipZigTest;
+    var tmp = std.testing.tmpDir(.{});
+    defer tmp.cleanup();
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const io = std.testing.io;
+    const contents = "niobium-managed outside granted roots";
+    try tmp.dir.writeFile(io, .{ .sub_path = "outside.plist", .data = contents });
+    const relative = try std.fs.path.join(a, &.{
+        ".zig-cache", "tmp", &tmp.sub_path, "outside.plist",
+    });
+    const absolute = try tmp.dir.realPathFileAlloc(io, "outside.plist", a);
+    var host: platform.Host = .init(io, .{ .env = .{} });
+    var session: Session = .{
+        .io = io,
+        .backend = host.platform(),
+        .policy = .{ .install_bases = &.{}, .integration_dirs = &.{}, .self_exe = "" },
+    };
+    for ([_][]const u8{ relative, absolute }) |location| {
+        try std.testing.expectError(error.Violation, run(&session, a, .remove_integration, .{
+            .installed = .{ .kind = .service, .id = "outside", .location = location },
+        }));
+        const remaining = try tmp.dir.readFileAlloc(io, "outside.plist", a, .limited(128));
+        try std.testing.expectEqualStrings(contents, remaining);
+    }
 }

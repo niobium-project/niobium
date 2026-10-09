@@ -1,6 +1,6 @@
 //! Win32 window: one top-level window, the canvas blitted with `SetDIBitsToDevice` (a top-down
 //! 32-bit DIB is the canvas's BGRA layout). Per-monitor DPI v2 comes from the application
-//! manifest (apps/setup/setup.manifest). Crash traps (docs/spec/platform-contract-v1.md): the
+//! manifest (apps/setup/setup.manifest). Crash traps (docs/spec/platform-contract.md): the
 //! wndproc never propagates an error (it queues events or stores the failure for `next`).
 //! The folder dialog is in win32_dialog.zig.
 

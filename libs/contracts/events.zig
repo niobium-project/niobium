@@ -1,4 +1,4 @@
-//! CLI / ABI progress events (docs/spec/cli-v1.md#events): one JSON object per line, `schema: 1`.
+//! UI progress-event protocol: one JSON object per line, `schema: 1`.
 
 const std = @import("std");
 

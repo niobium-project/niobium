@@ -8,11 +8,8 @@ const ui = @import("ui.zig");
 const evidence = @import("evidence.zig");
 
 pub const suite_imports = [_][]const u8{
-    "core",       "contracts",   "platform",    "manifest", "trust",
-    "repository", "package",     "executor",    "resolver", "planner",
-    "privilege",  "bootstrap",   "transaction", "portable", "engine",
-    "packager",   "conformance", "zstd",        "program",  "wasm_profile",
-    "content",    "image",
+    "core",        "contracts", "platform", "trust", "repository", "package", "privilege",
+    "conformance", "program",   "content",  "image",
 };
 
 /// One test binary per library module; each runs under std.testing.allocator (SafeAllocator).

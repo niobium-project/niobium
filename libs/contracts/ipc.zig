@@ -1,4 +1,4 @@
-//! Privilege helper IPC v1 (docs/spec/ipc-v1.md): 4-byte little-endian length + JSON, ≤ 1 MiB.
+//! Privilege helper IPC v1 (docs/spec/ipc.md): 4-byte little-endian length + JSON, ≤ 1 MiB.
 //! The op set mirrors the platform capability vtable one to one, so the broker is just another
 //! `Platform` implementation and the helper dispatches onto the host backend.
 
@@ -82,12 +82,14 @@ pub fn decode(arena: std.mem.Allocator, payload: []const u8) json.DecodeError!Me
     var limits = limits_mod.default;
     // write_file carries whole state files (plan, installation.json) as one base64 string.
     limits.json_string_bytes = max_frame_bytes;
-    return json.decode(Message, arena, payload, .{
+    const message = try json.decode(Message, arena, payload, .{
         .max_bytes = max_frame_bytes,
         .max_schema = version,
         .schema_field = "v",
         .limits = limits,
     });
+    if (message.v != version) return error.UnsupportedSchema;
+    return message;
 }
 
 pub fn encode(arena: std.mem.Allocator, message: Message) error{OutOfMemory}![]u8 {
@@ -148,12 +150,16 @@ test "frames round trip and oversize frames are rejected" {
     try std.testing.expectError(error.IpcTruncated, readFrame(arena.allocator(), &short));
 }
 
-test "N1-INV-08 newer IPC version fails closed" {
+test "N1-INV-08 undeclared IPC versions fail closed" {
     var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
     defer arena.deinit();
     try std.testing.expectError(
         error.UnsupportedSchema,
         decode(arena.allocator(), "{\"v\":2,\"type\":\"hello\"}"),
+    );
+    try std.testing.expectError(
+        error.UnsupportedSchema,
+        decode(arena.allocator(), "{\"v\":0,\"type\":\"hello\"}"),
     );
     try std.testing.expectError(
         error.JsonType,

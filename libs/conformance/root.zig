@@ -1,4 +1,4 @@
-//! PlatformContract suite (docs/spec/platform-contract-v1.md#contract-tests), shared by every
+//! PlatformContract suite (docs/spec/platform-contract.md#contract-tests), shared by every
 //! backend. A backend is "supported" only when every required case passes; optional integration
 //! kinds may answer CapabilityUnsupported, which is recorded, never silently skipped.
 

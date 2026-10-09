@@ -1,6 +1,6 @@
 # Wasm library SDK
 
-- **Kind:** Engineering design for [capability-library-v2](../spec/capability-library-v2.md).
+- **Kind:** Engineering design for [capability-library-v2](../spec/capability-library.md).
 - **Owners:** Versioned WIT, Component tooling, `component_worker` and library publishers.
 - **Current boundary:** Generated C/Rust consumers, production Component inspection and
   calls, fixed libraries, typed dataflow and explicit state migration are implemented.
@@ -29,7 +29,7 @@ Upstream `wit-bindgen`, `wasm-tools` and Wasmtime implement generation, Componen
 encoding and the Canonical ABI. Niobium does not define a parallel guest memory
 layout. Replacement of these implementations follows
 [ADR-0026](../adr/0026-pinned-rust-component-wasm.md). The
-[capability contract](../spec/capability-library-v2.md) owns enabled
+[capability contract](../spec/capability-library.md) owns enabled
 features, imports, buffer ownership, execution limits and error behavior.
 
 Production calls use prebound observations and values. Resource-free type-only
@@ -77,7 +77,3 @@ Adding a new machine primitive requires a runtime implementation, authority
 contract and recovery semantics. Adding a product policy using existing primitives
 requires a library/preset change. Changes to WIT or state compatibility require
 versioned contracts and vectors before parallel implementations begin.
-
-The retained Core Wasm/WAMR profile and `capability.h` remain v1 interfaces with
-historical evidence. Their custom pointer/index conventions do not constrain the
-Component SDK.

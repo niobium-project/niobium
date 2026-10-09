@@ -1,4 +1,4 @@
-//! ThreadSanitizer lane (`zig build tsan`): engine worker + UI snapshot, broker IPC, crash state.
+//! ThreadSanitizer lane (`zig build tsan`): concurrent crash-context updates.
 
 const std = @import("std");
 const core = @import("core");

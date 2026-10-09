@@ -2,29 +2,11 @@
 //! Corpus seeds live in tests/fuzz/corpus/<target>/.
 
 const std = @import("std");
-const core = @import("core");
 const contracts = @import("contracts");
-const manifest = @import("manifest");
 const package = @import("package");
 const program = @import("program");
-const wasm_profile = @import("wasm_profile");
 const content = @import("content");
 const image = @import("image");
-
-test "fuzz exit-code classification" {
-    try std.testing.fuzz({}, fuzzExitCode, .{ .corpus = &.{ "TrustHashMismatch", "", "Usage" } });
-}
-
-fn fuzzExitCode(_: void, smith: *std.testing.Smith) anyerror!void {
-    var buffer: [128]u8 = @splat(0);
-    const len = smith.slice(&buffer);
-    const name = buffer[0..len];
-    const code = core.exit_code.fromName(name);
-    try std.testing.expect(@backingInt(code) <= 13);
-    var out: [512]u8 = @splat(0);
-    var writer: std.Io.Writer = .fixed(&out);
-    try core.exit_code.eventCode(&writer, name);
-}
 
 test "fuzz tar header and pax parsing" {
     try std.testing.fuzz({}, fuzzTar, .{ .corpus = &.{ "", "13 path=a/bc\n", "ustar\x0000" } });
@@ -67,58 +49,15 @@ fn fuzzExtract(_: void, smith: *std.testing.Smith) anyerror!void {
     while (try it.next(io)) |entry| try std.testing.expectEqualStrings("staging", entry.name);
 }
 
-test "fuzz manifest decoding" {
-    try std.testing.fuzz({}, fuzzManifest, .{ .corpus = &.{ "{}", "{\"schema\":1}", "[[[[[[" } });
-}
-
-fn fuzzManifest(_: void, smith: *std.testing.Smith) anyerror!void {
-    var buffer: [2048]u8 = @splat(0);
-    const len = smith.slice(&buffer);
-    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
-    defer arena.deinit();
-    const limits: contracts.Limits = .{};
-    if (manifest.parse(arena.allocator(), buffer[0..len], "0.1.0", limits)) |_| {} else |_| {}
-}
-
-test "N2-SAFE-01: compiled program and image parsers reject malformed bounded inputs" {
-    try std.testing.fuzz({}, fuzzProgram, .{ .corpus = &.{
-        @embedFile("corpus/program/minimal.json"),
-        @embedFile("corpus/program/duplicate.json"),
-        "NIOPROG1",
-        "NIORT001",
-        "[[[[[[",
-        "\x00asm\x01\x00\x00\x00",
-    } });
-}
-
-fn fuzzProgram(_: void, smith: *std.testing.Smith) anyerror!void {
-    var buffer: [4096]u8 = @splat(0);
-    const length = smith.slice(&buffer);
-    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
-    defer arena.deinit();
-    const bytes = buffer[0..length];
-    if (program.decode(arena.allocator(), bytes)) |model| {
-        try program.validate(model);
-        try std.testing.expect(model.inputs.len <= (contracts.Limits{}).program_items);
-    } else |_| {}
-    if (program.image.unpack(bytes)) |payload| {
-        try std.testing.expect(payload.len <= bytes.len);
-    } else |_| {}
-    if (program.image.productFromExecutable(bytes)) |payload| {
-        try std.testing.expect(payload.len <= bytes.len);
-    } else |_| {}
-    if (wasm_profile.validate(bytes, .{})) |_| {} else |_| {}
-}
-
-test "N2-SAFE-02: v2 product and native image parsers share bounded malformed-input replay" {
-    try std.testing.fuzz({}, fuzzProductV2, .{ .corpus = &.{
+test "N2-SAFE-02: product and native image parsers share bounded malformed-input replay" {
+    try std.testing.fuzz({}, fuzzProduct, .{ .corpus = &.{
         "{}", "{\"schema\":2}", "NIOIMG02", "NIOTMP02", "\x7fELF", "MZ", "[[[[[[",
         "{\"id\":\"fuzz.product\",\"release_sequence\":1,\"target\":\"x86_64-linux\"," ++
             "\"profile\":{\"id\":\"fuzz.runtime\",\"target\":\"x86_64-linux\",\"primitives\":[]}}",
     } });
 }
 
-fn fuzzProductV2(_: void, smith: *std.testing.Smith) anyerror!void {
+fn fuzzProduct(_: void, smith: *std.testing.Smith) anyerror!void {
     var buffer: [4096]u8 = @splat(0);
     const length = smith.slice(&buffer);
     const bytes = buffer[0..length];

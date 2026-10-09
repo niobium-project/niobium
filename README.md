@@ -10,10 +10,15 @@ authors use native Zig/C APIs or Starlark; language SDKs share the compiler
 backend. Libraries and presets own product selection, distribution and upgrade
 policy.
 
-[ADR-0023](docs/adr/0023-standard-content-and-component-contracts.md) establishes
-the current standard-content/WIT baseline. These interfaces are experimental and
-pre-release. [Acceptance v0.3](docs/acceptance-plan-v0.3.md) records current results;
-the older acceptance plans retain their own implementation and platform scope.
+**Early draft: Niobium is not usable yet and does not accept external contributions.**
+Framework APIs, formats, persistent state and tools carry no compatibility guarantee.
+Breaking changes may happen at any time. Installer upgrade recognition, explicit
+product migration, incompatible-state refusal and crash recovery remain required
+safety mechanisms.
+
+[ADR-0023](docs/adr/0023-standard-content-and-component-contracts.md) defines the
+current content/WIT baseline. [Acceptance](docs/acceptance-plan.md) records exact
+source and execution scopes; recorded results do not make this draft usable.
 
 ## Build and verify
 
@@ -25,11 +30,11 @@ not need those compilers. See
 
 ```sh
 zig build compiler:build runtime:build  # host compiler and complete runtime template
-zig build test:author         # native Zig, C and Starlark author parity
+zig build test:author            # native Zig, C and Starlark author parity
 zig build test:component         # standard WIT/Canonical ABI and isolated worker
 zig build test:core              # content, access, types and compiler foundations
 zig build core:e2e               # final setup, lifecycle, migration and recovery
-zig build verify                # current gates and retained regressions
+zig build verify                # current gates and independent component regressions
 ```
 
 The current runtime is a headless user-scope profile. Standard WIT and community
@@ -43,17 +48,14 @@ Local native and emulated target runs are recorded individually. Native hosted C
 qualifies user-scope operations in its recorded runner contexts. These records do
 not establish machine scope, full native application metadata, publisher
 authentication or notarization. Further qualification remains in progress.
-The 1 MiB section, ASCII resource names and WAMR profile belong to the retained v1
-PoC, not the current content/Component contracts.
 
 Start with the [DSL tutorial](apps/user-docs/src/content/docs/tutorial/index.md)
 and its [runnable example](examples/dsl-tutorial/) to build your first Starlark product.
-For SDK details, use [authoring v2](docs/development/authoring-v2.md), the
+For SDK details, use [authoring](docs/development/authoring.md), the
 [Component SDK](docs/development/component-library-sdk.md), and
 [cross-host builds](docs/development/cross-host-builds.md).
 The [current contracts](docs/README.md) define the shared compiler and runtime
-boundaries. `examples/hello`, manifest tutorials and the older
-[PoC workflow](docs/development/aot-poc.md) retain their original API scope.
+boundaries.
 
 ## Roadmap
 
@@ -76,7 +78,7 @@ qualification. These are priorities, not blanket completion or support claims.
 | 🗓️ | Additional native-platform and machine-scope qualification |
 
 The [user roadmap](apps/user-docs/src/content/docs/roadmap.md) explains these items.
-The [maintainer roadmap](docs/roadmap-v0.3.md),
+The [maintainer roadmap](docs/roadmap.md),
 [feature ownership catalog](docs/feature-coverage.md) and
 [product journeys](docs/design/product-journeys.md) assign interfaces, owners,
 dependencies and acceptance.
@@ -84,8 +86,8 @@ dependencies and acceptance.
 ## Background
 
 Niobium is a hobby project that the author works on while employed at TongYuan.
-It is not part of TongYuan's commercial products. It supports creating installers
-for internal, experimental and commercial products. TongYuan provides no direct
+It is not part of TongYuan's commercial products. Its intended purpose is to create installers
+for experimental and commercial products. TongYuan provides no direct
 support or steering. See [About the project](apps/user-docs/src/content/docs/about.md).
 
 ## Documentation
@@ -95,7 +97,7 @@ support or steering. See [About the project](apps/user-docs/src/content/docs/abo
 - Engineering designs: [Compiler](docs/design/compiler-engineering.md), [library SDK](docs/design/wasm-library-sdk.md), [host and stdlib](docs/design/host-primitives-and-stdlib.md)
 - Development constraints: [AGENTS.md](AGENTS.md)
 - Domain terms: [GLOSSARY.md](GLOSSARY.md)
-- Evidence: [Current v0.3](docs/acceptance-plan-v0.3.md), [retained v0.2](docs/acceptance-plan-v0.2.md), [historical N1](docs/acceptance-plan-v0.1.md)
+- Evidence: [Acceptance](docs/acceptance-plan.md)
 
 ## License
 

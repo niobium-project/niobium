@@ -27,15 +27,14 @@ The libc hooks for `stb_truetype` are `export`ed by `bindings.zig`. Any artifact
 ## Errors and exit codes
 
 - Each module defines its own explicit error set. The owning application or ABI adapter maps errors to its public protocol. Authoring C and Wasm guest ABI status conventions are independent.
-- The retained `engine` maps errors through `core.exit_code.fromError` to `cli-v1`; its legacy distribution C ABI uses `nb_status = -exit_code`.
 
 ## Phases and side effects
 
-The active Component flow freezes guest outputs and host operations under [runtime-lifecycle-v2](../../../../docs/spec/runtime-lifecycle-v2.md). The following phase names describe the retained manifest/engine profile.
+The active Component flow freezes guest outputs and host operations under [runtime-lifecycle-v2](../../../../docs/spec/runtime-lifecycle.md). The following phase names describe the retained manifest/engine profile.
 
 - `Prepare` downloads, verifies through TUF, and unpacks into staging before `Execute` starts.
-- `Execute` writes only `versions/<seq>` and never touches `current`; `Commit` is the pointer swap ([ADR-0006](../../../../docs/adr/0006-transaction-and-pointer-swap-commit.md)).
-- The privilege helper lives inside one transaction. When it is lost, the transaction aborts and recovery takes over ([ADR-0007](../../../../docs/adr/0007-same-binary-privilege-helper.md)).
+- `Execute` writes only `versions/<seq>` and never touches `current`; `Commit` is the pointer swap (retired ADR-0006 (Git history)).
+- The privilege helper lives inside one transaction. When it is lost, the transaction aborts and recovery takes over (retired ADR-0007 (Git history)).
 - Work that can outlive its caller (helper, download, App Bootstrap) has an owner, a bound from `contracts.Limits`, and an outcome that is journaled or reported.
 
 ## Platform code

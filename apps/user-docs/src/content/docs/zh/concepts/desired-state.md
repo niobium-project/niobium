@@ -29,6 +29,4 @@ Niobium 产品从构建时代码开始。作者构造带类型的模型；固定
 
 教程声明 `application`，并以 `--root application=<absolute-directory>` 绑定它。教程请求此根目录内的 `hello` 前缀。此运行配置不要求由框架选择的产品目录或固定的组件选择 schema。
 
-产品模型版本和每次调用的状态版本有独立的兼容性规则。改变它们需要显式且适用的升级或迁移声明。见[编译后产品契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/program-image-v2.md)和[迁移契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/migration-v2.md)。
-
-保留的 JSON 清单流程仍记录在 [v1 清单参考](/zh/reference/manifest/)中。
+产品模型版本和每次调用的状态版本有独立的兼容性规则。改变它们需要显式且适用的升级或迁移声明。见[编译后产品契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/program-image.md)和[迁移契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/migration.md)。

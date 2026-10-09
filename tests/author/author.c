@@ -1,5 +1,5 @@
 /* Independent C consumer: public descriptors construct the same typed reference product. */
-#include "compiler_v2.h"
+#include <niobium/compiler.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

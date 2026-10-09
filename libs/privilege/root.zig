@@ -1,11 +1,10 @@
-//! Privilege broker and same-binary helper (ADR-0007, docs/spec/ipc-v1.md). The broker is a
+//! Authenticated privilege broker and helper protocol (docs/spec/ipc.md). The broker is a
 //! `platform.Platform`; the helper serves the closed op set onto the host backend.
 
 const std = @import("std");
 
 pub const broker = @import("broker.zig");
 pub const helper = @import("helper.zig");
-pub const elevate = @import("elevate.zig");
 
 pub const Broker = broker.Broker;
 pub const Session = broker.Session;
@@ -75,6 +74,5 @@ test "helper arguments are closed" {
 test {
     _ = broker;
     _ = helper;
-    _ = elevate;
     _ = @import("privilege_test.zig");
 }

@@ -49,7 +49,7 @@ content = value("record", {
 
 The zero digest here demonstrates a byte value only. The runnable product uses `CONTENT_DIGEST` and `CONTENT_BYTES` generated from the actual canonical content. A hex string and the 32 raw digest bytes are different values.
 
-Composite values contain typed values, rather than ordinary Starlark elements. For example, `value("list", [value("string", "Hello")])` is a typed list. The API also covers tuples, variants, options, results and flags; the constructor details live in [Authoring v2](https://github.com/niobium-project/niobium/blob/main/docs/development/authoring-v2.md#starlark-api).
+Composite values contain typed values, rather than ordinary Starlark elements. For example, `value("list", [value("string", "Hello")])` is a typed list. The API also covers tuples, variants, options, results and flags; the constructor details live in [Authoring v2](https://github.com/niobium-project/niobium/blob/main/docs/development/authoring.md#starlark-api).
 
 A typed record is fixed data. A record binding can combine different sources:
 
@@ -75,7 +75,7 @@ This excerpt shows composition only. The files library's complete request also c
 Verify the middle row without changing the installer:
 
 ```sh
-"$NIOBIUM_REPO/zig-out/bin/niobium-starlark-v2" \
+"$NIOBIUM_REPO/zig-out/bin/nb-starlark-v2" \
   --source "$TUTORIAL_WORK/release1/product.star" \
   --arg enabled=false --out "$TUTORIAL_WORK/values-args.program.json"
 cmp "$TUTORIAL_WORK/release1/product.program.json" \
@@ -112,6 +112,6 @@ The compiler resolves an input's complete type from the actual WIT parameter whe
 
 An unused boolean, integer or fully typed record can supply enough information for inference. An unused empty generic list, absent option, enum, flags, variant or result cannot. For example, `input("unused", value("list", []))` emits author IR but fails compilation with `InputTypeAmbiguous`. Bind such an input to a real typed parameter; do not invent a serialized type field. Input overrides and retained inputs are checked against the compiler-resolved type.
 
-See [Parameter types](https://github.com/niobium-project/niobium/blob/main/docs/development/authoring-v2.md#parameter-types) for the rules, and [Compilation and diagnostics](/tutorial/compilation-diagnostics/) for a type-error experiment.
+See [Parameter types](https://github.com/niobium-project/niobium/blob/main/docs/development/authoring.md#parameter-types) for the rules, and [Compilation and diagnostics](/tutorial/compilation-diagnostics/) for a type-error experiment.
 
 Next: [Content, authority and capability calls](/tutorial/content-capabilities/).

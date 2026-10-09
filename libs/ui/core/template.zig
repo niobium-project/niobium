@@ -1,4 +1,4 @@
-//! Screen templates (docs/spec/ui-ir-v1.md). A `.zon` screen is `@import`ed with
+//! Screen templates (docs/spec/ui-ir.md). A `.zon` screen is `@import`ed with
 //! `TemplateNode` as its result type, so unknown fields and nodes already fail to compile;
 //! `compile` adds the per-kind rules and the ViewModel binding checks at comptime. `check` is
 //! the same validation callable at runtime, which is how the rules are tested.

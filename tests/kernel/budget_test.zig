@@ -15,7 +15,7 @@ test "N2-KERNEL-14 byte ceiling rejects before CAS publication" {
     var temp = std.testing.tmpDir(.{});
     defer temp.cleanup();
     var fixture = try Fixture.init(a, io, temp.dir, 1);
-    var host = platform.Host.init(io, .{ .env = .{}, .system_managers = false });
+    var host = platform.Host.init(io, .{ .env = .{} });
     var options = try fixture.options(&host, .install);
     const grants = try a.dupe(program.model.Grant, options.model.?.grants);
     grants[0].max_bytes = 1;
@@ -33,7 +33,7 @@ test "N2-KERNEL-15 entry ceiling includes synthesized prefix parents" {
     defer temp.cleanup();
     var fixture = try Fixture.init(a, io, temp.dir, 1);
     fixture.prefix = "one/two";
-    var host = platform.Host.init(io, .{ .env = .{}, .system_managers = false });
+    var host = platform.Host.init(io, .{ .env = .{} });
     var options = try fixture.options(&host, .install);
     const grants = try a.dupe(program.model.Grant, options.model.?.grants);
     grants[0].max_entries = 2;
@@ -55,7 +55,7 @@ test "N2-KERNEL-15 ancestors outside the grant remain private host scaffolds" {
     var fixture = try Fixture.init(a, io, temp.dir, 1);
     fixture.prefix = "one/two";
     fixture.directory_policy.everyone = .{ .read = true, .write = true };
-    var host = platform.Host.init(io, .{ .env = .{}, .system_managers = false });
+    var host = platform.Host.init(io, .{ .env = .{} });
     var options = try fixture.options(&host, .install);
     const grants = try a.dupe(program.model.Grant, options.model.?.grants);
     grants[0].prefix = "one/two";
@@ -83,7 +83,7 @@ test "N2-KERNEL-18 Windows rejects unsafe native link syntax before CAS writes" 
     var temp = std.testing.tmpDir(.{});
     defer temp.cleanup();
     var fixture = try Fixture.init(a, io, temp.dir, 1);
-    var host = platform.Host.init(io, .{ .env = .{}, .system_managers = false });
+    var host = platform.Host.init(io, .{ .env = .{} });
     for ([_][]const u8{ "..\\outside", "C:relative", "C:outside/../bin/tool" }) |target| {
         var output: std.Io.Writer.Allocating = .init(a);
         fixture.reference = try content.writeTar(a, io, .{ .entries = &.{

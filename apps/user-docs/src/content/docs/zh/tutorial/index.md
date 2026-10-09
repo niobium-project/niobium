@@ -53,6 +53,5 @@ product.star + loaded modules + build arguments
 
 命令使用 macOS arm64 上的 POSIX shell。Mach-O 组装使用 SDK 中锁定的临时签名工具。生产发布者身份、Gatekeeper 和公证需要单独的资格验证，见[运行时组装流程](https://github.com/niobium-project/niobium/blob/main/docs/development/cross-host-builds.md)。
 
-平台执行记录见[状态与平台](/zh/status/)。本教程不构成 Linux 或 Windows 的资格证明。[保留的首次发布教程](/zh/start/)描述另一套基于清单的旧版流程。
 
 从[准备工具与项目](/zh/tutorial/setup/)开始。

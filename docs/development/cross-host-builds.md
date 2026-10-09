@@ -15,7 +15,7 @@ toolchain is needed inside isolated product assembly.
 
 ```sh
 zig build tools:install
-zig build core:sdk
+zig build sdk:build
 zig build test:core
 ```
 
@@ -29,7 +29,7 @@ GNU Windows also needs an x64 MinGW C toolchain and `dlltool` for the native
 publisher. CI checks and records its target and version. The internal Starlark
 CGO build selects the already-required Zig CC/LLD, independently of that compiler;
 external static SDK consumers use the linker requirements in the
-[authoring guide](authoring-v2.md). A Zig MSVC host instead selects the matching Rust MSVC
+[authoring guide](authoring.md). A Zig MSVC host instead selects the matching Rust MSVC
 archive; it must not consume a GNU archive.
 
 Runtime publication runs the `component` binary policy under
@@ -47,11 +47,11 @@ covers Zig modules, Rust archives, native C helpers and Go/CGO outputs. Record
 effective targets and flag/wrapper provenance; architecture labels and successful
 execution on the publisher's machine do not establish a minimum CPU. Upstream
 prebuilt tools retain their own identities and qualification. The current
-[acceptance ledger](../acceptance-plan-v0.3.md) distinguishes earlier host-specific
+[acceptance ledger](../acceptance-plan.md) distinguishes earlier host-specific
 evidence from the baseline contract's new execution records.
 
 The build graph fetches hash-pinned `wasm-tools`, `wit-bindgen` and portable guest
-libc headers/libraries. `core-sdk` installs the compiler, authoring C library/header,
+libc headers/libraries. `sdk:build` installs the compiler, authoring C library/header,
 Starlark and Component workers, complete host runtime template, runtime-package
 metadata, common WIT, official files Component, two independent consumer releases,
 and the pinned host `rcodesign` executable with its copying notice under `zig-out/`. Native Zig author projects consume the public `compiler.author`
@@ -61,14 +61,14 @@ The runtime publisher supplies a complete template for each target, its profile
 metadata and exact digest. `runtime-package` inspects a template without launching it:
 
 ```sh
-niobium-compiler-v2 runtime-package \
+nb-builder runtime-package \
   --template runtime-template \
   --target aarch64-macos --native-profile aarch64-macos-baseline-v1 \
   --version 0.3.0-dev --out runtime-package.json
 ```
 
 The declared target must match the native image and template profile marker.
-The required [native profile](../spec/runtime-package-v2.md) comes from the
+The required [native profile](../spec/runtime-package.md) comes from the
 publisher's controlled build configuration. Metadata schema 2 records that
 declaration; headers cannot prove its truth. Consumers preserve the publisher's
 record and verify its digest and template binding instead of generating a CPU
@@ -82,9 +82,24 @@ no separate `.res`, manifest file or Windows SDK. The declared
 uses the caller's execution level; standard-token launch remains a separate
 qualification from execution on an administrative CI runner.
 
+## Package SDKs and runtimes
+
+`zig build sdk:c sdk:zig runtime:package` writes release archives to
+`zig-out/packages/`. C SDK archives carry the native static library and
+`include/niobium/compiler.h`; Zig source archives export `compiler.author`
+through the package's `compiler` module. Runtime archives carry the complete
+precompiled executable, runtime metadata, provenance and license records.
+Runtime packaging runs the existing binary dependency, hardening and size policy.
+
+Archive names are defined by [repository layout](repository-layout.md#apps-and-delivered-names).
+An external C/Zig consumer must build from the extracted package rather than
+accidentally linking checkout files. Runtime consumers verify the metadata and
+template digest before product assembly; package creation does not establish
+real OS or publisher-signing qualification.
+
 ## Execute an author program
 
-Use the [authoring guide](authoring-v2.md) for Zig/C/Starlark. Author functions,
+Use the [authoring guide](authoring.md) for Zig/C/Starlark. Author functions,
 conditions and module composition produce typed IR and an optional source map.
 Starlark receives generic `--arg key=value` arguments. JSON files at the compiler
 boundary are emitted IR and lock data; they contain no runtime author expressions.
@@ -100,13 +115,13 @@ selected target template/metadata, emitted product, lock, Components and content
 It needs a host signer when the selected native profile requires signing.
 
 ```sh
-niobium-compiler-v2 compile \
+nb-builder compile \
   --program product.program.json --source-map product.sources.json \
   --lock inputs.lock.json \
   --runtime runtime --runtime-metadata runtime-metadata --worker worker \
   --input runtime=runtime-template \
   --input runtime-metadata=runtime-package.json \
-  --input worker=niobium-component-worker \
+  --input worker=nb-component-worker \
   --input files=files.wasm --input content=content.tar \
   --signer signer --input signer=rcodesign \
   --output setup
@@ -139,9 +154,9 @@ build the other native templates on their own hosts. The repository also provide
 cross-build entrypoints when pinned target engine static libraries are supplied:
 
 ```sh
-zig build runtime-linux-x64 \
+zig build runtime:linux-x64 \
   -Dcomponent-library-linux-x64=/published/linux/libniobium_wasmtime.a
-zig build runtime-windows-x64 \
+zig build runtime:windows-x64 \
   -Dcomponent-library-windows-x64=/published/windows/libniobium_wasmtime.a
 ```
 
@@ -195,5 +210,5 @@ reconfiguration, fresh v2 state, explicit 1-to-2 migration, refusal without a pa
 state/history and uninstall. `kernel-test` separately exercises every coordinator
 kill boundary and repeated recovery with guest execution unavailable.
 
-[Acceptance v0.3](../acceptance-plan-v0.3.md) distinguishes local native, emulated,
+[Acceptance v0.3](../acceptance-plan.md) distinguishes local native, emulated,
 CI, filesystem and identity qualification. It also records what remains unrun.

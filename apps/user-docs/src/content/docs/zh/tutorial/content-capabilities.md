@@ -22,7 +22,7 @@ description: 连接内容身份、逻辑根目录、访问授权、Component 调
 
 `libs/files.wasm` 和 `content/hello.tar` 等 `member` 值是安装器载荷中的成员名称，不是安装路径。根目录与请求的 `prefix="hello"` 共同确定所提出的 `README.txt` 放在哪里。
 
-准备工具把 `payload/README.txt` 编码为规范 POSIX pax 内容。`container()` 声明其身份；请求中的带类型 `content` record 向库传入相同身份。编译器输入锁文件另行固定组装安装器时使用的源字节。规范化与身份规则见[内容契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/content-container-v1.md)。
+准备工具把 `payload/README.txt` 编码为规范 POSIX pax 内容。`container()` 声明其身份；请求中的带类型 `content` record 向库传入相同身份。编译器输入锁文件另行固定组装安装器时使用的源字节。规范化与身份规则见[内容契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/content-container.md)。
 
 ## 授权上限与期望访问策略
 
@@ -56,7 +56,7 @@ file_access = value("record", {
 })
 ```
 
-目录策略的 `kind="directory"`，权限相同。两者使用精确的 WIT 字段名 `file-access` 和 `directory-access` 放入请求。期望策略必须在授权上限之内。归档 mode `0644` 是内容元数据，不会授予安装后的访问权。这个可移植策略中，目录的 `execute` 必须为 false。本机映射和拒绝规则见 [Portable access policy](https://github.com/niobium-project/niobium/blob/main/docs/spec/access-policy-v1.md)。
+目录策略的 `kind="directory"`，权限相同。两者使用精确的 WIT 字段名 `file-access` 和 `directory-access` 放入请求。期望策略必须在授权上限之内。归档 mode `0644` 是内容元数据，不会授予安装后的访问权。这个可移植策略中，目录的 `execute` 必须为 false。本机映射和拒绝规则见 [Portable access policy](https://github.com/niobium-project/niobium/blob/main/docs/spec/access-policy.md)。
 
 ## 值与计划
 
@@ -109,11 +109,11 @@ FLOW_BUILD="$TUTORIAL_WORK/flow"
 "$NIOBIUM_REPO/zig-out/bin/niobium-tutorial-prepare" \
   --sdk "$NIOBIUM_REPO/zig-out" \
   --source "$NIOBIUM_REPO/examples/dsl-tutorial" --out "$FLOW_BUILD"
-"$NIOBIUM_REPO/zig-out/bin/niobium-starlark-v2" \
+"$NIOBIUM_REPO/zig-out/bin/nb-starlark-v2" \
   --source "$FLOW_BUILD/product_flow.star" \
   --out "$FLOW_BUILD/product.program.json" \
   --source-map "$FLOW_BUILD/product.sources.json"
-"$NIOBIUM_REPO/zig-out/bin/niobium-compiler-v2" compile \
+"$NIOBIUM_REPO/zig-out/bin/nb-builder" compile \
   --program "$FLOW_BUILD/product.program.json" \
   --source-map "$FLOW_BUILD/product.sources.json" \
   --lock "$FLOW_BUILD/inputs.lock.json" \

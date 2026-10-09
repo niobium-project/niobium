@@ -5,7 +5,7 @@
 
 ## Context
 
-Niobium is a hobby project with one maintainer and no company resources ([About the project](../../apps/user-docs/src/content/docs/about.md)). Every platform the project claims costs build, test and release time on every change. Today only a macOS aarch64 host runs `zig build verify`, and real-OS evidence for Windows and Linux depends on local Parallels VMs ([vm-smoke](../runbooks/vm-smoke.md)). Without an explicit policy, "it cross-compiles" drifts into "it is supported", which AGENTS.md section 6 forbids.
+Niobium is a hobby project with one maintainer and no company resources ([About the project](../../apps/user-docs/src/content/docs/about.md)). Every platform the project claims costs build, test and release time on every change. Today only a macOS aarch64 host runs `zig build verify`, and real-OS evidence for Windows and Linux depends on local Parallels VMs (real-OS qualification). Without an explicit policy, "it cross-compiles" drifts into "it is supported", which AGENTS.md section 6 forbids.
 
 ## Decision
 
@@ -29,5 +29,5 @@ Every build target belongs to one of three tiers. The current assignment, the re
 ## Consequences
 
 - A Linux Tier 1 claim covers the reference distribution only (Ubuntu LTS). Other distributions are at most Tier 2 until they have their own lane.
-- Tier 1 targets currently lack some of the lanes their tier requires (an x86_64 Ubuntu guest, native x64 Windows, machine-scope smoke, the macOS GUI walkthrough). These gaps are on the Platform support roadmap and in [roadmap-v0.1](../roadmap-v0.1.md); until they close, the affected acceptance entries stay `BLOCKED` or `NOT_RUN`.
+- Tier 1 targets currently lack some of the lanes their tier requires (an x86_64 Ubuntu guest, native x64 Windows, machine-scope smoke, the macOS GUI walkthrough). These gaps are on the Platform support roadmap and in [roadmap-v0.1](../roadmap.md); until they close, the affected acceptance entries stay `BLOCKED` or `NOT_RUN`.
 - A new platform backend ([niobium-platform-capability](../../.agents/skills/niobium-platform-capability/SKILL.md)) enters at Tier 3.

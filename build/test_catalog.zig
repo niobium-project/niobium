@@ -10,14 +10,6 @@ pub const Case = struct {
 pub const cases = [_]Case{
     .{ .id = "host-user", .suite = .conformance, .acceptance = &.{"N1-AC-14"} },
     .{ .id = "host-machine", .suite = .conformance, .acceptance = &.{"N1-AC-14"} },
-    .{
-        .id = "online-lifecycle",
-        .suite = .e2e,
-        .acceptance = &.{ "N1-UJ-01", "N1-UJ-03", "N1-UJ-04", "N1-INV-06" },
-    },
-    .{ .id = "repair-uninstall", .suite = .e2e, .acceptance = &.{ "N1-UJ-05", "N1-UJ-06" } },
-    .{ .id = "offline-bundle", .suite = .e2e, .acceptance = &.{"N1-UJ-07"} },
-    .{ .id = "artifact-tampering", .suite = .e2e, .acceptance = &.{"N1-INV-05"} },
 };
 
 pub const contracts = [_][]const u8{
@@ -42,6 +34,7 @@ pub const Selection = struct {
         var names = std.mem.splitScalar(u8, suites orelse "unit,conformance", ',');
         while (names.next()) |name| {
             const suite = std.meta.stringToEnum(Suite, name) orelse return error.InvalidSelection;
+            if (suite == .sim or suite == .@"c-smoke") return error.InvalidSelection;
             if (selected.contains(suite)) return error.InvalidSelection;
             selected.insert(suite);
         }
@@ -77,9 +70,9 @@ test "N1-AC-20 selection fails closed and preserves the fast default" {
     const fast = try Selection.parse(null, null);
     try std.testing.expect(fast.suites.contains(.unit));
     try std.testing.expect(fast.suites.contains(.conformance));
-    const one = try Selection.parse("e2e,conformance", "online-lifecycle");
+    const one = try Selection.parse("e2e,conformance", "host-user");
     try std.testing.expectEqual(@as(usize, 1), one.suites.count());
-    for ([_][]const u8{ "", "vm", "unit,", "sim,sim" }) |bad| {
+    for ([_][]const u8{ "", "vm", "unit,", "sim", "c-smoke", "sim,sim" }) |bad| {
         try std.testing.expectError(error.InvalidSelection, Selection.parse(bad, null));
     }
     try std.testing.expectError(error.InvalidSelection, Selection.parse("unit", "host-user"));

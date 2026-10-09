@@ -120,11 +120,11 @@ pub fn evidenceKey(
     retention: Retention,
 ) ![]const u8 {
     return std.fmt.allocPrint(a, "{s}/{s}", .{
-        try reportPrefix(a, report), try legacyEvidenceKey(a, report, file, retention),
+        try reportPrefix(a, report), try relativeEvidenceKey(a, report, file, retention),
     });
 }
 
-pub fn legacyEvidenceKey(
+pub fn relativeEvidenceKey(
     a: std.mem.Allocator,
     report: Report,
     file: []const u8,

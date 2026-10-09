@@ -14,7 +14,7 @@ without them.
 
 Rust 1.96.1 builds the Component engine and wasm32 guests. Go 1.26.8 builds the
 Starlark worker. Node.js stays a host tool for the user-docs site
-([ADR-0015](0015-node-toolchain-for-user-docs.md)). Example packages, VM smoke,
+([ADR-0015](0015-node-toolchain-for-user-docs.md)). Example packages, target witnesses,
 OS signing tools, and the Windows GNU publisher's `gcc` and `dlltool` are not
 downloaded by the build.
 
@@ -29,9 +29,9 @@ downloaded by the build.
 2. Build and test steps that invoke Cargo or Go run those cache binaries and
    depend on installation. Configuration does not use the network or probe
    `PATH`. `zig build tools:doctor` checks the installed versions.
-3. `example:*` and `vm:smoke` do not install a toolchain. When `prlctl` is
-   missing, `vm:smoke` fails and names `docs/runbooks/vm-smoke.md`.
-4. Public step names are `fmt`, `lint`, `check`, `test`, `verify`, and `run`,
+3. `example:*` wrappers do not install a toolchain. Target execution is a separate
+   qualification step.
+4. Public step names are `fmt`, `lint`, `check`, `test`, `verify`,
    or `namespace:leaf` with at most one extra colon. The catalog is
    `build/commands.zig`. [Tooling](../development/tooling-and-rules.md) lists
    the commands.

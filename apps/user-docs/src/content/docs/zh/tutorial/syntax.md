@@ -59,10 +59,10 @@ declare_inputs(["cli", "examples"], {"cli": True, "examples": False},
 求值两次，写入两个新文件：
 
 ```sh
-"$NIOBIUM_REPO/zig-out/bin/niobium-starlark-v2" \
+"$NIOBIUM_REPO/zig-out/bin/nb-starlark-v2" \
   --source "$TUTORIAL_WORK/syntax.star" \
   --out "$TUTORIAL_WORK/syntax.program.json"
-"$NIOBIUM_REPO/zig-out/bin/niobium-starlark-v2" \
+"$NIOBIUM_REPO/zig-out/bin/nb-starlark-v2" \
   --source "$TUTORIAL_WORK/syntax.star" --arg docs=true \
   --out "$TUTORIAL_WORK/syntax-docs.program.json"
 cat "$TUTORIAL_WORK/syntax.program.json"
@@ -101,6 +101,6 @@ worker 提供 Starlark 和 Niobium 作者内建函数。它不提供 Python 导�
 
 安装期间，输入绑定和宿主观察向固定能力调用提供值。需要在这个阶段执行的产品行为属于能力库，例如 files 库根据 `enabled` 决定是否部署内容。
 
-作者 API 和 worker 限制见 [Authoring v2](https://github.com/niobium-project/niobium/blob/main/docs/development/authoring-v2.md)。
+作者 API 和 worker 限制见 [Authoring v2](https://github.com/niobium-project/niobium/blob/main/docs/development/authoring.md)。
 
 下一章：[值、绑定与安装输入](/zh/tutorial/values-bindings/)。

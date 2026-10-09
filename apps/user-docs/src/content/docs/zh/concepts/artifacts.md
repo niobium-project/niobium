@@ -15,7 +15,7 @@ description: 区分可部署内容、能力库、运行时模板和最终安装�
 
 解析器拒绝不安全的名称、越界链接、冲突条目、不支持的归档特征和超出限制的大小。部署时，逻辑验证之后还会检查原生目标名称和文件系统。解析出有效容器不构成向机器写入的授权。
 
-归档模式仍属于内容元数据。显式请求的访问策略和[授权](/zh/concepts/privilege/)控制部署后的访问。完整表示与规范化规则见[内容契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/content-container-v1.md)。
+归档模式仍属于内容元数据。显式请求的访问策略和[授权](/zh/concepts/privilege/)控制部署后的访问。完整表示与规范化规则见[内容契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/content-container.md)。
 
 ## 锁定输入与最终字节
 
@@ -23,23 +23,4 @@ description: 区分可部署内容、能力库、运行时模板和最终安装�
 
 组装器将预编译运行时模板复制到输出映像，不执行或重新链接它。最终签名改变交付映像的身份。资格验证必须标识这些最终字节；单独的内容摘要或模板摘要不认证发布者身份。
 
-[编译器输入契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/compiler-inputs-v1.md)规定锁定规则。[安装器映像契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/setup-image-v2.md)规定组装和最终映像度量。
-
-## 保留的便携运行 { #portable-run }
-
-<details data-pagefind-ignore>
-<summary>清单时代的便携运行与离线包</summary>
-
-本节描述基于清单的 v1 运行时。它的 `setup run` 命令与 Component-v2 教程安装器属于不同的配置。
-
-v1 可部署组件拥有包含 `component.json` 和 `files/` 的 `tar.zst` 制品。便携运行通过签名仓库解析发布，将其提取到按用户划分、按内容寻址的缓存，并在不创建安装根目录的情况下运行具名入口点：
-
-```sh
-setup run com.example.hello:runtime.main --repo repo -- --some-argument
-```
-
-保留的运行时按摘要复用缓存组件，移除 30 天未使用的条目，并返回程序退出码。其[制品参考](/zh/reference/artifact-format/)和 [CLI 参考](/zh/reference/setup-cli/)保留此适用范围。
-
-v1 离线包将 `setup` 放在完整的签名 `repository/` 目录旁边。见保留的[发布指南](/zh/guides/publish-and-host/#ship-an-offline-bundle)。当前教程将固定输入直接打包到交付的安装器中。
-
-</details>
+[编译器输入契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/compiler-inputs.md)规定锁定规则。[安装器映像契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/setup-image.md)规定组装和最终映像度量。

@@ -35,7 +35,7 @@ The Node.js major version is in `.nvmrc`. Dependencies are pinned to exact versi
 - Link to other pages by root-relative route with a trailing slash: `/guides/package/`, `/reference/exit-codes/#codes`. Do not add the version base; the build adds it.
 - Link to repository files by `https://github.com/niobium-project/niobium/blob/main/<path>`, or `tree/main/<path>` for a directory. `zig build check:docs` fails if the path does not exist.
 - The specifications in `docs/spec/` are the source of truth. Summarize and link to them instead of copying them.
-- Status claims use only `PASS`, `FAIL`, `BLOCKED`, `NOT_RUN` and `DEFERRED`. Current Component results come from [acceptance v0.3](../../docs/acceptance-plan-v0.3.md); [Core Wasm v1 records](../../docs/acceptance-plan-v0.2.md) and [historical N1 records](../../docs/acceptance-plan-v0.1.md) retain their original scopes.
+- Status claims use only `PASS`, `FAIL`, `BLOCKED`, `NOT_RUN` and `DEFERRED`. Current Component results and independent shared test-system/component records come from [acceptance](../../docs/acceptance-plan.md), with exact source and execution scopes.
 
 ## Chinese pages
 

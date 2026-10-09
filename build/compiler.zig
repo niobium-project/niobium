@@ -1,109 +1,62 @@
-//! Build-time authoring tools. This graph never becomes a runtime dependency.
+//! The product compiler runs on the build host and consumes separately published runtimes.
 
 const std = @import("std");
 const commands = @import("commands.zig");
 const graph_mod = @import("graph.zig");
 
-const Compile = std.Build.Step.Compile;
-pub const Artifacts = struct {
-    compiler: *Compile,
-    library: *Compile,
-    author_zig: *Compile,
-    author_c: *Compile,
-    starlark: std.Build.LazyPath,
-    tests: *std.Build.Step,
-};
+pub const Artifacts = struct { compiler: *std.Build.Step.Compile, tests: *std.Build.Step };
 
-pub fn add(
-    b: *std.Build,
-    graph: *const graph_mod.Graph,
-    host: @import("host_tools.zig").Tools,
-) Artifacts {
-    const compiler = b.addExecutable(.{
-        .name = "niobium-compiler",
-        .root_module = graph.root("apps/compiler/main.zig", &.{
-            "compiler", "contracts", "program",
-        }),
+pub fn add(b: *std.Build, inputs: graph_mod.Inputs) Artifacts {
+    const graph = graph_mod.create(b, .{
+        .target = @import("publication.zig").baselineTarget(b),
+        .optimize = .safe,
+        .inputs = inputs,
     });
-    const library = b.addLibrary(.{
-        .name = "niobium_compiler",
-        .linkage = .static,
-        .root_module = graph.root("apps/libcompiler/root.zig", &.{ "compiler", "contracts" }),
-    });
-    const author_zig = b.addExecutable(.{
-        .name = "author-zig",
-        .root_module = graph.root("examples/aot/author.zig", &.{ "compiler", "contracts" }),
-    });
-    const author_c = cExample(b, graph, library);
-    const go_build = goCommand(b, library, host);
-    go_build.addArgs(&.{ "build", "-trimpath", "-buildvcs=false", "-mod=readonly", "-o" });
-    const starlark = go_build.addOutputFileArg("niobium-starlark");
-    go_build.addArg(".");
-    const tests = commands.step(b, "aot:authoring", "Compiler authoring and Starlark conformance");
-    const go_test = goCommand(b, library, host);
-    // ABI v2 is tested by author-v2-test with its independently linked C library.
-    go_test.addArgs(&.{ "test", "-mod=readonly", "-count=1", "." });
-    tests.dependOn(&go_test.step);
-    for ([_][]const u8{ "apps/libcompiler/root.zig", "apps/compiler/main.zig" }) |source| {
-        const suite = b.addTest(.{
-            .root_module = graph.root(source, &.{ "compiler", "contracts", "program" }),
-        });
-        tests.dependOn(&b.addRunArtifact(suite).step);
-    }
-    return .{
-        .compiler = compiler,
-        .library = library,
-        .author_zig = author_zig,
-        .author_c = author_c,
-        .starlark = starlark,
-        .tests = tests,
+    const imports = &.{
+        "compiler",        "program",          "contracts", "content", "image", "access",
+        "host_primitives", "component_client",
     };
+    const compiler = b.addExecutable(.{
+        .name = "nb-builder",
+        .root_module = graph.root("apps/compiler/main.zig", imports),
+    });
+    const install = b.addInstallArtifact(compiler, .{});
+    const step = commands.step(
+        b,
+        "compiler:build",
+        "Build the host compiler for standard Component products",
+    );
+    step.dependOn(&install.step);
+    const suite = b.addTest(.{ .root_module = graph.root("apps/compiler/main.zig", imports) });
+    const tests = commands.step(b, "test:compiler", "Host compiler argument and adapter checks");
+    tests.dependOn(&b.addRunArtifact(suite).step);
+    addLinux(b, inputs);
+    return .{ .compiler = compiler, .tests = tests };
 }
 
-fn cExample(b: *std.Build, graph: *const graph_mod.Graph, library: *Compile) *Compile {
-    const module = b.createModule(.{
-        .target = graph.config.target,
-        .optimize = graph.config.optimize,
-        .link_libc = true,
+fn addLinux(b: *std.Build, inputs: graph_mod.Inputs) void {
+    const graph = graph_mod.create(b, .{
+        .target = b.resolveTargetQuery(.{
+            .cpu_arch = .x86_64,
+            .cpu_model = .baseline,
+            .os_tag = .linux,
+            .abi = .musl,
+        }),
+        .optimize = .safe,
+        .inputs = inputs,
     });
-    module.addIncludePath(b.path("api/c"));
-    module.addCSourceFile(.{
-        .file = b.path("examples/aot/author.c"),
-        .flags = &.{ "-std=c11", "-Wall", "-Wextra", "-Werror" },
-    });
-    module.linkLibrary(library);
-    return b.addExecutable(.{ .name = "author-c", .root_module = module });
-}
-
-fn goCommand(
-    b: *std.Build,
-    library: *Compile,
-    host: @import("host_tools.zig").Tools,
-) *std.Build.Step.Run {
-    const launcher = b.addExecutable(.{
-        .name = "go-author-build-v1",
-        .root_module = b.createModule(.{
-            .root_source_file = b.path("apps/starlark/build.zig"),
-            .target = b.graph.host,
-            .optimize = .safe,
+    const compiler = b.addExecutable(.{
+        .name = "nb-builder-linux-x64",
+        .root_module = graph.root("apps/compiler/main.zig", &.{
+            "compiler",        "program",          "contracts", "content", "image", "access",
+            "host_primitives", "component_client",
         }),
     });
-    const run = b.addRunArtifact(launcher);
-    run.step.dependOn(host.install);
-    const target = library.rootModuleTarget();
-    if (target.os.tag == .macos) {
-        const minimum = target.os.version_range.semver.min;
-        run.setEnvironmentVariable("MACOSX_DEPLOYMENT_TARGET", b.fmt("{d}.{d}.{d}", .{
-            minimum.major, minimum.minor, minimum.patch,
-        }));
-    }
-    run.addFileArg(library.getEmittedBin());
-    run.addArg(@import("host_tools.zig").goBinary(b));
-    run.setCwd(b.path("apps/starlark"));
-    run.addFileInput(library.getEmittedBin());
-    run.addFileInput(b.path("api/c/compiler.h"));
-    for ([_][]const u8{
-        "go.mod", "go.sum", "author.go", "builtins.go", "main.go", "main_test.go",
-    }) |file| run.addFileInput(b.path(b.fmt("apps/starlark/{s}", .{file})));
-    return run;
+    const install = b.addInstallArtifact(compiler, .{});
+    const step = commands.step(
+        b,
+        "compiler:linux-x64",
+        "Build the Linux x64 host compiler without an engine",
+    );
+    step.dependOn(&install.step);
 }

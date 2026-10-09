@@ -20,7 +20,7 @@ shell text from a report. Local tests need neither AWS CLI nor credentials.
 A separate trusted publisher consumes untrusted test artifacts as bounded data. R2 credentials
 are bucket-scoped deployment inputs available only to publication. Reports are published last
 and immutable; a repeated create succeeds only for identical content. The versioned protocol is
-[test-system-v1](../spec/test-system-v1.md).
+[test-system-v1](../spec/test-system.md).
 
 ## Consequences
 

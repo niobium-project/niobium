@@ -1,5 +1,6 @@
 //! Docs lint (zig build check:docs): relative links resolve, ADR fields, acceptance IDs, spec
-//! filenames carry a version, docs are English, URLs only name public allowed hosts, and every
+//! filenames identify current owners without version suffixes. Docs use English and public hosts;
+//! every
 //! build target has a tier on the Platform support page.
 
 const std = @import("std");
@@ -8,10 +9,7 @@ const links = @import("links.zig");
 const locales = @import("locales.zig");
 const targets = @import("targets.zig");
 
-pub const acceptance_path = "docs/acceptance-plan-v0.3.md";
-const acceptance_paths = [_][]const u8{
-    "docs/acceptance-plan-v0.1.md", "docs/acceptance-plan-v0.2.md", acceptance_path,
-};
+pub const acceptance_path = "docs/acceptance-plan.md";
 
 /// Public hosts the repository may reference; adding one is a reviewed change.
 /// `example.com` and its subdomains are always allowed for fixtures.
@@ -70,8 +68,8 @@ pub fn main(init: std.process.Init) !void {
         if (!markdown) continue;
         try checkLinks(&report, io, path, bytes);
         if (isAdr(path)) try checkAdr(&report, path, bytes, adr_index);
-        if (std.mem.startsWith(u8, path, "docs/spec/") and !hasVersion(path)) {
-            try report.add("{s}: spec filename must end with -v<N>.md", .{path});
+        if (std.mem.startsWith(u8, path, "docs/spec/") and hasVersion(path)) {
+            try report.add("{s}: spec filename must not end with a version suffix", .{path});
         }
     }
     try checkAcceptance(&report, io, files);
@@ -271,14 +269,12 @@ fn validFamily(family: []const u8) bool {
     return true;
 }
 
-/// Historical test requirements remain active; new plans have independent status/evidence.
+/// One current ledger owns all active IDs and preserves each evidence scope.
 fn checkAcceptance(report: *repo.Report, io: std.Io, files: repo.Files) !void {
     var planned: IdSet = .empty;
     var needs_test: IdSet = .empty;
-    for (acceptance_paths) |path| {
-        const plan = try repo.read(report.arena, io, path);
-        try collectPlan(report, path, plan, &planned, &needs_test);
-    }
+    const plan = try repo.read(report.arena, io, acceptance_path);
+    try collectPlan(report, acceptance_path, plan, &planned, &needs_test);
     var cited: IdSet = .empty;
     for (files.paths) |path| {
         if (!std.mem.endsWith(u8, path, ".zig")) continue;
@@ -498,7 +494,7 @@ test "site sources and workflows are scanned, mdx is markdown" {
     try std.testing.expect(!isMarkdown("apps/user-docs/package.json"));
 }
 
-test "spec filenames need a version" {
+test "current spec filenames reject historical version suffixes" {
     try std.testing.expect(hasVersion("docs/spec/manifest-v1.md"));
     try std.testing.expect(!hasVersion("docs/spec/manifest.md"));
 }
@@ -531,4 +527,13 @@ test "superseded ADRs name successors and reject unknown statuses" {
     try std.testing.expectEqualStrings("Superseded", adrStatus(
         "- **Status:** Superseded\n- **Superseded by:** [new](0022.md)\n",
     ).?);
+}
+
+test "current acceptance ledger contains independent N1 and active N2 obligations" {
+    var planned: IdSet = .empty;
+    defer planned.deinit(std.testing.allocator);
+    try collectIds(std.testing.allocator, "N1-AC-21 N2-CORE-01", &planned);
+    try std.testing.expect(planned.contains("N1-AC-21"));
+    try std.testing.expect(planned.contains("N2-CORE-01"));
+    try std.testing.expectEqualStrings("docs/acceptance-plan.md", acceptance_path);
 }

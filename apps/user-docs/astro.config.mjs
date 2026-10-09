@@ -15,12 +15,6 @@ import { baseLinks } from './src/markdown/base-links.mjs';
 import { docsBase } from './src/site-version.mjs';
 
 const repository = 'https://github.com/niobium-project/niobium';
-const legacyPages = [
-  'start',
-  'guides/**',
-  'concepts/{trust,channels,app-bootstrap}',
-  'reference/{manifest,setup-cli,nbpack-cli,exit-codes,events,c-abi,artifact-format,repository-layout}',
-];
 
 /** Sidebar label in both locales. @param {keyof typeof en & keyof typeof zh} key */
 const label = (key) => ({ label: en[key], translations: { 'zh-CN': zh[key] } });
@@ -57,8 +51,6 @@ export default defineConfig({
         starlightLinksValidator(),
         starlightLlmsTxt({
           projectName: 'Niobium',
-          demote: legacyPages,
-          exclude: legacyPages,
         }),
       ],
       sidebar: [
@@ -111,41 +103,7 @@ export default defineConfig({
           ...label('niobium.sidebar.reference'),
           items: ['reference/glossary'],
         },
-        {
-          ...label('niobium.sidebar.legacy'),
-          collapsed: true,
-          items: [
-            { ...label('niobium.sidebar.legacyTutorial'), slug: 'start' },
-            {
-              ...label('niobium.sidebar.concepts'),
-              items: ['concepts/trust', 'concepts/channels', 'concepts/app-bootstrap'],
-            },
-            {
-              ...label('niobium.sidebar.guides'),
-              items: [
-                'guides/package',
-                'guides/sign-and-keys',
-                'guides/publish-and-host',
-                'guides/app-bootstrap',
-                'guides/embed-c-abi',
-                'guides/silent-install',
-              ],
-            },
-            {
-              ...label('niobium.sidebar.reference'),
-              items: [
-                'reference/manifest',
-                'reference/setup-cli',
-                'reference/nbpack-cli',
-                'reference/exit-codes',
-                'reference/events',
-                'reference/c-abi',
-                'reference/artifact-format',
-                'reference/repository-layout',
-              ],
-            },
-          ],
-        },
+
       ],
     }),
   ],

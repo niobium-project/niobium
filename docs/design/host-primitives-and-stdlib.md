@@ -40,14 +40,14 @@ More detailed machine facts need explicit contracts and provenance.
 
 ## Content and access
 
-[Content container v1](../spec/content-container-v1.md) owns logical naming,
+[Content container v1](../spec/content-container.md) owns logical naming,
 metadata and canonical pax. Target name restrictions belong to native deployment:
 Windows reserved names cannot become a global Linux/macOS naming policy.
 Native exclusive creation detects filesystem aliases before commit. Symbolic link
 text remains exact; native traversal and target-kind requirements are checked
 before staging. Windows creation privilege is a separate runtime observation.
 
-[Access policy v1](../spec/access-policy-v1.md) defines the portable discretionary
+[Access policy v1](../spec/access-policy.md) defines the portable discretionary
 subset. POSIX modes and Windows DACLs are separate representations. The host
 verifies the requested policy and preserves native identity/metadata for recovery;
 it refuses unsupported ACLs, filesystems or rules.
@@ -63,7 +63,7 @@ persisted with the actual private policy; it cannot widen rights above a grant.
 
 ## Lifecycle and durable identity
 
-The [lifecycle specification](../spec/runtime-lifecycle-v2.md) owns the detailed
+The [lifecycle specification](../spec/runtime-lifecycle.md) owns the detailed
 state machine. The host checks grants and resource budgets before publishing
 content into durable storage, then validates the captured inventory again. A
 frozen plan contains stable identities, relative paths, hashes and versions.
@@ -107,4 +107,4 @@ unsupported outcomes and failure vectors. Then implement the native adapter and
 recovery path, qualify real effects on each claimed target, and publish a runtime
 profile containing that version. Libraries and presets can evolve independently
 once those contracts are fixed. [Product journeys](product-journeys.md) and
-[roadmap v0.3](../roadmap-v0.3.md) provide the parallel work packages.
+[roadmap v0.3](../roadmap.md) provide the parallel work packages.

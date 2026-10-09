@@ -13,28 +13,6 @@
         "branded"
       ]
     },
-    "product_id": {
-      "type": "string"
-    },
-    "channel": {
-      "enum": [
-        "stable",
-        "beta",
-        "nightly"
-      ]
-    },
-    "repository": {
-      "type": "string"
-    },
-    "trust_root": {
-      "type": "string"
-    },
-    "default_scope": {
-      "enum": [
-        "user",
-        "machine"
-      ]
-    },
     "branding": {
       "type": "object",
       "properties": {

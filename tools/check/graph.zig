@@ -117,16 +117,16 @@ test "declared graph is acyclic and layered" {
 }
 
 test "edge rules reject upward and UI leaks" {
-    const engine = specs.find("engine").?;
+    const kernel = specs.find("kernel").?;
     const core = specs.find("core").?;
     const ui_core = specs.find("ui_core").?;
-    try std.testing.expect(edgeViolation(core, engine) != null);
-    try std.testing.expect(edgeViolation(engine, ui_core) != null);
-    try std.testing.expect(edgeViolation(ui_core, engine) != null);
+    try std.testing.expect(edgeViolation(core, kernel) != null);
+    try std.testing.expect(edgeViolation(kernel, ui_core) != null);
+    try std.testing.expect(edgeViolation(ui_core, kernel) != null);
 }
 
 test "install-time phase rejects compiler and policy dependencies" {
-    var runtime = specs.find("runtime").?;
+    var runtime = specs.find("runtime_process").?;
     const compiler = specs.find("compiler").?;
     runtime.layer = compiler.layer;
     try std.testing.expect(edgeViolation(runtime, compiler) != null);

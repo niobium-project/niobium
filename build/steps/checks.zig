@@ -12,8 +12,6 @@ pub const source_roots = [_][]const u8{
     "build.zig",
     "examples",
     "third_party/stb_truetype/bindings.zig",
-    "third_party/zstd/bindings.zig",
-    "third_party/wamr/bindings.zig",
 };
 
 pub const Tools = struct {
@@ -25,7 +23,6 @@ pub const Tools = struct {
     check_each: *std.Build.Step.Compile,
     check_binary: *std.Build.Step.Compile,
     gen_tokens: *std.Build.Step.Compile,
-    vm_smoke: *std.Build.Step.Compile,
     fetch_deps: *std.Build.Step.Compile,
 };
 
@@ -49,7 +46,6 @@ pub fn addTools(b: *std.Build, host: std.Build.ResolvedTarget) Tools {
         .check_each = tool(b, host, "check-each", shared),
         .check_binary = tool(b, host, "check-binary", shared),
         .gen_tokens = tool(b, host, "gen-tokens", shared),
-        .vm_smoke = tool(b, host, "vm-smoke", shared),
         .fetch_deps = tool(b, host, "fetch-deps", shared),
     };
 }

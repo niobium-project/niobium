@@ -23,12 +23,9 @@ test {
     _ = host;
     _ = names;
     _ = @import("files.zig");
-    _ = @import("command.zig");
     _ = @import("space.zig");
     // Renderers of every OS are pure and tested on every host.
     _ = @import("macos.zig");
     _ = @import("linux.zig");
     _ = @import("windows.zig");
-    _ = @import("windows_registry.zig");
-    _ = @import("windows_service.zig");
 }

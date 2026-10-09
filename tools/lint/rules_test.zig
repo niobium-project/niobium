@@ -62,16 +62,16 @@ test "boundaries" {
         "parser-int-cast",
     );
     try expectRule(
-        "libs/engine/a.zig",
+        "libs/compiler/a.zig",
         "fn f(p: *u8) usize { return @intFromPtr(p); }",
         "ptr-cast-allowlist",
     );
     try expectRule(
-        "libs/engine/a.zig",
+        "libs/compiler/a.zig",
         "fn f() void { _ = std.process.spawn(io, .{}); }",
         "spawn-allowlist",
     );
-    try expectRule("libs/engine/a.zig", "fn f() void { @panic(\"x\"); }", "panic-owner");
+    try expectRule("libs/compiler/a.zig", "fn f() void { @panic(\"x\"); }", "panic-owner");
     try expectRule("libs/contracts/a.zig", "const T = struct { n: usize };", "no-usize-contracts");
 }
 

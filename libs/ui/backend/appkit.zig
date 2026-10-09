@@ -1,6 +1,6 @@
 //! AppKit window through the Objective-C runtime C API (no ObjC compiler). One NSWindow with a
 //! runtime-registered NSView subclass; the canvas is drawn as a CGImage in `drawRect:`.
-//! Crash traps (docs/spec/platform-contract-v1.md): every call happens on the main thread
+//! Crash traps (docs/spec/platform-contract.md): every call happens on the main thread
 //! (`open` refuses otherwise), each loop turn runs inside an autorelease pool, ObjC methods
 //! only queue events and never fail, and strings are checked before reaching NSString.
 

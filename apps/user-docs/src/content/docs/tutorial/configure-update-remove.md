@@ -45,7 +45,7 @@ zig-out/bin/niobium-tutorial-prepare \
   --sdk "$NIOBIUM_REPO/zig-out" \
   --source "$TUTORIAL_WORK/source" \
   --out "$TUTORIAL_WORK/release2"
-zig-out/bin/niobium-starlark-v2 \
+zig-out/bin/nb-starlark-v2 \
   --source "$TUTORIAL_WORK/release2/product.star" \
   --out "$TUTORIAL_WORK/release2/product.program.json" \
   --source-map "$TUTORIAL_WORK/release2/product.sources.json" \
@@ -57,7 +57,7 @@ The prepare tool records the changed content's identity. `--arg release_sequence
 Assemble the second installer:
 
 ```sh
-zig-out/bin/niobium-compiler-v2 compile \
+zig-out/bin/nb-builder compile \
   --program "$TUTORIAL_WORK/release2/product.program.json" \
   --source-map "$TUTORIAL_WORK/release2/product.sources.json" \
   --lock "$TUTORIAL_WORK/release2/inputs.lock.json" \
@@ -92,7 +92,7 @@ The file reads:
 Hello from the Niobium DSL tutorial, release 2.
 ```
 
-The root mapping remains the same. The runtime publishes a generation containing the new content and persists the new release. The [migration contract](https://github.com/niobium-project/niobium/blob/main/docs/spec/migration-v2.md) defines separate rules for changes to model and call state versions.
+The root mapping remains the same. The runtime publishes a generation containing the new content and persists the new release. The [migration contract](https://github.com/niobium-project/niobium/blob/main/docs/spec/migration.md) defines separate rules for changes to model and call state versions.
 
 ## Uninstall and check the result
 

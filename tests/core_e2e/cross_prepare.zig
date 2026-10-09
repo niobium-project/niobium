@@ -12,7 +12,13 @@ pub fn main(init: std.process.Init) !void {
     try Dir.cwd().createDir(init.io, base, .default_dir);
     const dir = try Dir.cwd().openDir(init.io, base, .{});
     defer dir.close(init.io);
-    try Dir.cwd().copyFile(args[2], dir, "compiler", init.io, .{ .permissions = .executable_file });
+    try Dir.cwd().copyFile(
+        args[2],
+        dir,
+        "nb-builder",
+        init.io,
+        .{ .permissions = .executable_file },
+    );
     try Dir.cwd().copyFile(
         args[11],
         dir,

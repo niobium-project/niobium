@@ -24,7 +24,7 @@ Niobium 是面向安装与分发的 DSL，包含 AOT 编译器、预编译 runti
 
 可选模块、workload、SDK 共存和缺少前置依赖时的处理，属于产品库与预设。检测已有资源不代表取得其所有权。原生机制必须有界并经过授权；添加 Wasm 库不会自动增加 OS primitive 或任意进程权限。
 
-[工作包](https://github.com/niobium-project/niobium/blob/main/docs/roadmap-v0.3.md)、[功能归属目录](https://github.com/niobium-project/niobium/blob/main/docs/feature-coverage.md)与[产品旅程](https://github.com/niobium-project/niobium/blob/main/docs/design/product-journeys.md)给出接口、依赖、反向测试向量和验收责任。
+[工作包](https://github.com/niobium-project/niobium/blob/main/docs/roadmap.md)、[功能归属目录](https://github.com/niobium-project/niobium/blob/main/docs/feature-coverage.md)与[产品旅程](https://github.com/niobium-project/niobium/blob/main/docs/design/product-journeys.md)给出接口、依赖、反向测试向量和验收责任。
 
 保留实现中的在线/离线分发、通道、Portable Run 和嵌入式更新，需要接入当前契约并补充新证据。[分发里程碑](https://github.com/niobium-project/niobium/blob/main/docs/adr/0020-distribution-delivery-milestones.md)与[分发工作清单](https://github.com/niobium-project/niobium/blob/main/docs/development/distribution-backlog.md)继续保留原有范围。单文件 Component setup 本身不能证明全部在线/离线/SFX 策略、发布者签名或原生应用元数据已经验收。
 

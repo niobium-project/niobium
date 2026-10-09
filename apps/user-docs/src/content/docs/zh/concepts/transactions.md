@@ -5,7 +5,7 @@ description: Component-v2 内核如何冻结安装计划，并在中断后恢复
 
 Component-v2 内核在改变部署资源前验证并冻结安装计划。持久化提交决定确定恢复时保留旧发布还是完成新发布。
 
-这些概念适用于 [DSL 教程](/zh/tutorial/)展示的当前用户范围运行配置。[运行时生命周期契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/runtime-lifecycle-v2.md)规定协议；[状态与平台](/zh/status/)记录执行证据。
+这些概念适用于 [DSL 教程](/zh/tutorial/)展示的当前用户范围运行配置。[运行时生命周期契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/runtime-lifecycle.md)规定协议；[状态与平台](/zh/status/)记录执行证据。
 
 ## 已拥有的根目录与代
 
@@ -51,5 +51,3 @@ Component-v2 内核在改变部署资源前验证并冻结安装计划。持久�
 ## 应用数据与兼容性
 
 产品模型变化和调用状态变化各自需要显式兼容性声明。内核在变更前独立于发布序号检查这些声明。
-
-应用数据库和其他业务数据仍归产品所有。部署恢复不意味着数据库回滚，保留的 [App Bootstrap 协议](/zh/concepts/app-bootstrap/)也不是当前 Component-v2 运行配置中的钩子。

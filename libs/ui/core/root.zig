@@ -1,4 +1,4 @@
-//! UI IR (docs/spec/ui-ir-v1.md): closed node vocabulary, ZON templates validated at
+//! UI IR (docs/spec/ui-ir.md): closed node vocabulary, ZON templates validated at
 //! comptime, binding, layout, DisplayList, SemanticTree, focus and input. No IO.
 
 pub const ir = @import("ir.zig");

@@ -26,7 +26,7 @@ description: 理解作者 IR、锁定输入与本机组装的关系，并诊断�
 
 原始源字节和规范内容具有独立身份，即使本示例提供的容器已经规范化。运行时、元数据、库、编译后产品和最终安装器也分别具有身份。散列一致证明你持有的是哪些字节；可信获取建立这些字节的提供者身份。这个从源码构建的练习不会建立外部发布者的权限。
 
-完整流程见 [Compiler and frontends v2](https://github.com/niobium-project/niobium/blob/main/docs/spec/compiler-frontends-v2.md) 和 [Locked compiler inputs](https://github.com/niobium-project/niobium/blob/main/docs/spec/compiler-inputs-v1.md)。
+完整流程见 [Compiler and frontends v2](https://github.com/niobium-project/niobium/blob/main/docs/spec/compiler-frontends.md) 和 [Locked compiler inputs](https://github.com/niobium-project/niobium/blob/main/docs/spec/compiler-inputs.md)。
 
 ## 区分前端与编译器错误
 
@@ -51,7 +51,7 @@ DIAG_BUILD="$TUTORIAL_WORK/diagnostics"
   --source "$NIOBIUM_REPO/examples/dsl-tutorial" --out "$DIAG_BUILD"
 sed 's/input("enabled", value("bool", True))/input("enabled", value("string", "true"))/' \
   "$DIAG_BUILD/product.star" > "$DIAG_BUILD/bad-type.star"
-"$NIOBIUM_REPO/zig-out/bin/niobium-starlark-v2" \
+"$NIOBIUM_REPO/zig-out/bin/nb-starlark-v2" \
   --source "$DIAG_BUILD/bad-type.star" \
   --out "$DIAG_BUILD/bad-type.program.json" \
   --source-map "$DIAG_BUILD/bad-type.sources.json"
@@ -60,7 +60,7 @@ sed 's/input("enabled", value("bool", True))/input("enabled", value("string", "t
 作者求值成功。编译生成的模型：
 
 ```sh
-"$NIOBIUM_REPO/zig-out/bin/niobium-compiler-v2" compile \
+"$NIOBIUM_REPO/zig-out/bin/nb-builder" compile \
   --program "$DIAG_BUILD/bad-type.program.json" \
   --source-map "$DIAG_BUILD/bad-type.sources.json" \
   --lock "$DIAG_BUILD/inputs.lock.json" \
@@ -94,11 +94,11 @@ input("enabled", value("bool", True))
 未修改的 `product.star` 已包含这个答案。将它生成到新文件，再构建：
 
 ```sh
-"$NIOBIUM_REPO/zig-out/bin/niobium-starlark-v2" \
+"$NIOBIUM_REPO/zig-out/bin/nb-starlark-v2" \
   --source "$DIAG_BUILD/product.star" \
   --out "$DIAG_BUILD/good.program.json" \
   --source-map "$DIAG_BUILD/good.sources.json"
-"$NIOBIUM_REPO/zig-out/bin/niobium-compiler-v2" compile \
+"$NIOBIUM_REPO/zig-out/bin/nb-builder" compile \
   --program "$DIAG_BUILD/good.program.json" \
   --source-map "$DIAG_BUILD/good.sources.json" \
   --lock "$DIAG_BUILD/inputs.lock.json" \
@@ -139,8 +139,8 @@ cmp "$DIAG_BUILD/content.saved" "$DIAG_BUILD/content"
 
 准备工具要求使用新目标目录。Starlark 前端以独占方式创建模型和可选 sidecar；再次求值时应使用新文件名。如果文件名已存在，选择新名称，不要把拒绝创建当成语言错误。编译器只有完成验证和所需最终签名后才发布组装镜像；发布可以替换已有安装器。
 
-教程中只改变内容的第 2 次发布保留 `model_version=1`、`Call.id="deploy"` 和 `state_version=1`，同时递增 `release_sequence`。模型转换与调用状态转换具有独立兼容性声明。不要通过递增版本或重命名调用来编造兼容性。[迁移契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/migration-v2.md)定义高级场景。
+教程中只改变内容的第 2 次发布保留 `model_version=1`、`Call.id="deploy"` 和 `state_version=1`，同时递增 `release_sequence`。模型转换与调用状态转换具有独立兼容性声明。不要通过递增版本或重命名调用来编造兼容性。[迁移契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/migration.md)定义高级场景。
 
 提供的 macOS finalizer 覆盖 ad-hoc 测量配置。生产发布者签名和平台资格验收需要各自的流程与证据；教程编译成功不能建立这些结论。记录的范围见[状态与平台](/zh/status/)。
 
-返回[教程总览](/zh/tutorial/)，或通过 [Authoring v2](https://github.com/niobium-project/niobium/blob/main/docs/development/authoring-v2.md)继续学习完整 API。
+返回[教程总览](/zh/tutorial/)，或通过 [Authoring v2](https://github.com/niobium-project/niobium/blob/main/docs/development/authoring.md)继续学习完整 API。

@@ -126,7 +126,6 @@ pub fn sampleController(arena: std.mem.Allocator, screen: screens.Screen) Error!
     config.* = .{
         .schema = 1,
         .mode = .branded,
-        .product_id = "com.example.hello",
         .branding = sample_branding,
     };
     const vm = try screens.model.viewModel(arena, .{

@@ -67,7 +67,7 @@ call(id="deploy", library="files", interface="niobium:files/installer@1.0.0",
 准备工具已将此源码复制到发布版本 1，并在旁边生成 `inputs.star`。执行该副本：
 
 ```sh
-zig-out/bin/niobium-starlark-v2 \
+zig-out/bin/nb-starlark-v2 \
   --source "$TUTORIAL_WORK/release1/product.star" \
   --out "$TUTORIAL_WORK/release1/product.program.json" \
   --source-map "$TUTORIAL_WORK/release1/product.sources.json" \
@@ -81,7 +81,7 @@ zig-out/bin/niobium-starlark-v2 \
 将生成的模型和锁定输入文件传给编译器：
 
 ```sh
-zig-out/bin/niobium-compiler-v2 compile \
+zig-out/bin/nb-builder compile \
   --program "$TUTORIAL_WORK/release1/product.program.json" \
   --source-map "$TUTORIAL_WORK/release1/product.sources.json" \
   --lock "$TUTORIAL_WORK/release1/inputs.lock.json" \
@@ -121,7 +121,7 @@ Hello from the Niobium DSL tutorial, release 1.
 
 产品声明逻辑名称 `application`，`--root` 提供它的绝对物理路径。运行时只接管不存在或为空的未拥有根目录，因此请使用专用教程目录。
 
-`current` 指向已发布代的内容。`hello` 前缀来自库请求。运行时在 `.niobium-v2/` 下单独保存所有权和事务数据；目录布局由[生命周期契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/runtime-lifecycle-v2.md)规定。
+`current` 指向已发布代的内容。`hello` 前缀来自库请求。运行时在 `.niobium-v2/` 下单独保存所有权和事务数据；目录布局由[生命周期契约](https://github.com/niobium-project/niobium/blob/main/docs/spec/runtime-lifecycle.md)规定。
 
 ## 练习：找到安装路径
 
