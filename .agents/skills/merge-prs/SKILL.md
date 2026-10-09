@@ -1,6 +1,6 @@
 ---
 name: merge-prs
-description: Land labeled GitHub pull requests onto main as a linear signed history. Use when asked to merge, land, or scan merge-me pull requests. Requires maintainer approval plus merge-me:squash or merge-me:no-squash. Orders a stack by branch dependency, resolves conflicts, checks every landed commit, pushes once, and comments on each pull request.
+description: Land labeled GitHub pull requests onto main as a linear signed history. Use when asked to merge, land, or scan merge-me pull requests. Requires maintainer approval plus merge-me:squash or merge-me:no-squash. Orders a stack by branch dependency, resolves conflicts, checks every landed commit, pushes once, deletes the landed work branch locally and on origin, and comments on each pull request.
 ---
 
 # Merge pull requests
@@ -26,9 +26,9 @@ List both labels, then drop duplicate numbers. A pull request with both labels k
 
 ```sh
 gh pr list --state open --label merge-me:squash --limit 100 \
-  --json number,title,body,isDraft,author,baseRefName,headRefName,headRefOid
+  --json number,title,body,isDraft,author,baseRefName,headRefName,headRefOid,isCrossRepository
 gh pr list --state open --label merge-me:no-squash --limit 100 \
-  --json number,title,body,isDraft,author,baseRefName,headRefName,headRefOid
+  --json number,title,body,isDraft,author,baseRefName,headRefName,headRefOid,isCrossRepository
 gh pr list --state open --limit 100 --json number,headRefName,baseRefName,isDraft
 ```
 
@@ -184,6 +184,22 @@ The failure comment names the reason in one sentence, then: add the label again 
 Success: comment with the strategy (`squash` or `keep commits`), each landed sha and subject, the three checks above, and the range-diff when commits were rewritten.
 
 When the source sha is now on `origin/main`, GitHub marks the pull request merged. Comment, and do not close it again. When the commits were rewritten, `gh pr close N` after the comment. Close only after `git push` has succeeded.
+
+## Delete the work branch
+
+Do this only after `git push origin main` has succeeded and every landed sha verified. Delete a branch only for a pull request this run landed. Never delete `main`.
+
+Leave a branch that is still the base of another open pull request. That pull request is still stacked on it. Delete the branch after that pull request lands.
+
+Skip the remote delete when `isCrossRepository` is true. The head branch belongs to the fork.
+
+```sh
+git push origin --delete BRANCH
+git fetch origin --prune
+git branch -d BRANCH
+```
+
+`git branch -d` deletes the local branch when its tip is contained in `main`. A squash or a rebase leaves the old tip off `main`, so `-d` refuses. For a branch this run landed that way, `git branch -D BRANCH` removes the local branch. A missing local or remote branch is already clean.
 
 ## Report
 

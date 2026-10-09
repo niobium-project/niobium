@@ -45,7 +45,7 @@ A pull request with both labels keeps its commits. Drafts are not eligible. A pu
 
 A maintainer is a collaborator with `admin` or `maintain` permission. Approval is an approving review from a maintainer. On a maintainer's own pull request, the merge-me label added by a maintainer is the approval, because GitHub has no self-approval.
 
-The landing maintainer runs the skill locally. It comments on success and on failure. A failure comment removes the merge-me label. Add the label again after the fix.
+The landing maintainer runs the skill locally. It comments on success and on failure. A failure comment removes the merge-me label. Add the label again after the fix. After the push to `main` succeeds, the skill deletes that pull request's branch locally and on origin. A branch that is still the base of another open pull request stays until that pull request lands.
 
 GitHub's squash and rebase buttons are off. The remaining merge-commit button cannot land a pull request while linear history is required. Repository settings are in [repository settings](../runbooks/repository-settings.md).
 
