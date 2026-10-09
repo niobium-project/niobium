@@ -9,8 +9,13 @@ description: Current Component qualification boundaries and historical results w
 records actual commands, source/artifact identities and evidence for the compiler,
 standard WIT libraries, content/access, native assembly and maintenance. The
 foundational CLI slice passed its native publishing, isolated assembly and final-byte
-matrix in [CI run 37830364529](https://github.com/niobium-project/niobium/actions/runs/37830364529).
+matrix in [CI run 37874568090](https://github.com/niobium-project/niobium/actions/runs/37874568090).
 Current interfaces remain experimental.
+
+Niobium runtime and SDK code use versioned minimum CPU profiles. The exact
+Linux SDK and setup bytes also passed in a recorded x64 emulation context lacking
+SHA/SSE4a extensions. That record remains scoped to its CPU, filesystem and
+privilege context; it does not qualify every physical CPU or older operating system.
 
 Author parity, standard ABI/worker isolation and foundation tests are distinct
 from final setup lifecycle, permissions, signing and crash-recovery evidence.

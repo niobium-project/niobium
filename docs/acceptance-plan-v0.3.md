@@ -29,8 +29,8 @@ record covering its required scenarios on the named snapshot.
 |---|---|---|---|---|
 | N2-ACCESS-01 | positive grants have one cross-platform interpretation | `libs/access/contract/root.zig`, `tests/access/` | PASS | `.evidence/final-v2/20261008T194056Z`; `.evidence/native-platform/20261008T144729Z`, `20261008T145621Z` |
 | N2-BINARY-01 | Exact Component native dependency profiles, ELF interpreters and unchanged executable hardening | `tools/check-binary`, runtime publication gates | PASS | `.evidence/native-binary/20261008T160447Z-profiles`; `.evidence/final-v2/20261008T194056Z` |
-| N2-CPU-01 | Explicit CPU targets and controlled Rust/C/Go flags cover published runtime, SDK and witness code | Publication graph and toolchain controls | NOT_RUN | New contract under ADR-0025 |
-| N2-CPU-02 | Exact SDK and setup bytes execute without undeclared mandatory CPU extensions | Source-free assembly and delivered lifecycle in a recorded CPU context | NOT_RUN | First failure: `.evidence/core-ci/20261009T020130Z-linux-sigill/`; fresh baseline bytes pending |
+| N2-CPU-01 | Explicit CPU targets and controlled Rust/C/Go flags cover published runtime, SDK and witness code | Publication graph and toolchain controls | PASS | `.evidence/final-v2/20261009T022607Z`; `.evidence/cpu-baseline/20261009T024000Z-published-replay/` |
+| N2-CPU-02 | Exact SDK and setup bytes execute without undeclared mandatory CPU extensions | Source-free assembly and delivered lifecycle in a recorded CPU context | PASS | `.evidence/cpu-baseline/20261009T024000Z-published-replay/qualification.json`; original failure retained separately |
 | N2-AUTH-02 | Native/C/Starlark equivalent models, owned values, source maps and generic worker arguments | `apps/libcompiler/v2_test.zig` | PASS | `.evidence/author-v2/20261008T194115Z-92f15f47e115d915` |
 | N2-AUTH-03 | Equivalent Zig/C/Starlark programs become executable setups | `tests/core_e2e/frontends.zig` | PASS | `.evidence/core-e2e/20261008T194101Z-12ad24aac3dd97c8` |
 | N2-COMPILER-02 | common backend verifies WIT bindings and returns source diagnostics | `libs/compiler/pipeline_test.zig` | PASS | `.evidence/final-v2/20261008T194056Z` |
@@ -233,6 +233,40 @@ they are not relabeled as baseline qualifications.
 
 New baseline publication must record all effective code-generation targets and
 flag controls, bind schema-2 metadata to exact templates, and execute transferred
-SDK/setup bytes in a CPU context lacking the original failing extensions. The
-new `N2-CPU-*` rows stay `NOT_RUN` until those records exist. No claim about every
-physical CPU or older OS follows from compilation or one execution context.
+SDK/setup bytes in a CPU context lacking the original failing extensions. No claim
+about every physical CPU or older OS follows from compilation or one execution context.
+
+### Qualified baseline bytes
+
+[Core v2 run 37874568090](https://github.com/niobium-project/niobium/actions/runs/37874568090)
+passed all eight jobs: three native publishers, isolated Linux assembly, three
+delivered-byte witnesses and the required gate. PR code head
+`e2adc8a9028f93820738990166ac4399e6d4e7dc` and tested merge
+`217110ca253306009e1be65500604fd0868e95f6` have the same tree,
+`f643076998d4e6e3e694fd3bdaf3d0051168149b`. Publisher source/CPU/engine provenance,
+SDK archive inventories, assembly and all three target receipts are archived in
+`.evidence/cpu-baseline/20261009T024000Z-published-replay/`. Existing CI and the
+user-site build also passed for this code head.
+
+The same recorded Rosetta x64 CPU rejects the old exact bytes and runs the new
+Linux SDK and final CI-assembled images. It lacks `sha_ni` and `sse4a`. The real
+Starlark model matches the native producer's model; worker typed calls, compiler
+assembly, installed contents, migration, refusal and uninstall pass. Every final
+setup retains its pre-run digest after execution. `sdk-result.json`,
+`delivered-result.json` and `qualification.json` preserve those commands and
+identities. The replay uses UID/GID 0 on tmpfs, so it qualifies CPU behavior in an
+emulated context and does not establish unprivileged access or every physical CPU.
+
+The exact code head also passed
+`zig build verify core-sdk core-cross-tools --cache-poison=disallowed --summary all`:
+804/804 steps and 161/162 reported tests, with one Windows-only case skipped on
+macOS. `.evidence/final-v2/20261009T022607Z` records the clean tree. The two
+`N2-CPU-01` environment cases run inside `core-test`; the separate Clang override
+red/green logs remain in `.evidence/cpu-baseline/20261009T021128Z/`. Lint retains
+68 suppressions.
+
+Local full-source Linux qualification under Rosetta is separately `BLOCKED`: the
+upstream Zig build executor fails with `bss_size overflow` before Niobium's graph
+runs. `.evidence/cpu-baseline/20261009T021000Z-linux` preserves that attempt. Native
+Linux CI source qualification and exact published-byte replay are both `PASS`;
+the local executor limitation is not relabeled as a product or cross-host failure.
