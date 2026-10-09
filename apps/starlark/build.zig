@@ -12,18 +12,21 @@ pub fn execute(init: std.process.Init, tracing: bool) !void {
     const arena = init.arena.allocator();
     diagnostic(tracing, "entered", .{});
     const args = try init.minimal.args.toSlice(arena);
-    if (args.len < 3 or args.len > 32) return error.Usage;
+    if (args.len < 4 or args.len > 32) return error.Usage;
     if (args[1].len > 4096 or std.mem.indexOfAny(u8, args[1], "\"\r\n") != null)
         return error.InvalidLibraryPath;
+    if (args[2].len == 0 or args[2].len > 4096) return error.Usage;
     const directory = std.fs.path.dirname(args[1]) orelse return error.InvalidLibraryPath;
     const path = try std.mem.replaceOwned(u8, arena, directory, "\\", "/");
     const flags = try arena.print("\"-L{s}\"", .{path});
     try init.environ_map.put("CGO_LDFLAGS", flags);
     try init.environ_map.put("CGO_ENABLED", "1");
     try init.environ_map.put("GOPROXY", "https://proxy.golang.org,direct");
-    const argv = try arena.alloc([]const u8, args.len - 1);
-    argv[0] = "go";
-    @memcpy(argv[1..], args[2..]);
+    try init.environ_map.put("GOTOOLCHAIN", "local");
+    try prependGo(arena, init.environ_map, args[2]);
+    const argv = try arena.alloc([]const u8, args.len - 2);
+    argv[0] = args[2];
+    @memcpy(argv[1..], args[3..]);
     diagnostic(tracing, "configured: argc={d}", .{argv.len});
     const result = std.process.run(arena, init.io, .{
         .argv = argv,
@@ -58,6 +61,15 @@ pub fn execute(init: std.process.Init, tracing: bool) !void {
         return error.GoFailed;
     }
     diagnostic(tracing, "complete", .{});
+}
+
+fn prependGo(arena: std.mem.Allocator, env: *std.process.Environ.Map, go_bin: []const u8) !void {
+    const bin = std.fs.path.dirname(go_bin) orelse return error.Usage;
+    const goroot = std.fs.path.dirname(bin) orelse return error.Usage;
+    try env.put("GOROOT", goroot);
+    const old = env.get("PATH") orelse "";
+    const sep: u8 = if (@import("builtin").os.tag == .windows) ';' else ':';
+    try env.put("PATH", try std.fmt.allocPrint(arena, "{s}{c}{s}", .{ bin, sep, old }));
 }
 
 fn diagnostic(enabled: bool, comptime format: []const u8, args: anytype) void {

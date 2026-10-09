@@ -76,7 +76,7 @@ Implementation: `runCase` in `libs/conformance` runs one contract against any `P
 |---|---|
 | Virtual (all capabilities required) | `libs/conformance` unit tests |
 | Host backend (N1-AC-14), user and machine scope, locations redirected to a temporary directory | `tests/conformance`, `zig build test` |
-| The same binary on Windows 11 / Ubuntu | `zig build test-cross` output `zig-out/cross-tests/<target>/suite-conformance`, executed by vm-smoke |
+| The same binary on Windows 11 / Ubuntu | `zig build test:cross` output `zig-out/cross-tests/<target>/suite-conformance`, executed by vm-smoke |
 
 ## Platform crash pitfalls
 

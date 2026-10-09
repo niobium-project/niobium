@@ -1,4 +1,4 @@
-//! `zig build example`: examples/hello is its own package and depends on this one by path,
+//! `zig build example:hello`: examples/hello is its own package and depends on this one by path,
 //! the way a product repository does (docs/development/consuming.md). Building it in a child
 //! `zig build` exercises the public build API end to end.
 

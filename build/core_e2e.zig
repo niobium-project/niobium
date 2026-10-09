@@ -1,5 +1,6 @@
 //! Final bytes, fixed library dataflow and native lifecycle acceptance.
 const std = @import("std");
+const commands = @import("commands.zig");
 const graph_mod = @import("graph.zig");
 pub const Inputs = struct {
     runtime: *std.Build.Step.Compile,
@@ -22,7 +23,7 @@ pub fn add(b: *std.Build, graph: *const graph_mod.Graph, inputs: Inputs) *std.Bu
         "compiler", "program", "content", "host_primitives", "image", "kernel",
     });
     module.addImport("suite_provenance", graph.root("tests/aot/provenance.zig", &.{"core"}));
-    const suite = b.addExecutable(.{ .name = "core-e2e", .root_module = module });
+    const suite = b.addExecutable(.{ .name = "core:e2e", .root_module = module });
     const run = b.addRunArtifact(suite);
     run.setCwd(b.path("."));
     run.has_side_effects = true;
@@ -39,7 +40,11 @@ pub fn add(b: *std.Build, graph: *const graph_mod.Graph, inputs: Inputs) *std.Bu
     run.addFileArg(inputs.consumer_v2);
     run.addFileArg(inputs.metadata);
     run.addFileInput(b.path("tests/author/types.star"));
-    const step = b.step("core-e2e", "Delivered setup lifecycle, content and migration acceptance");
+    const step = commands.step(
+        b,
+        "core:e2e",
+        "Delivered setup lifecycle, content and migration acceptance",
+    );
     step.dependOn(inputs.binary_check);
     step.dependOn(&run.step);
     return step;
@@ -68,7 +73,11 @@ fn crossTools(b: *std.Build, graph: *const graph_mod.Graph) void {
             "compiler", "program", "image",
         }),
     });
-    const step = b.step("core-cross-tools", "Build isolated Linux cross-assembly acceptance tools");
+    const step = commands.step(
+        b,
+        "core:cross-tools",
+        "Build isolated Linux cross-assembly acceptance tools",
+    );
     step.dependOn(&b.addInstallArtifact(prepare, .{}).step);
     step.dependOn(&b.addInstallArtifact(assemble, .{}).step);
     delivered(b, graph, "native", step);

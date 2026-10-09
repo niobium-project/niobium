@@ -7,9 +7,10 @@
 //! fails a step that writes to stderr, so only failures print.
 
 const std = @import("std");
-const builtin = @import("builtin");
 const patch = @import("patch.zig");
 const archive_zip = @import("zip.zig");
+const cache = @import("cache.zig");
+const toolchain = @import("toolchain.zig");
 
 const Dir = std.Io.Dir;
 const max_download = 64 << 20;
@@ -52,7 +53,11 @@ const Args = struct {
 pub fn main(init: std.process.Init) !u8 {
     const arena = init.arena.allocator();
     const io = init.io;
-    const args = parseArgs(arena, try init.minimal.args.toSlice(arena)) catch {
+    const argv = try init.minimal.args.toSlice(arena);
+    if (argv.len >= 2 and std.mem.eql(u8, argv[1], "toolchain")) {
+        return toolchain.execute(init, argv);
+    }
+    const args = parseArgs(arena, argv) catch {
         std.debug.print("usage: nb-fetch-deps --manifest <deps.zon> --package <name> " ++
             "--out <dir> [--cache <dir>] [--patch <file>]...\n", .{});
         return 2;
@@ -64,11 +69,11 @@ pub fn main(init: std.process.Init) !u8 {
         std.debug.print("fetch-deps: {s}: no package {s}\n", .{ args.manifest, args.package });
         return 1;
     };
-    const cache = args.cache orelse try defaultCache(arena, init.environ_map);
+    const cache_dir = args.cache orelse try cache.defaultCache(arena, init.environ_map);
     var out = try Dir.cwd().createDirPathOpen(io, args.out, .{});
     defer out.close(io);
     for (package.sources) |source| {
-        const bytes = try obtain(io, init.gpa, arena, init.environ_map, cache, source);
+        const bytes = try obtain(io, init.gpa, arena, init.environ_map, cache_dir, source);
         switch (source.archive) {
             .none => try out.writeFile(io, .{ .sub_path = source.file.?, .data = bytes }),
             .tar_gz => try extract(io, out, bytes, source),
@@ -82,7 +87,7 @@ pub fn main(init: std.process.Init) !u8 {
 fn parseArgs(arena: std.mem.Allocator, argv: []const []const u8) !Args {
     var manifest: ?[]const u8 = null;
     var package: ?[]const u8 = null;
-    var cache: ?[]const u8 = null;
+    var cache_dir: ?[]const u8 = null;
     var out: ?[]const u8 = null;
     var patches: std.ArrayList([]const u8) = .empty;
     var index: usize = 1;
@@ -94,7 +99,7 @@ fn parseArgs(arena: std.mem.Allocator, argv: []const []const u8) !Args {
         } else if (std.mem.eql(u8, flag, "--package")) {
             package = value;
         } else if (std.mem.eql(u8, flag, "--cache")) {
-            cache = value;
+            cache_dir = value;
         } else if (std.mem.eql(u8, flag, "--out")) {
             out = value;
         } else if (std.mem.eql(u8, flag, "--patch")) {
@@ -105,29 +110,10 @@ fn parseArgs(arena: std.mem.Allocator, argv: []const []const u8) !Args {
     return .{
         .manifest = manifest orelse return error.UsageFetchDeps,
         .package = package orelse return error.UsageFetchDeps,
-        .cache = cache,
+        .cache = cache_dir,
         .out = out orelse return error.UsageFetchDeps,
         .patches = patches.items,
     };
-}
-
-/// Mirrors Zig's own global cache resolution, so downloads live next to `zig fetch` packages.
-fn defaultCache(arena: std.mem.Allocator, environ: *const std.process.Environ.Map) ![]const u8 {
-    if (environ.get("NIOBIUM_DEPS_CACHE")) |dir| return dir;
-    const zig_cache = environ.get("ZIG_GLOBAL_CACHE_DIR") orelse if (builtin.os.tag == .windows)
-        try std.fs.path.join(arena, &.{
-            environ.get("LOCALAPPDATA") orelse return error.FetchNoCacheDir,
-            "zig",
-        })
-    else if (environ.get("XDG_CACHE_HOME")) |xdg|
-        try std.fs.path.join(arena, &.{ xdg, "zig" })
-    else
-        try std.fs.path.join(arena, &.{
-            environ.get("HOME") orelse return error.FetchNoCacheDir,
-            ".cache",
-            "zig",
-        });
-    return std.fs.path.join(arena, &.{ zig_cache, "niobium-deps" });
 }
 
 fn loadManifest(io: std.Io, arena: std.mem.Allocator, path: []const u8) !Manifest {
@@ -171,90 +157,20 @@ fn obtain(
     cache_path: []const u8,
     source: Source,
 ) ![]const u8 {
-    const max = try sourceBudget(source);
-    var cache = try Dir.cwd().createDirPathOpen(io, cache_path, .{});
-    defer cache.close(io);
-    if (cache.readFileAlloc(io, source.sha256, arena, .limited64(max))) |bytes| {
-        // A corrupt cache entry is fetched again and overwritten.
-        if (matches(bytes, source.sha256)) return bytes;
-    } else |err| switch (err) {
-        error.FileNotFound => {},
-        else => return err,
-    }
-    const bytes = try downloadRetrying(io, gpa, arena, environ, source.url, max);
-    if (!matches(bytes, source.sha256)) {
-        std.debug.print("fetch-deps: {s}: sha256 mismatch, expected {s}\n", .{
-            source.url,
-            source.sha256,
-        });
-        return error.FetchHashMismatch;
-    }
-    const tmp = try std.fmt.allocPrint(arena, "{s}.tmp", .{source.sha256});
-    try cache.writeFile(io, .{ .sub_path = tmp, .data = bytes });
-    try Dir.rename(cache, tmp, cache, source.sha256, io);
-    return bytes;
-}
-
-/// Connections to GitHub and jsDelivr drop often enough from some networks that one attempt
-/// fails builds; a hash mismatch is not retried (the caller checks it once).
-fn downloadRetrying(
-    io: std.Io,
-    gpa: std.mem.Allocator,
-    arena: std.mem.Allocator,
-    environ: *const std.process.Environ.Map,
-    url: []const u8,
-    max: u64,
-) ![]const u8 {
-    const retries = 3;
-    var delay_seconds: i64 = 2;
-    for (0..retries) |_| {
-        const bytes = download(io, gpa, arena, environ, url, max) catch |err| {
-            if (err == error.FetchTooLarge) return err;
-            try io.sleep(.fromSeconds(delay_seconds), .awake);
-            delay_seconds *= 2;
-            continue;
-        };
-        return bytes;
-    }
-    return download(io, gpa, arena, environ, url, max);
-}
-
-fn download(
-    io: std.Io,
-    gpa: std.mem.Allocator,
-    arena: std.mem.Allocator,
-    environ: *const std.process.Environ.Map,
-    url: []const u8,
-    max: u64,
-) ![]const u8 {
-    var client: std.http.Client = .{ .allocator = gpa, .io = io };
-    defer client.deinit();
-    try client.initDefaultProxies(arena, environ);
-    const uri = try std.Uri.parse(url);
-    var request = try client.request(.GET, uri, .{
-        .redirect_behavior = .init(3),
-        .headers = .{ .accept_encoding = .{ .override = "identity" } },
-    });
-    defer request.deinit();
-    try request.sendBodiless();
-    var redirect: [8 << 10]u8 = undefined; // SAFETY: response header scratch.
-    var response = try request.receiveHead(&redirect);
-    if (response.head.status != .ok) {
-        std.debug.print("fetch-deps: {s}: HTTP {d}\n", .{ url, @backingInt(response.head.status) });
-        return error.FetchHttpStatus;
-    }
-    if (response.head.content_length) |length| {
-        if (length > max) return error.FetchTooLarge;
-    }
-    var transfer: [64]u8 = undefined; // SAFETY: HTTP body reader scratch.
-    return boundedBody(response.reader(&transfer), arena, max);
+    return cache.obtain(
+        io,
+        gpa,
+        arena,
+        environ,
+        cache_path,
+        source.url,
+        source.sha256,
+        try sourceBudget(source),
+    );
 }
 
 fn matches(bytes: []const u8, expected_hex: []const u8) bool {
-    var digest: [32]u8 = undefined; // SAFETY: written by hash.
-    std.crypto.hash.sha2.Sha256.hash(bytes, &digest, .{});
-    const hex = std.fmt.bytesToHex(digest, .lower);
-    return std.mem.eql(u8, &hex, expected_hex);
+    return cache.matches(bytes, expected_hex);
 }
 
 fn extract(io: std.Io, out: Dir, bytes: []const u8, source: Source) !void {
@@ -392,12 +308,7 @@ fn sourceBudget(source: Source) !u64 {
 }
 
 fn boundedBody(reader: *std.Io.Reader, arena: std.mem.Allocator, max: u64) ![]u8 {
-    const bytes = reader.allocRemaining(arena, .limited64(max + 1)) catch |err| switch (err) {
-        error.StreamTooLong => return error.FetchTooLarge,
-        else => return err,
-    };
-    if (bytes.len > max) return error.FetchTooLarge;
-    return bytes;
+    return cache.boundedBody(reader, arena, max);
 }
 
 test "download rejects over-limit data before unbounded allocation" {

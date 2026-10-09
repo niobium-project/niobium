@@ -1,4 +1,4 @@
-//! `zig build vm-smoke [-- --start] [-- --vm <name>]` (docs/runbooks/vm-smoke.md): runs the
+//! `zig build vm:smoke [-- --start] [-- --vm <name>]` (docs/runbooks/vm-smoke.md): runs the
 //! examples/hello offline bundle of each VM target in its Parallels guest as the logged-in user:
 //! install, update, repair, uninstall, then a console screenshot. A VM that is not running is
 //! BLOCKED unless `--start` allows booting or resuming it. Evidence: `<evidence>/<UTC>/`.

@@ -7,7 +7,7 @@ repository root with Zig 0.17.0, Go 1.25 or newer, and the host C toolchain.
 ## Build the toolchain
 
 ```sh
-zig build aot --cache-poison=disallowed
+zig build aot:build --cache-poison=disallowed
 poc_dir="$(mktemp -d /private/tmp/niobium-poc.XXXXXX)"
 ```
 
@@ -61,8 +61,8 @@ generation is reported explicitly rather than overwritten.
 ## Verify the complete boundary
 
 ```sh
-zig build aot-test --cache-poison=disallowed
-zig build aot-e2e --cache-poison=disallowed
+zig build aot:test --cache-poison=disallowed
+zig build aot:e2e --cache-poison=disallowed
 ```
 
 The native suite compares Zig/C/Starlark output, denies repository and runtime

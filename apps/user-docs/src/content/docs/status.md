@@ -27,8 +27,8 @@ Machine scope, Developer ID, notarization, Authenticode and a standard v2 UI rem
 separate work packages. The recorded Windows private worker-copy cleanup limitation
 also remains open.
 
-Run `zig build author-v2-test component-test core-test` for foundation checks and
-`zig build core-e2e` for delivered-artifact scenarios. `zig build verify` is the
+Run `zig build test:author test:component test:core` for foundation checks and
+`zig build core:e2e` for delivered-artifact scenarios. `zig build verify` is the
 complete gate. Each platform's actual scope comes from its acceptance record,
 not the historical tables below.
 

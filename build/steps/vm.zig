@@ -1,4 +1,4 @@
-//! `zig build vm-smoke`: a branded offline bundle of examples/hello per VM target, driven in
+//! `zig build vm:smoke`: a branded offline bundle of examples/hello per VM target, driven in
 //! Parallels guests by tools/vm-smoke (docs/runbooks/vm-smoke.md).
 
 const std = @import("std");
@@ -8,8 +8,17 @@ const example = @import("example.zig");
 /// `targets.cross_targets` names with a VM in tools/vm-smoke.
 const vm_targets = [_][]const u8{ "x86_64-windows", "aarch64-linux" };
 
-pub fn add(b: *std.Build, tool: *std.Build.Step.Compile) *std.Build.Step {
+pub fn add(
+    b: *std.Build,
+    tool: *std.Build.Step.Compile,
+    host: @import("../host_tools.zig").Tools,
+) *std.Build.Step {
     const run = b.addRunArtifact(tool);
+    run.step.dependOn(host.require(
+        b,
+        "prlctl",
+        "Install Parallels Desktop. See docs/runbooks/vm-smoke.md.",
+    ));
     run.addArg("--prlctl");
     run.addFileArg(b.findProgramLazy(.{ .names = &.{"prlctl"} }));
     run.addArgs(&.{ "--evidence", ".evidence/vm-smoke" });

@@ -7,21 +7,11 @@ Build the authoring and compiler tools, then prepare the example's locked inputs
 
 ## Prerequisites
 
-Use macOS arm64 with a POSIX shell and these source-build tools:
+Use macOS arm64 with a POSIX shell, Git, and Zig 0.17.0. The first SDK build
+needs network access. Zig installs the pinned Rust and Go tools used to publish
+the SDK. Compiling an already prepared product does not need them.
 
-- Git and Zig 0.17.0.
-- Rust 1.96.1 with the `wasm32-unknown-unknown` target.
-- Go 1.25 or newer and a host C toolchain.
-- Network access to download the pinned upstream dependencies on the first build.
-
-The [SDK build workflow](https://github.com/niobium-project/niobium/blob/main/docs/development/cross-host-builds.md) owns toolchain and native-target requirements. The installed authoring tools do not require Rust or Go when compiling an already prepared product.
-
-Install the required Rust toolchain and guest target if they are absent:
-
-```sh
-rustup toolchain install 1.96.1 --profile minimal
-rustup +1.96.1 target add wasm32-unknown-unknown
-```
+The [SDK build workflow](https://github.com/niobium-project/niobium/blob/main/docs/development/cross-host-builds.md) owns the native-target requirements.
 
 ## Build the SDK
 
@@ -36,7 +26,7 @@ Run all remaining commands in Part I from this checkout's root. Keep the shell o
 
 ```sh
 NIOBIUM_REPO="$PWD"
-zig build core-sdk dsl-tutorial-tools --cache-poison=disallowed
+zig build core:sdk example:tutorial:tools --cache-poison=disallowed
 ```
 
 The SDK installs the Starlark worker, compiler, native runtime template, Component worker, and official files library under `zig-out/`. The tutorial build adds `zig-out/bin/niobium-tutorial-prepare`.

@@ -19,4 +19,4 @@ Upstream files are not committed: `zig build` fetches them according to [`deps.z
 - Used only for glyph rasterization in `libs/ui/render`.
 - stb's memory comes from `bindings.Scratch` (a fixed buffer), reset before each glyph; allocation failure returns NULL.
 - The v2 rasterizer uses a stack buffer when the glyph width is ≤ 128 px, so the paths that do not check the malloc result are never triggered; `libs/ui/render` clamps the font size to at most 96 px.
-- To upgrade: change the commit and sha256 in `deps.zon`, update this table, and run `zig build test` and `zig build golden`.
+- To upgrade: change the commit and sha256 in `deps.zon`, update this table, and run `zig build test` and `zig build test:golden`.

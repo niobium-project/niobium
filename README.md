@@ -17,18 +17,18 @@ the older acceptance plans retain their own implementation and platform scope.
 
 ## Build and verify
 
-Source builds use Zig 0.17.0, Rust 1.96.1 with the `wasm32-unknown-unknown` target,
-and Go 1.25 or newer plus a host C compiler for the Starlark worker. The build
-fetches pinned Wasm tools; product assembly consumes precompiled runtime bytes.
-Install the Rust native target matching the Zig host ABI; see the
-[cross-host build prerequisites](docs/development/cross-host-builds.md#build-the-host-sdk-and-a-runtime-template).
+Source builds need Zig 0.17.0. `zig build` installs pinned Rust 1.96.1 and Go 1.26.8
+into `.cache/tools` when a build or test step needs them. The build also fetches
+pinned Wasm tools. Product assembly consumes precompiled runtime bytes and does
+not need those compilers. See
+[cross-host builds](docs/development/cross-host-builds.md#build-the-host-sdk-and-a-runtime-template).
 
 ```sh
-zig build compiler-v2 runtime-v2  # host compiler and complete runtime template
-zig build author-v2-test         # native Zig, C and Starlark author parity
-zig build component-test         # standard WIT/Canonical ABI and isolated worker
-zig build core-test              # content, access, types and compiler foundations
-zig build core-e2e               # final setup, lifecycle, migration and recovery
+zig build compiler:build runtime:build  # host compiler and complete runtime template
+zig build test:author         # native Zig, C and Starlark author parity
+zig build test:component         # standard WIT/Canonical ABI and isolated worker
+zig build test:core              # content, access, types and compiler foundations
+zig build core:e2e               # final setup, lifecycle, migration and recovery
 zig build verify                # current gates and retained regressions
 ```
 

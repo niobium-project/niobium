@@ -42,5 +42,5 @@ The bundled font Inter covers only Latin characters, so CJK glyphs render as pla
 ## Rules
 
 - Components accept no color, font or pixel-size parameters; visual values come only from tokens.
-- Visual changes must be actually inspected in the PNGs from `zig build gallery`; screenshots do not replace behavior assertions.
-- Golden updates must name a component scope: `zig build golden -Dupdate=<component>`; the scope name for page golden is `screens`. On mismatch, the actual image is written to `zig-out/golden-actual/`; update only after review.
+- Visual changes must be actually inspected in the PNGs from `zig build ui:gallery`; screenshots do not replace behavior assertions.
+- Golden updates must name a component scope: `zig build test:golden -Dupdate=<component>`; the scope name for page golden is `screens`. On mismatch, the actual image is written to `zig-out/golden-actual/`; update only after review.

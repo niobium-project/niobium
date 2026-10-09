@@ -8,7 +8,7 @@ Status uses only `PASS`, `FAIL`, `BLOCKED`, `NOT_RUN`, `DEFERRED`. A row is PASS
 
 ## Executable baseline
 
-The designated target is macOS arm64, user scope, CLI, ad-hoc signed single-file setup. The program image has a 1 MiB ceiling. These rows require `zig build aot-e2e` and its lower-level checks. `zig build aot` produces tools and runtime; it is not an acceptance result.
+The designated target is macOS arm64, user scope, CLI, ad-hoc signed single-file setup. The program image has a 1 MiB ceiling. These rows require `zig build aot:e2e` and its lower-level checks. `zig build aot:build` produces tools and runtime; it is not an acceptance result.
 
 | ID | Description | Coverage | Status | Evidence |
 |---|---|---|---|---|
@@ -84,8 +84,8 @@ settings and source-file digests are part of that record.
 | Command | Result | Evidence |
 |---|---|---|
 | `zig build verify --cache-poison=disallowed --summary all` | PASS: 544 build steps; fresh guest, runtime and schema conformance plus cached regression results | `.evidence/realign-validation/20261008T015439Z` |
-| `zig build fuzz --cache-poison=disallowed --summary all` | PASS: five corpus-replay tests, including compiled program/image/Wasm profile parsing | `.evidence/realign-validation/20261008T014952Z/1.log` |
-| `zig build sim -Dseeds=2000 --cache-poison=disallowed --summary all` | PASS: retained transaction simulation; does not substitute for N2 native recovery | `.evidence/realign-validation/20261008T014952Z/2.log` |
+| `zig build test:fuzz --cache-poison=disallowed --summary all` | PASS: five corpus-replay tests, including compiled program/image/Wasm profile parsing | `.evidence/realign-validation/20261008T014952Z/1.log` |
+| `zig build test:sim -Dseeds=2000 --cache-poison=disallowed --summary all` | PASS: retained transaction simulation; does not substitute for N2 native recovery | `.evidence/realign-validation/20261008T014952Z/2.log` |
 | Starlark authoring, two signed releases, install/apply/status/uninstall | PASS: independently reproduced documented workflow | `.evidence/aot-quickstart/20261008T014458Z` |
 
 That `verify` run executed nine real-interpreter conformance tests, ten native

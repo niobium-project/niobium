@@ -4,7 +4,7 @@
 
 Status uses only `PASS`, `FAIL`, `BLOCKED`, `NOT_RUN`, `DEFERRED`. Every entry whose "Coverage" column is `zig test` must be cited by at least one test name (checked by `tools/check-docs`).
 
-Basis for status: `zig build verify` passes on a macOS aarch64 host (covering all entries with `zig test` and `build` coverage), and the e2e suite also passes in a Debian bookworm arm64 container; e2e evidence is in `.evidence/e2e/<UTC>/`. The reason for the `BLOCKED` entries is in `.evidence/vm-smoke/<UTC>/summary.txt`: neither VM was running, and the tool does not start them without `--start` ([vm-smoke](runbooks/vm-smoke.md)). N1-UJ-02 additionally needs machine scope, while `tools/vm-smoke` currently runs only user scope. N1-UJ-10 is a manual item: on a macOS host, run `zig build example`, then open `zig-out/example/setup` and walk through all five screens.
+Basis for status: `zig build verify` passes on a macOS aarch64 host (covering all entries with `zig test` and `build` coverage), and the e2e suite also passes in a Debian bookworm arm64 container; e2e evidence is in `.evidence/e2e/<UTC>/`. The reason for the `BLOCKED` entries is in `.evidence/vm-smoke/<UTC>/summary.txt`: neither VM was running, and the tool does not start them without `--start` ([vm-smoke](runbooks/vm-smoke.md)). N1-UJ-02 additionally needs machine scope, while `tools/vm-smoke` currently runs only user scope. N1-UJ-10 is a manual item: on a macOS host, run `zig build example:hello`, then open `zig-out/example/setup` and walk through all five screens.
 
 ## User journeys
 
@@ -44,7 +44,7 @@ Basis for status: `zig build verify` passes on a macOS aarch64 host (covering al
 | N1-AC-04 | All malicious archive fixtures are rejected | zig test | PASS |
 | N1-AC-05 | The planner produces the expected plan for install/update/repair/uninstall | zig test | PASS |
 | N1-AC-06 | Journal recovery: rollback before commit, roll-forward after commit | zig test | PASS |
-| N1-AC-07 | `zig build sim` seeded faults with no invariant violation | zig test | PASS |
+| N1-AC-07 | `zig build test:sim` seeded faults with no invariant violation | zig test | PASS |
 | N1-AC-08 | bootstrap v1 activate/deactivate and failure semantics | zig test | PASS |
 | N1-AC-09 | CLI exit codes and JSON event schema | zig test | PASS |
 | N1-AC-10 | C ABI smoke (C program compiled with zig cc) | build | PASS |
@@ -73,11 +73,11 @@ implementation was applied in bounded patches. No new lint suppressions were int
 | Validation | Verdict | Evidence / limits |
 |---|---|---|
 | `zig build verify --cache-poison=disallowed --summary failures` | PASS | Final local gate after ZIP extraction checks, including native cases, golden, sim, C smoke, ThreadSanitizer, cross compilation, binary and size gates |
-| `zig build test c-smoke --summary failures` | PASS | Default selection and compatibility alias; host contracts: `.evidence/conformance/1791357834297-suite-conformance-68270b21b47d2901/report.json` |
+| `zig build test test:c-smoke --summary failures` | PASS | Default selection and compatibility alias; host contracts: `.evidence/conformance/1791357834297-suite-conformance-68270b21b47d2901/report.json` |
 | `zig build test -Dsuite=e2e -Dcase=online-lifecycle --summary failures` | PASS | Filtered lifecycle: `.evidence/e2e/1791357448923-suite-e2e-483751b500cdc93f/report.json` |
 | `zig build test -Dsuite=sim,fuzz -Dseeds=2000 -Dseed-start=42 --summary failures` | PASS | Simulation: `.evidence/sim/1791357464115-suite-sim-d2a1eeb2eb130399/report.json`, corpus replay: `.evidence/fuzz/1791357496605-suite-fuzz-e9d02acc9d9fd155/report.json` |
 | Unknown suite/case, zero seeds, narrowing verify | PASS | CLI invocations rejected with exit 1; narrowing verify ran no test nodes |
-| Saved lifecycle validation through `zig build evidence -Daction=validate` | PASS | Saved report: `.evidence/e2e/1791358963767-suite-e2e-599ea13fb6dff571/report.json` |
+| Saved lifecycle validation through `zig build test:evidence -Daction=validate` | PASS | Saved report: `.evidence/e2e/1791358963767-suite-e2e-599ea13fb6dff571/report.json` |
 | Partial reports, unsupported contracts, missing/changed evidence, deadlines and output limits | PASS | Evidence-tool and conformance regression tests, including link/traversal ZIP rejection; `.evidence/unit/1791358961538-tool-evidence-0bd0862ca45049a9/report.json` |
 | Wrong generation, corrupt payload and lost application data | PASS | Independent negative controls and lifecycle cases: `.evidence/e2e/1791358963767-suite-e2e-599ea13fb6dff571/report.json` |
 | CI aggregate and path selection | PASS | Local shell checks: seven job-status combinations and five changed-path cases; workflow YAML parsed |
@@ -144,7 +144,7 @@ GitHub environment, whose deployment policy remains restricted to `main`.
 | Corrected native gates | PASS | [PR run 37687634857](https://github.com/niobium-project/niobium/actions/runs/37687634857) on `eb290db` and [main run 37688502195](https://github.com/niobium-project/niobium/actions/runs/37688502195) on `879a89e`: Ubuntu, Windows, macOS and required `linux` passed; Codecov upload authentication remains separate |
 | Partial publication recovery and duplicate objects | PASS | [Publisher 37688506992](https://github.com/niobium-project/niobium/actions/runs/37688506992) completed all 157 saved reports from source `37660875144`, reusing identical objects from interrupted local/deployed publication |
 | Failed native evidence preservation | PASS | [Publisher 37688518320](https://github.com/niobium-project/niobium/actions/runs/37688518320) archived all 157 reports from failed source `37685855188`. Downloaded Windows tool evidence passed `evidence -Daction=validate` while retaining test verdict FAIL: `.evidence/readback-37685855188-mn0qpl2t/report.json` |
-| Fork and main independent archive validation | PASS | Bounded object downloads passed `zig build evidence -Daction=validate`: `.evidence/readback-37683496636-xw_za1ya/report.json` retains fork repository/revision and workflow failure; `.evidence/readback-37688502195-8ja_w7bb/report.json` identifies tested main `879a89e`. Neither operation ran saved artifacts |
+| Fork and main independent archive validation | PASS | Bounded object downloads passed `zig build test:evidence -Daction=validate`: `.evidence/readback-37683496636-xw_za1ya/report.json` retains fork repository/revision and workflow failure; `.evidence/readback-37688502195-8ja_w7bb/report.json` identifies tested main `879a89e`. Neither operation ran saved artifacts |
 | Local credential-file verification | PASS | Five ignored Zig configure-cache entries contained credentials from environment-based local verification; tracked files and evidence did not. The entries were removed and the generated cache rebuilt. Native AWS shared-file authentication passed live verification (`58407c1`, dirty): `.evidence/unit/1791410625926-tool-evidence-243ed4211bcd7745/report.json`; rebuilt configure-cache scanning found no credential values. Full `zig build verify --cache-poison=disallowed --summary failures` also passed with the correction |
 
 Provider verification does not substitute for the trusted CI publication check. The configured

@@ -1,4 +1,5 @@
 const std = @import("std");
+const commands = @import("../commands.zig");
 pub const catalog = @import("../test_catalog.zig");
 pub const Config = struct {
     exe: *std.Build.Step.Compile,
@@ -99,7 +100,7 @@ pub fn options(b: *std.Build, initial: Config) error{InvalidSelection}!Selection
     run.addArgs(&.{ action, input });
     run.setCwd(b.path("."));
     run.has_side_effects = true;
-    b.step("evidence", "Validate or publish saved results").dependOn(&run.step);
+    commands.step(b, "test:evidence", "Validate or publish saved results").dependOn(&run.step);
     var config = initial;
     config.filter = case;
     config.r2_live = r2_live;
@@ -112,7 +113,7 @@ pub fn select(
     steps: []const *std.Build.Step,
     tsan: ?*std.Build.Step,
 ) void {
-    const step = b.step("test", "Selected suites (default: unit,conformance)");
+    const step = commands.step(b, "test", "Selected suites (default: unit,conformance)");
     for (std.enums.values(catalog.Suite), steps) |suite, suite_step| {
         if (selected.selection.suites.contains(suite)) step.dependOn(suite_step);
     }

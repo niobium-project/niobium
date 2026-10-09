@@ -24,7 +24,7 @@ No Zig static site generator offers navigation, full-text search, link validatio
 ## Consequences
 
 - Contributors who change only Zig code still need only Zig 0.17.0. Editing the site locally needs Node.js; the CI build catches site breakage for everyone else.
-- A broken spec link or a renamed spec file fails `zig build check-docs`, so the site cannot silently drift from the repository paths it cites.
+- A broken spec link or a renamed spec file fails `zig build check:docs`, so the site cannot silently drift from the repository paths it cites.
 - The site adds a second dependency tree (about 290 npm packages) to review on upgrades; it is never shipped to product users.
 - Hosting depends on GitHub Pages and the DNS for `niobium-project.dev`.
 - Every deploy builds each published version from its tag, so deploy time grows with the number of release lines, and an old tag that no longer builds blocks deploys until it is fixed or falls out of the 12-line window. Old versions keep the text they were released with; a fix to them needs a new patch tag.

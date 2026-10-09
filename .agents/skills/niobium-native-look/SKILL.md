@@ -19,7 +19,7 @@ Niobium does not use AppKit controls, WinUI/XAML, or GTK widgets; every pixel is
 | `focus_ring` | 3 (system focus ring extends outward) | 2 (two-color focus rectangle) | 2 |
 | `primary_on_right` | true: primary button at the far right | false: primary button at the far left of the button group | true: suggested action on the right |
 
-When changing values: first find the source in the corresponding external skill and record it in the "source" column of this table or in the commit message; then run `zig build golden -Dupdate=<component>` and compare all three platforms in the gallery.
+When changing values: first find the source in the corresponding external skill and record it in the "source" column of this table or in the commit message; then run `zig build test:golden -Dupdate=<component>` and compare all three platforms in the gallery.
 
 ## Interaction conventions
 

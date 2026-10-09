@@ -1,8 +1,8 @@
 # Release signing
 
-The order cannot be reversed: OS platform signing changes the binary bytes, so artifact and TUF hashes must be computed after platform signing. `zig build example` runs steps 1, 4, 5 and 8 with `examples/hello` (`examples/hello/build.zig` calls `addBundle` in `build/sdk.zig`).
+The order cannot be reversed: OS platform signing changes the binary bytes, so artifact and TUF hashes must be computed after platform signing. `zig build example:hello` runs steps 1, 4, 5 and 8 with `examples/hello` (`examples/hello/build.zig` calls `addBundle` in `build/sdk.zig`).
 
-1. Build once: `zig build cross -Doptimize=ReleaseSafe`.
+1. Build once: `zig build check:cross -Doptimize=ReleaseSafe`.
 2. Functional tests: `zig build verify`.
 3. Platform signing (a hook; v0.1 has no certificates wired in, and this step has never been run):
    - Windows: `signtool sign /fd sha256 /tr <rfc3161> /td sha256 setup.exe`, then `signtool verify /pa`.

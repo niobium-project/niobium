@@ -4,7 +4,7 @@ const std = @import("std");
 
 /// Directories never scanned by repository tools.
 pub const skipped_dirs = [_][]const u8{
-    ".git", ".zig-cache", "zig-out", ".evidence", ".local", ".claude", ".cursor",
+    ".git", ".zig-cache", ".cache", "zig-out", ".evidence", ".local", ".claude", ".cursor",
 };
 
 /// Build outputs of nested packages (examples/hello builds on its own), skipped at any depth.

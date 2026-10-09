@@ -50,9 +50,9 @@ jobs:
       - if: needs.changes.outputs.code == 'true'
         run: zig build test "-Dsuite=unit,conformance,e2e"
       - if: needs.changes.outputs.code == 'true'
-        run: zig build c-smoke
+        run: zig build test:c-smoke
       - if: needs.changes.outputs.code == 'true' && needs.changes.outputs.ui == 'true'
-        run: zig build golden
+        run: zig build test:golden
       - if: github.event_name == 'pull_request'
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
@@ -66,7 +66,7 @@ jobs:
             '^(feat|fix|test|docs|refactor|chore|adr|build)\([a-z0-9/_-]+\): .+'
       - if: github.event_name == 'pull_request' && needs.changes.outputs.code == 'true'
         run: >
-          zig build check-commits --
+          zig build check:commits --
           ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       - if: success() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         uses: ./.github/actions/zig

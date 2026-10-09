@@ -55,17 +55,8 @@ jobs:
         with:
           mode: restore
           build-cache: "false"
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: 1.26.8
-          cache-dependency-path: apps/starlark/go.sum
-      - name: Install the exact Rust toolchain and guest targets
-        run: |
-          set -euo pipefail
-          rustup toolchain install 1.96.1 --profile minimal
-          # These fixed matrix values are arguments, never evaluated shell source.
-          read -r -a targets <<< "$NIOBIUM_RUST_TARGETS"
-          rustup target add --toolchain 1.96.1 "${targets[@]}"
+      - name: Install pinned Rust and Go
+        run: zig build tools:install --summary all
       - name: Resolve Windows GNU prerequisites explicitly
         if: runner.os == 'Windows'
         run: |
@@ -122,8 +113,9 @@ jobs:
               'os': platform.platform(), 'runner_image': os.environ.get('ImageVersion'),
               'zig_version': command('zig', 'version'),
               'zig_env_zon': command('zig', 'env'),
-              'rustc': command('rustc', '+1.96.1', '-Vv'),
-              'cargo': command('cargo', '+1.96.1', '-V'), 'go': command('go', 'version'),
+              'rustc': command(str(root / '.cache/tools/rust/1.96.1/bin' / ('rustc.exe' if os.name == 'nt' else 'rustc')), '-Vv'),
+              'cargo': command(str(root / '.cache/tools/rust/1.96.1/bin' / ('cargo.exe' if os.name == 'nt' else 'cargo')), '-V'),
+              'go': command(str(root / '.cache/tools/go/1.26.8/bin' / ('go.exe' if os.name == 'nt' else 'go')), 'version'),
               'c_compiler': command(os.environ.get('CC', 'cc'), '--version'),
               'source_files': source,
           }
@@ -132,7 +124,7 @@ jobs:
       - name: Run native contracts, author parity, lifecycle and SDK publication
         run: |
           set -euo pipefail
-          zig build core-test core-sdk core-cross-tools --cache-poison=disallowed --summary all \
+          zig build test:core core:sdk core:cross-tools --cache-poison=disallowed --summary all \
             2>&1 | tee .evidence/core-ci/build.log
       - name: Package the qualified SDK and final executable inventory
         run: |

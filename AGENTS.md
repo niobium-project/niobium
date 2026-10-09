@@ -54,6 +54,7 @@ A module may only `@import` the modules `build/modules.zig` hands it, which the 
 6. For review, security or boundary-related changes: review against the [review-niobium](.agents/skills/review-niobium/SKILL.md) checklist.
 7. For technical prose, read the installed `technical-writing` skill; for terminology or decisions also read `domain-modeling`.
 8. External GUI skills (`apple-hig`, `winui-app`, `gtk-ui-ux-engineer`) only provide design values and checklists; the SwiftUI/AppKit controls, WinUI 3/XAML/C#/MSIX and GTK/libadwaita they recommend do not change [ADR-0008](docs/adr/0008-shared-software-renderer.md).
+9. For the build graph, step names, or host Rust/Go pins: read [niobium-build](.agents/skills/niobium-build/SKILL.md). The step catalog lives in [tooling](docs/development/tooling-and-rules.md).
 
 ## 5. Zig rules
 
@@ -76,7 +77,7 @@ Test lanes: L0 static (check/lint/schema/size), L1 pure core (VirtualPlatform), 
 - New standard-core evidence uses N2 IDs in [acceptance-plan-v0.3](docs/acceptance-plan-v0.3.md). Prior N2 and N1 records retain their original profiles and cannot establish new contract completion; shared test-system evidence retains its declared scope.
 - Acceptance status uses only `PASS`/`FAIL`/`BLOCKED`/`NOT_RUN`/`DEFERRED`; without real evidence, never write "supported" or "passed".
 - Compiling, mocks succeeding, screenshots and an agent's own claims do not constitute completion. Evidence goes to `.evidence/<suite>/<UTC>/`.
-- Goldens are never updated wholesale: `zig build golden -Dupdate=<component>` must name a scope, and the diff is inspected in review.
+- Goldens are never updated wholesale: `zig build test:golden -Dupdate=<component>` must name a scope, and the diff is inspected in review.
 
 ## 7. Changes, commits and definition of done
 
@@ -91,6 +92,7 @@ Test lanes: L0 static (check/lint/schema/size), L1 pure core (VirtualPlatform), 
 | Skill | Purpose |
 |---|---|
 | `niobium-development` | Design → contract → implement → verify → deliver main loop, with the anti-pattern table |
+| `niobium-build` | Root `zig build` steps, subdirectory packages, and pinned Rust/Go |
 | `niobium-ui-kit` | Installer UI components, tokens, screens and goldens |
 | `niobium-native-look` | Map each platform's look and interaction conventions to tokens |
 | `niobium-platform-capability` | Contract-first flow and crash pitfalls for new capabilities / platform backends |

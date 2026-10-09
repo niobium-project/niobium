@@ -1,4 +1,4 @@
-//! `zig build golden|gallery` and the tokens.json -> Zig codegen step.
+//! `zig build test:golden|gallery` and the tokens.json -> Zig codegen step.
 
 const std = @import("std");
 const evidence = @import("evidence.zig");

@@ -25,5 +25,5 @@ Zig 0.17 `build.zig.zon` dependencies can only fetch archives; they cannot fetch
 ## Consequences
 
 - The first build on a new machine needs access to GitHub, codeload and jsDelivr; after that it works offline. A self-hosted mirror is tracked in the [roadmap](../roadmap-v0.1.md).
-- Upgrading a dependency: change the URL and sha256 in `deps.zon`, update `PROVENANCE.md`, then run `zig build test`, `zig build golden` and fuzz.
+- Upgrading a dependency: change the URL and sha256 in `deps.zon`, update `PROVENANCE.md`, then run `zig build test`, `zig build test:golden` and fuzz.
 - Local modifications exist only as patches, so review sees the diff directly; when an upstream change makes a patch mismatch, the build fails instead of drifting silently.

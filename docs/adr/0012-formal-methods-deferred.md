@@ -9,7 +9,7 @@ The transaction/commit/recovery state machine suits TLA+ modeling, but TLC depen
 
 ## Decision
 
-- v0.1 has no `formal/`. State machine correctness is covered by three kinds of Zig tests: crash injection at every kill point, seeded fault simulation with `zig build sim`, and exhaustive enumeration of journal replay.
+- v0.1 has no `formal/`. State machine correctness is covered by three kinds of Zig tests: crash injection at every kill point, seeded fault simulation with `zig build test:sim`, and exhaustive enumeration of journal replay.
 - Re-evaluate when the state machine grows to concurrent transactions or maintainer self-update.
 
 ## Consequences

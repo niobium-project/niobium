@@ -52,18 +52,18 @@ Pick the minimal set for the change, then run the full set:
 | Change | Command |
 |---|---|
 | Any Zig | `zig build check test` |
-| transaction / executor / platform | `zig build sim -Dseeds=2000` |
-| Parser | `zig build fuzz` (and add the triggering sample to `tests/fuzz/corpus/`) |
-| UI | `zig build golden`, with `-Dupdate=<component>` when needed; inspect `zig build gallery` manually |
-| CLI / engine | `zig build e2e c-smoke` |
-| Size / dependencies | `zig build cross check-binary size-gate` |
+| transaction / executor / platform | `zig build test:sim -Dseeds=2000` |
+| Parser | `zig build test:fuzz` (and add the triggering sample to `tests/fuzz/corpus/`) |
+| UI | `zig build test:golden`, with `-Dupdate=<component>` when needed; inspect `zig build ui:gallery` manually |
+| CLI / engine | `zig build test:e2e test:c-smoke` |
+| Size / dependencies | `zig build check:cross check:binary check:size` |
 | Before delivery | `zig build verify --cache-poison=disallowed` |
 
-Put the acceptance ID at the start of the test name. Current Component behavior uses N2 IDs and `docs/acceptance-plan-v0.3.md`; preserve earlier N1/N2 scopes and results. Run `zig build component-test author-v2-test core-test` for current contracts; retained `aot-test aot-e2e` evidence does not establish Component-v2 completion. Details in [references/acceptance.md](references/acceptance.md).
+Put the acceptance ID at the start of the test name. Current Component behavior uses N2 IDs and `docs/acceptance-plan-v0.3.md`; preserve earlier N1/N2 scopes and results. Run `zig build test:component test:author test:core` for current contracts; retained `aot-test aot-e2e` evidence does not establish Component-v2 completion. Details in [references/acceptance.md](references/acceptance.md).
 
 ## 5. Deliver
 
-- Commit: `<type>(<scope>): English summary`, ≤ 300 net lines; `zig build check-commits`.
+- Commit: `<type>(<scope>): English summary`, ≤ 300 net lines; `zig build check:commits`.
 - The final report lists: commands actually run and their results, items not run and why, known limitations. Do not write "passed" without evidence.
 - Keep the author's claim, tool evidence, and independent review apart. A review or a reading of the diff does not replace a command that ran.
 - On a dirty tree, name what was tested, not only `HEAD`.

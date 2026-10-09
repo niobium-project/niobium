@@ -85,4 +85,4 @@ jobs:
           printf '[default]\naws_access_key_id = %s\naws_secret_access_key = %s\n' \
             "$AWS_ACCESS_KEY_ID" "$AWS_SECRET_ACCESS_KEY" > "$AWS_SHARED_CREDENTIALS_FILE"
           unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
-          zig build evidence -Daction=publish -Dinput="$RUNNER_TEMP/source-evidence" --cache-poison=disallowed
+          zig build test:evidence -Daction=publish -Dinput="$RUNNER_TEMP/source-evidence" --cache-poison=disallowed

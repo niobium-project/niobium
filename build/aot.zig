@@ -1,6 +1,7 @@
 //! Native PoC delivery and conformance consume prebuilt runtime artifacts at product assembly.
 
 const std = @import("std");
+const commands = @import("commands.zig");
 const graph_mod = @import("graph.zig");
 const authoring = @import("compiler.zig");
 const wamr = @import("wamr.zig");
@@ -9,10 +10,19 @@ pub fn add(
     b: *std.Build,
     inputs: graph_mod.Inputs,
     check_binary: *std.Build.Step.Compile,
+    host: @import("host_tools.zig").Tools,
 ) ?*std.Build.Step {
-    const artifacts = b.step("aot", "Build compiler, runtime and capability libraries");
-    const tests = b.step("aot-test", "Authoring, sandbox and frozen-plan conformance");
-    const e2e = b.step("aot-e2e", "Native DSL/AOT product, migration and crash-recovery evidence");
+    const artifacts = commands.step(
+        b,
+        "aot:build",
+        "Build compiler, runtime and capability libraries",
+    );
+    const tests = commands.step(b, "aot:test", "Authoring, sandbox and frozen-plan conformance");
+    const e2e = commands.step(
+        b,
+        "aot:e2e",
+        "Native DSL/AOT product, migration and crash-recovery evidence",
+    );
     const target = b.graph.host;
     if (target.result.os.tag != .macos or target.result.cpu.arch != .aarch64) {
         const unsupported = b.addFail("DSL/AOT PoC requires a macOS arm64 build host");
@@ -26,7 +36,7 @@ pub fn add(
         .optimize = .safe,
         .inputs = inputs,
     });
-    const tools = authoring.add(b, &graph);
+    const tools = authoring.add(b, &graph, host);
     const runtime_module = graph.root("apps/runtime/main.zig", &.{
         "runtime", "program", "contracts",
     });
@@ -42,11 +52,8 @@ pub fn add(
     }) |artifact| artifacts.dependOn(&b.addInstallArtifact(artifact, .{}).step);
     artifacts.dependOn(&b.addInstallBinFile(tools.starlark, "niobium-starlark").step);
     artifacts.dependOn(&b.addInstallFile(b.path("api/c/compiler.h"), "include/compiler.h").step);
-    const capability_header = b.addInstallFile(
-        b.path("api/c/capability.h"),
-        "include/capability.h",
-    );
-    artifacts.dependOn(&capability_header.step);
+    const header = b.addInstallFile(b.path("api/c/capability.h"), "include/capability.h");
+    artifacts.dependOn(&header.step);
     const libraries = guests(b, artifacts);
     addTests(b, &graph, tests, tools.tests);
     const suite_module = graph.root("tests/aot/main.zig", &.{
@@ -95,7 +102,7 @@ fn addSizeGate(
     checker: *std.Build.Step.Compile,
     tests: *std.Build.Step,
 ) void {
-    const step = b.step("aot-size", "Precompiled runtime size and growth budget");
+    const step = commands.step(b, "aot:size", "Precompiled runtime size and growth budget");
     const run = b.addRunArtifact(checker);
     run.setCwd(b.path("."));
     run.addArgs(&.{

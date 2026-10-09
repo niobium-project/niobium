@@ -4,7 +4,7 @@ Numbers are assigned once and never reused or renumbered. Template: title `# ADR
 
 | Number | Title | Status |
 |---|---|---|
-| [0001](0001-repository-baseline-and-zig-only-toolchain.md) | Repository baseline and Zig-only toolchain | Accepted; amended by 0021, 0022 and 0023 |
+| [0001](0001-repository-baseline-and-zig-only-toolchain.md) | Repository baseline and Zig-only toolchain | Accepted; amended by 0021, 0022, 0023 and 0027 |
 | [0002](0002-library-first-core-and-c-abi.md) | Library-first core and C ABI | Accepted; amended by 0022 |
 | [0003](0003-strict-json-manifest.md) | Strict JSON product manifest | Accepted; amended by 0022 |
 | [0004](0004-tuf-profile-v1.md) | Installer TUF profile v1 | Accepted; amended by 0022 |
@@ -30,3 +30,4 @@ Numbers are assigned once and never reused or renumbered. Template: title `# ADR
 | [0024](0024-native-runtime-dependency-qualification.md) | Native runtime dependency qualification | Accepted; amended by 0025 |
 | [0025](0025-baseline-cpu-runtime-publication.md) | Baseline CPU targets for runtime publication | Accepted |
 | [0026](0026-pinned-rust-component-wasm.md) | Pinned Rust for Component Wasm | Accepted |
+| [0027](0027-zig-provisioned-host-tools.md) | Zig-provisioned Rust and Go for build and test | Accepted |

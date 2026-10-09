@@ -11,7 +11,7 @@ A target claim records OS/version, CPU/emulation, filesystem and privilege scope
 
 ## Current gates
 
-`zig build core-test` is a dependency of `verify`. It includes typed model and
+`zig build test:core` is a dependency of `verify`. It includes typed model and
 compiler tests, author/C/Starlark conformance, Component engine/IPC limits,
 content interoperation, image assembly, native access, kernel recovery and the
 complete native `core-e2e` lane. `core-cross-tools` builds the isolated assembly
@@ -145,7 +145,7 @@ on macOS arm64. Evidence: `.evidence/final-v2/20261008T194056Z/result.json` and
 executed test/installer bytes. The Windows-specific link-input case has separate
 actual Windows evidence; the local skip is not a Windows support claim.
 
-`zig build fuzz sim -Dseeds=2000 --cache-poison=disallowed --summary all` completed
+`zig build test:fuzz test:sim -Dseeds=2000 --cache-poison=disallowed --summary all` completed
 **11/11 steps**. Corpus replay is recorded in
 `.evidence/fuzz/1791473758366-suite-fuzz-91e3d412f9f9f6f0`; retained transaction
 simulation is recorded in `.evidence/sim/1791473737843-suite-sim-188233f828caae6a`.
@@ -258,7 +258,7 @@ identities. The replay uses UID/GID 0 on tmpfs, so it qualifies CPU behavior in 
 emulated context and does not establish unprivileged access or every physical CPU.
 
 The exact code head also passed
-`zig build verify core-sdk core-cross-tools --cache-poison=disallowed --summary all`:
+`zig build verify core:sdk core:cross-tools --cache-poison=disallowed --summary all`:
 804/804 steps and 161/162 reported tests, with one Windows-only case skipped on
 macOS. `.evidence/final-v2/20261009T022607Z` records the clean tree. The two
 `N2-CPU-01` environment cases run inside `core-test`; the separate Clang override

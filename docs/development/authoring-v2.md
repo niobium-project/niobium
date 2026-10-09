@@ -24,7 +24,7 @@ The [C example](../../tests/author/author.c) constructs the same model through
 context-owned typed object handles and separately owned output buffers. Follow
 the header's lifetime and numeric-tag rules when implementing a language SDK.
 
-For a GNU Windows consumer of `zig build core-sdk`, use GNU ld 2.47 or newer
+For a GNU Windows consumer of `zig build core:sdk`, use GNU ld 2.47 or newer
 (or the pinned Zig/LLD toolchain) and link the published archive
 with its [native system dependency](../spec/authoring-c-abi-v2.md#native-static-linkage):
 
@@ -103,7 +103,7 @@ The complete runnable example is
 ## Run conformance
 
 ```sh
-zig build author-v2-test --cache-poison=disallowed --summary all
+zig build test:author --cache-poison=disallowed --summary all
 ```
 
 The graph builds the static C ABI with Zig compiler runtime support, compiles its

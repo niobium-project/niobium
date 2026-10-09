@@ -1,10 +1,11 @@
 //! Runtime template release builds precede byte-only product assembly qualification.
 
 const std = @import("std");
+const commands = @import("commands.zig");
 const graph_mod = @import("graph.zig");
 
 pub fn add(b: *std.Build, inputs: graph_mod.Inputs) *std.Build.Step {
-    const step = b.step("image-test", "Native image assembly and target-host execution");
+    const step = commands.step(b, "test:image", "Native image assembly and target-host execution");
     const host = graph_mod.create(b, .{
         .target = b.graph.host,
         .optimize = .safe,

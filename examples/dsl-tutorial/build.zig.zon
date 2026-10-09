@@ -1,0 +1,10 @@
+.{
+    .name = .niobium_dsl_tutorial,
+    .version = "0.0.0",
+    .fingerprint = 0x775a5ff3d295c5ac,
+    .minimum_zig_version = "0.17.0",
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+    },
+}

@@ -8,14 +8,13 @@ separate examples of the same public contract.
 
 ## Build the examples
 
-The repository build requires Zig 0.17.0, Cargo with Rust 1.96.1, and its
-`wasm32-unknown-unknown` target. It explicitly selects `cargo +1.96.1`; it does
-not change the user's default Rust toolchain. The checked dependency fetcher
-obtains the exact tools listed in
-[toolchain.zon](../../third_party/wasmtime/toolchain.zon).
+The repository build requires Zig 0.17.0. It installs pinned Rust 1.96.1,
+including `wasm32-unknown-unknown`, under `.cache/tools` and does not change a
+user-wide Rust toolchain. The checked dependency fetcher obtains the exact Wasm
+tools listed in [toolchain.zon](../../third_party/wasmtime/toolchain.zon).
 
 ```sh
-zig build component-test --cache-poison=disallowed --summary all
+zig build test:component --cache-poison=disallowed --summary all
 ```
 
 The build stages each Rust consumer into an isolated Cargo/WIT workspace. It copies

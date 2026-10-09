@@ -1,4 +1,4 @@
-//! `zig build fmt|lint|check|check-docs|check-commits`. All tools are host Zig executables.
+//! `zig build fmt|lint|check|check:docs|check:commits`. All tools are host Zig executables.
 
 const std = @import("std");
 const evidence = @import("evidence.zig");
