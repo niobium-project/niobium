@@ -44,7 +44,7 @@ fn addWireConformance(
     const tests = b.addTest(.{ .name = "kernel-wire-contract", .root_module = module });
     kernel_step.dependOn(&b.addRunArtifact(tests).step);
     const executable = b.addExecutable(.{
-        .name = "test:kernel-wire",
+        .name = "test-kernel-wire",
         .root_module = module,
     });
     const install = b.addInstallArtifact(executable, .{});

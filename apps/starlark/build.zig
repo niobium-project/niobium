@@ -33,7 +33,7 @@ pub fn execute(init: std.process.Init, tracing: bool) !void {
         .environ_map = init.environ_map,
         .stdout_limit = .limited(stream_limit),
         .stderr_limit = .limited(stream_limit),
-        .timeout = .{ .duration = .{ .raw = .fromSeconds(300), .clock = .awake } },
+        .timeout = .{ .duration = .{ .raw = .fromSeconds(900), .clock = .awake } },
     }) catch |err| {
         std.log.err("Go invocation failed: {s}", .{@errorName(err)});
         return err;

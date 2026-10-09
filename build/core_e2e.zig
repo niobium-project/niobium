@@ -23,7 +23,7 @@ pub fn add(b: *std.Build, graph: *const graph_mod.Graph, inputs: Inputs) *std.Bu
         "compiler", "program", "content", "host_primitives", "image", "kernel",
     });
     module.addImport("suite_provenance", graph.root("tests/aot/provenance.zig", &.{"core"}));
-    const suite = b.addExecutable(.{ .name = "core:e2e", .root_module = module });
+    const suite = b.addExecutable(.{ .name = "core-e2e", .root_module = module });
     const run = b.addRunArtifact(suite);
     run.setCwd(b.path("."));
     run.has_side_effects = true;
