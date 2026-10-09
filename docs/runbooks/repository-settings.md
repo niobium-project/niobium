@@ -13,6 +13,9 @@ gh label create merge-me:squash --repo niobium-project/niobium \
 gh label create merge-me:no-squash --repo niobium-project/niobium \
   --description "Land keeping commits; rebase and re-sign when needed" \
   --color 1D76DB
+gh label create merge-me:done --repo niobium-project/niobium \
+  --description "Landed on main by the merge-prs skill" \
+  --color 5319E7
 ```
 
 Creating a label that already exists exits non-zero. Confirm with `gh label list --repo niobium-project/niobium`.

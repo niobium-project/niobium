@@ -1,6 +1,6 @@
 ---
 name: merge-prs
-description: Land labeled GitHub pull requests onto main as a linear signed history. Use when asked to merge, land, or scan merge-me pull requests. Requires maintainer approval plus merge-me:squash or merge-me:no-squash. Orders a stack by branch dependency, resolves conflicts, checks every landed commit, pushes once, deletes the landed work branch locally and on origin, and comments on each pull request.
+description: Land labeled GitHub pull requests onto main as a linear signed history. Use when asked to merge, land, or scan merge-me pull requests. Requires maintainer approval plus merge-me:squash or merge-me:no-squash. Orders a stack by branch dependency, resolves conflicts, checks every landed commit, pushes once, deletes the landed work branch locally and on origin, comments on each pull request, and labels it merge-me:done after it closes.
 ---
 
 # Merge pull requests
@@ -184,6 +184,13 @@ The failure comment names the reason in one sentence, then: add the label again 
 Success: comment with the strategy (`squash` or `keep commits`), each landed sha and subject, the three checks above, and the range-diff when commits were rewritten.
 
 When the source sha is now on `origin/main`, GitHub marks the pull request merged. Comment, and do not close it again. When the commits were rewritten, `gh pr close N` after the comment. Close only after `git push` has succeeded.
+
+After that close, on a pull request this run landed, remove the landing label and add `merge-me:done`. GitHub marking the pull request merged is already that close. The label is created in [repository settings](../../../docs/runbooks/repository-settings.md).
+
+```sh
+gh pr edit N --add-label merge-me:done \
+  --remove-label merge-me:squash --remove-label merge-me:no-squash
+```
 
 ## Delete the work branch
 
