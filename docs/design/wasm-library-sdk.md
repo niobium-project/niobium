@@ -27,7 +27,9 @@ calls while replacing generated trees with canonical host-computed references.
 
 Upstream `wit-bindgen`, `wasm-tools` and Wasmtime implement generation, Component
 encoding and the Canonical ABI. Niobium does not define a parallel guest memory
-layout. The [capability contract](../spec/capability-library-v2.md) owns enabled
+layout. Replacement of these implementations follows
+[ADR-0026](../adr/0026-pinned-rust-component-wasm.md). The
+[capability contract](../spec/capability-library-v2.md) owns enabled
 features, imports, buffer ownership, execution limits and error behavior.
 
 Production calls use prebound observations and values. Resource-free type-only

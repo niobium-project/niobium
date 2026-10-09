@@ -63,9 +63,10 @@ assembly; verification and target execution refer to those exact final bytes.
 
 The runtime graph excludes compiler, author frontend and preset modules. The
 Component engine uses pinned Wasmtime with Pulley and no ambient WASI or native
-JIT. Standard upstream tooling generates guest bindings and implements the
-Canonical ABI. Type-only imports carry no callable authority; production product
-calls consume prebound values and return declarative plans.
+JIT ([ADR-0026](../adr/0026-pinned-rust-component-wasm.md)). Standard upstream
+tooling generates guest bindings and implements the Canonical ABI. Type-only
+imports carry no callable authority; production product calls consume prebound
+values and return declarative plans.
 
 ## Content, effects and recovery
 

@@ -14,11 +14,11 @@ Current explicit user instruction > this file > accepted ADRs > active versioned
 
 ## 2. Inviolable principles
 
-[ADR-0022](docs/adr/0022-installer-dsl-and-aot-toolchain.md) owns the architecture direction, amended by [ADR-0023](docs/adr/0023-standard-content-and-component-contracts.md) for standard content, WIT and cross-host compilation. These rules apply to every new feature:
+[ADR-0022](docs/adr/0022-installer-dsl-and-aot-toolchain.md) owns the architecture direction, amended by [ADR-0023](docs/adr/0023-standard-content-and-component-contracts.md) for standard content, WIT and cross-host compilation, and by [ADR-0026](docs/adr/0026-pinned-rust-component-wasm.md) for the Component implementation language. These rules apply to every new feature:
 
 1. **Author programs execute at build time.** Native-language SDKs and Starlark construct the same typed product model. Serialized program data is a compiler output.
 2. **The compiler packages a complete precompiled runtime.** Product builds must preserve the template input and executable code sections, and must not relink or execute a target runtime. The host-independent image assembler and final signer change only the output image.
-3. **Capability contracts bind libraries.** Official and product/third-party Wasm Components use the same WIT and upstream Canonical ABI implementation. No ambient WASI, filesystem, network, process or elevation authority is granted. The retained Core Wasm v1 ABI keeps its historical scope.
+3. **Capability contracts bind libraries.** Official and product/third-party Wasm Components use the same WIT and upstream Canonical ABI implementation. No ambient WASI, filesystem, network, process or elevation authority is granted. The retained Core Wasm v1 ABI keeps its historical scope. Wasmtime, `wit-bindgen`, `wasm-tools` and libraries maintained in this repository stay on the pinned Rust implementations until a competing alternative is qualified ([ADR-0026](docs/adr/0026-pinned-rust-component-wasm.md)).
 4. **Core provides mechanisms.** Product distribution, component selection, coexistence, channels and layout policies belong to libraries, presets and templates.
 5. **Machine effects are transactional.** The host validates and freezes outputs before mutation; recovery uses durable plans and reaches only old-good or new-good.
 6. **Compatibility is explicit.** Product migration/bridge policy belongs to the product. Framework and library state have independent versioned compatibility contracts.

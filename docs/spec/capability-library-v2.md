@@ -1,7 +1,7 @@
 # Capability library v2
 
 - **Status:** Normative for Component profile 1; product and platform qualification is recorded separately.
-- **Decision:** [ADR-0023](../adr/0023-standard-content-and-component-contracts.md).
+- **Decision:** [ADR-0023](../adr/0023-standard-content-and-component-contracts.md), amended for the Component implementation language by [ADR-0026](../adr/0026-pinned-rust-component-wasm.md).
 - **Supersedes:** [Capability library v1](capability-library-v1.md) for runtime ABI 2 products. Retained v1 evidence keeps its original scope.
 
 ## Contract and identities
@@ -68,9 +68,11 @@ fixture does not establish production primitive availability.
 The qualified implementation uses Wasmtime 49.0.2's official Component C API,
 Pulley, and standard `wit-bindgen`. Cranelift prepares Pulley interpreter bytecode
 from checked standard Component Wasm; it does not emit native guest machine code
-for this profile. Product-supplied serialized engine artifacts MUST NOT be
-accepted. WASI, guest threads, async components, native guest JIT and automatic
-module loading are disabled.
+for this profile. Replacement of this implementation follows
+[ADR-0026](../adr/0026-pinned-rust-component-wasm.md).
+Product-supplied serialized engine artifacts MUST NOT be accepted. WASI,
+guest threads, async components, native guest JIT and automatic module
+loading are disabled.
 
 Before compilation, the upstream Wasm parser rejects every nested core or
 Component start section and enforces structure bounds. This scan supplements

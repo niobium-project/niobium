@@ -11,6 +11,9 @@ hard development constraints. Product-author documentation lives in
 runtime dependency qualification by OS and ABI, separately from retained binaries.
 [ADR-0025](adr/0025-baseline-cpu-runtime-publication.md) defines CPU baselines for
 published runtimes and SDK artifacts.
+[ADR-0026](adr/0026-pinned-rust-component-wasm.md) keeps the Component engine
+and repository-owned guests on pinned Rust until a competing alternative is
+qualified.
 
 ## Active contracts
 
