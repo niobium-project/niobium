@@ -23,9 +23,9 @@ zig build verify                # 当前门禁与保留的回归测试
 
 当前 runtime 是无界面的用户范围方案。标准 WIT 与社区 bindgen 接入 Wasmtime/Pulley；能力库接收类型化输入和预先绑定的观察结果，不获得隐式 WASI 或机器操作权限。规范化 POSIX pax 容器保存文件、目录和链接的逻辑结构，部署权限通过独立策略明确表达。PE、ELF 与 Mach-O 组装保留模板的可执行代码，并绑定原生前缀、产品及载荷身份。
 
-本地原生或模拟目标的执行分别记录，不能据此宣称原生 Windows/Linux CI、整机范围、完整原生应用元数据、发布者身份认证或公证已经验收。最终资格确认仍在进行。1 MiB 预留段、ASCII 资源名称和 WAMR profile 属于保留的 v1 PoC，不是当前内容与 Component 契约的限制。
+本地原生或模拟目标的执行分别记录。原生托管 CI 验收覆盖已记录 runner 上下文中的用户范围操作。这些记录不能证明整机范围、完整原生应用元数据、发布者身份认证或公证已经验收，进一步的资格确认仍在进行。1 MiB 预留段、ASCII 资源名称和 WAMR profile 属于保留的 v1 PoC，不是当前内容与 Component 契约的限制。
 
-从[作者接口 v2](docs/development/authoring-v2.md)、[Component SDK](docs/development/component-library-sdk.md)和[跨主机构建](docs/development/cross-host-builds.md)开始。[当前契约](docs/README.md)定义共享编译器及 runtime 的边界。`examples/hello`、manifest 教程和旧 [PoC 操作说明](docs/development/aot-poc.md)保留原有 API 范围。
+从 [DSL 入门教程](apps/user-docs/src/content/docs/zh/tutorial/index.md)及其[可运行示例](examples/dsl-tutorial/)开始，构建你的第一个 Starlark 产品。SDK 细节见[作者接口 v2](docs/development/authoring-v2.md)、[Component SDK](docs/development/component-library-sdk.md)和[跨主机构建](docs/development/cross-host-builds.md)。[当前契约](docs/README.md)定义共享编译器及 runtime 的边界。`examples/hello`、manifest 教程和旧 [PoC 操作说明](docs/development/aot-poc.md)保留原有 API 范围。
 
 ## 路线图
 
@@ -44,7 +44,7 @@ zig build verify                # 当前门禁与保留的回归测试
 | 🔜 | 在线、离线文件与自解压产品方案 |
 | 🗓️ | 发布者签名与公证验收 |
 | 🗓️ | 标准 UI、嵌入式维护与无障碍支持 |
-| 🗓️ | 原生平台 CI 与整机范围验收 |
+| 🗓️ | 更多原生平台与整机范围验收 |
 
 [用户路线图](apps/user-docs/src/content/docs/zh/roadmap.md)解释这些项目。[维护者路线图](docs/roadmap-v0.3.md)、[功能归属目录](docs/feature-coverage.md)与[产品旅程](docs/design/product-journeys.md)定义接口、负责人、依赖关系和验收。
 

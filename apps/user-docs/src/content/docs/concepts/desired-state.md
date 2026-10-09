@@ -1,47 +1,34 @@
 ---
-title: Desired-state manifest
-description: Why a Niobium release is described as data, and what the installer derives from it.
+title: Compiled product and desired state
+description: How build-time author code produces a fixed typed model and runtime calls produce desired installation resources.
 ---
 
-> Scope: this page describes the retained v1 implementation. See the [project overview](/) for DSL/AOT authoring and capability contracts, and [Status and platforms](/status/) for evidence.
+A Niobium product starts as build-time code. The author constructs a typed model; fixed capability libraries later use that model, installation inputs, and observations to propose desired resources.
 
-A Niobium release is a JSON document that states what should be on the machine, not how to put it there. The installer compares that desired state with what is installed and plans the operations itself. Nothing in the manifest is executed.
+The [DSL tutorial](/tutorial/) follows this flow with a Starlark product. The current Component-v2 profile uses command-line operation and user-scope roots. Execution qualification is recorded separately on [Status and platforms](/status/).
 
-## What the manifest says
+## The compiled model
 
-The product manifest names the product, its release, the components and their artifacts per platform, the OS integrations to create, and the App Bootstrap entrypoint:
+Native Zig, the authoring C API, and Starlark construct the same product model. Author variables, functions, conditions, and loops execute during the build. The emitted JSON is compiler output consumed by the shared compiler pipeline.
 
-- **product**: a reverse-domain `id`, display `name`, `publisher`, `version` text and `release_sequence`;
-- **install**: which scopes (`user`, `machine`) are allowed and which is the default;
-- **components**: each with an `id`, a title, whether it is required or selected by default, and one artifact digest per platform;
-- **integrations**: shortcuts, file associations and services, each pointing at a named entrypoint of a component;
-- **bootstrap**: the entrypoint that implements [App Bootstrap](/concepts/app-bootstrap/);
-- **experience**: accent color, license and welcome text, icon.
+The model fixes the product identity and release sequence, typed inputs, content identities, logical roots, grants, observations, and capability calls. Each call selects an exact library implementation and exported WIT function. WIT is the WebAssembly Component interface language that defines parameter and result types.
 
-Field-level rules are in the [manifest reference](/reference/manifest/).
+The compiler checks those types and the selected runtime profile before packaging a complete precompiled runtime. The delivered installer contains the model and fixed libraries; installation does not execute the author source.
 
-## Why data and not scripts
+## Desired resources at installation time
 
-Install scripts are where installers usually go wrong: they run with elevated rights, they cannot be rolled back, and they turn every product into a special case. Niobium removes them:
+The runtime resolves typed input values and declared read-only observations, then evaluates the compiled call graph. A plan-producing call returns desired containers with an authorized root, grant, relative prefix, and explicit file and directory access policies.
 
-- unknown fields are rejected at every level, and the fields `pre_install`, `post_install`, `script`, `exec`, `shell` and `command` are rejected wherever they appear;
-- a manifest with a newer `schema`, or a `min_installer` above the running installer, fails closed instead of being half understood;
-- what the installer can do to a machine is a closed set of capabilities: managed files and directories, shortcuts, file associations, services and application registration.
+The host checks content identities, paths, ownership, access ceilings, conflicts, and budgets. It freezes the accepted content and native resource inventory before executing a [transaction](/concepts/transactions/). A library failure aborts evaluation; it cannot be treated as a successful empty plan.
 
-A product that needs something else, such as migrating its data, does it in its own process through App Bootstrap, after the installer has finished deploying files.
+For example, the tutorial binds `enabled` to the files library's request. Reconfiguration with `enabled=false` produces an empty desired content set, removing the previously published file while retaining the installation state.
 
-## From desired state to a plan
+## Product policy and paths
 
-When you run `setup install`, `update`, `repair` or `uninstall`, the engine:
+The author and libraries own selection and layout policy. The product declares logical root IDs; an invocation binds them to absolute directories. The host validates that mapping and rejects incompatible ownership or unsafe root relationships.
 
-1. resolves the release from the signed repository and verifies it ([trust model](/concepts/trust/));
-2. combines the manifest with your choices (scope, components, install directory) into a desired state;
-3. reads the installed state from the install root;
-4. compiles the difference into a typed plan of operations, each with an apply, a rollback and a verify step;
-5. executes the plan as a [transaction](/concepts/transactions/).
+The tutorial declares `application` and binds it with `--root application=<absolute-directory>`. It requests the `hello` prefix within that root. No framework-selected product directory or fixed component-selection schema is required for this profile.
 
-The GUI and the command line build the same request and run the same engine path, so a choice made in the window and the equivalent command produce the same plan.
+Product model versions and per-call state versions have separate compatibility rules. Their changes require explicit applicable upgrade or migration declarations. See the [compiled product contract](https://github.com/niobium-project/niobium/blob/main/docs/spec/program-image-v2.md) and [migration contract](https://github.com/niobium-project/niobium/blob/main/docs/spec/migration-v2.md).
 
-## Where things go
-
-The framework decides every machine path from the scope and the product id; components only contain relative paths. For example, a user-scope install on macOS lives in `~/Library/Application Support/<product id>`, and a machine-scope install on Linux in `/opt/<product id>`. The full table is in [repository and install layout](/reference/repository-layout/).
+The retained JSON manifest workflow remains documented in the [v1 manifest reference](/reference/manifest/).

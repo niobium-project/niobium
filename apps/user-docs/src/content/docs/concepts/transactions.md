@@ -1,53 +1,55 @@
 ---
-title: Transactions
-description: How Niobium guarantees that an interrupted install, update or uninstall ends at the old version or the new one.
+title: Transactions and recovery
+description: How the Component-v2 kernel freezes installation plans and recovers publication after interruption.
 ---
 
-> Scope: this page describes the retained v1 implementation. See the [project overview](/) for DSL/AOT authoring and capability contracts, and [Status and platforms](/status/) for evidence.
+The Component-v2 kernel validates and freezes an installation plan before changing deployment resources. A durable commit decision determines whether recovery preserves the old publication or completes the new one.
 
-Every install, update, repair and uninstall runs as one transaction with a single point of no return. Before that point the old version stays active and recovery rolls back; after it the new version is active and recovery rolls forward. Kill the process, cut the power or fill the disk at any moment: the next run of `setup` ends at the old version or the new one, never a mix.
+These concepts apply to the current user-scope profile demonstrated in the [DSL tutorial](/tutorial/). The [runtime lifecycle contract](https://github.com/niobium-project/niobium/blob/main/docs/spec/runtime-lifecycle-v2.md) owns the protocol; [Status and platforms](/status/) records execution evidence.
 
-## The install root
+## Owned roots and generations
+
+Each logical root has an ownership record and unpublished generation directories. One product-declared state root coordinates the transaction across every participating root.
 
 ```text
-<install root>/
-  installation.json        what is installed: product, release, manifest, integrations
-  current -> versions/<n>  the active version (a symlink, or a junction on Windows)
-  versions/<n>/<component>/...
-  maintainer/              a copy of setup, used for later update, repair and uninstall
-  trust/state.json         the TUF versions this installation has accepted
-  journal/                 the transaction journal
+<root>/
+  current -> .niobium-v2/generations/<transaction>/data/
+  .niobium-v2/
+    owner.json
+    generations/<transaction>/data/...
+    installation.json    in the coordinator root
 ```
 
-Shortcuts, file associations and services point at paths through `current`, so they stay valid on both sides of a switch.
+`current` publishes generation content through a Unix symlink or Windows junction. The coordinator also stores frozen content, a pending plan, and a commit decision. Those records bind the installation instance and complete root mapping.
 
-## The steps
+The kernel claims only absent or empty unowned roots. Existing ownership must match the product, installing account, and root mapping. Nonblocking root locks exclude cooperating concurrent operations; a busy root reports `KernelBusy`.
 
-1. **Stage.** Verified artifacts are unpacked into `versions/<new>/`. Nothing the active version uses is touched.
-2. **Execute.** Planned operations run one by one. Each writes only to the new version or to version-specific temporary integration files, and each has a rollback.
-3. **Commit.** `current` is switched to the new version in one atomic step. This is the point of no return.
-4. **Finalize.** App Bootstrap runs, the old version and the journal are cleaned up.
+## Preparation and publication
 
-Progress is recorded in an append-only journal (`begin`, one record per completed operation, `ready_to_commit`, `commit`, bootstrap start and end, `finalized`), flushed to disk after every record.
+The kernel first evaluates fixed capability calls and validates their desired resources. It captures and verifies content before persisting the complete pending plan.
 
-## Recovery
+It then prepares an unpublished generation for every root, checking file contents and native access and persisting receipts. Only after all roots are prepared does the coordinator persist its commit decision.
 
-`setup` always runs recovery first, before doing anything else. It reads the last journal record:
+With that decision durable, the kernel publishes every prepared generation and persists the next installation snapshot. Cleanup removes unchanged retired resources and completes the transaction. Uninstall instead removes the published pointers and active snapshot.
 
-| Interrupted | Recovery | Result |
+Cross-root publication is sequential. Observers can temporarily see different releases in different roots; the recovery guarantee does not imply simultaneous visibility across filesystems.
+
+## Recovery outcomes
+
+Every invocation completes compatible pending work before its requested action. This includes `status`, which can therefore perform recovery.
+
+| Durable transaction state | Recovery | Published outcome |
 |---|---|---|
-| Before the commit record | Roll back completed operations in reverse order, delete staging | Old version |
-| After the commit record | Repeat the switch and the post-commit operations (all are idempotent) | New version |
-| While App Bootstrap ran | Mark bootstrap as pending; it is retried later | New version |
+| No commit decision | Abort completed unpublished preparation | Previous publication |
+| Valid commit decision and required receipts | Complete publication and snapshot persistence | Next publication |
+| Incompatible or inconsistent records | Refuse unsafe replay and preserve evidence | No inferred recovery result |
 
-A half-written last journal line counts as not written. Only one transaction per product and user runs at a time; a second one gets exit code 10. The lock is released by the operating system when the process ends, so a crash never leaves a lock to clean up by hand.
+Recovery uses the frozen host plan. It does not rerun author code or capability libraries, fetch replacement inputs, or guess missing resources. Repeating a completed recovery is idempotent.
 
-## App Bootstrap is after the commit
+Uninstall retains ownership records and verified content storage. Modified or unknown files may remain in retired generations because cleanup requires the recorded identity and contents to match. Repair produces a fresh desired generation; it does not establish an old-good state after arbitrary external corruption.
 
-Your application's [App Bootstrap](/concepts/app-bootstrap/) entrypoint runs after the switch. If it fails, the new version stays active, `setup` exits with code 8 (`bootstrap_pending`), and bootstrap is retried on a later run. Rolling back files after the application may already have migrated its data would be worse than retrying the migration.
+## Application data and compatibility
 
-## How this is tested
+Product model changes and call-state changes require their own explicit compatibility declarations. The kernel checks those independently of the release sequence before mutation.
 
-Crash-injection tests kill the transaction after every file system mutation and after every journal record, and require both outcomes, old and new, to occur; a seeded simulation mixes injected faults with repeated recovery. The results are listed under invariant N1-INV-01 on [Status and platforms](/status/). The full state machine is specified in the [transaction model](https://github.com/niobium-project/niobium/blob/main/docs/architecture/transaction-model.md).
-
-One known limitation: two different users operating on the same machine-scope product at the same moment do not exclude each other.
+Application databases and other business data remain product-owned. Deployment recovery does not imply database rollback, and the retained [App Bootstrap protocol](/concepts/app-bootstrap/) is not a hook in the current Component-v2 profile.

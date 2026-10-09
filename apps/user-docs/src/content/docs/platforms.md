@@ -3,7 +3,7 @@ title: Platform support
 description: Which platforms Niobium targets, what each support tier commits to, and what comes next.
 ---
 
-> Scope: the guidance and platform records below apply to the retained v1 implementation. New DSL/AOT interfaces and qualification have separate evidence on [Status and platforms](/status/).
+This page records platform tier obligations and remaining qualification work. Current Component evidence and retained v1 records have separate scopes on [Status and platforms](/status/).
 
 Niobium sorts the platforms it builds for into three tiers. A tier states what the project commits to on that platform; whether the commitment is met today is recorded on [Status and platforms](/status/), the only page that reports results.
 
@@ -17,7 +17,7 @@ The list is short on purpose. Niobium is maintained by one person in spare time,
 | Tier 2 | Yes | Best effort | No | When time allows |
 | Tier 3 | No | No | No | Only with a volunteer owner |
 
-- **Built on every change** means the target is cross-compiled in ReleaseSafe and its binaries pass the binary lint (allowed dynamic libraries, PE flags, no writable and executable memory). Shipping targets also stay under the 30 MiB size budget for `setup`.
+- **Built on every change** means the target is cross-compiled in ReleaseSafe and its binaries pass the binary lint (allowed dynamic libraries, PE flags, no writable and executable memory). Component runtime publication enforces its native ABI profile, the 30 MiB runtime ceiling and the growth bound; product payload capacity is separate ([ADR-0024](https://github.com/niobium-project/niobium/blob/main/docs/adr/0024-native-runtime-dependency-qualification.md)).
 - **Tested on a real OS** means the platform contract suite, the end-to-end install, update, repair and uninstall scenarios and a smoke run on the reference OS. For a Tier 1 platform, a known failure blocks the release; a test that could not run is reported in the release notes as `BLOCKED` or `NOT_RUN`, never as passed.
 - **Tier 3** platforms are candidates. Nothing is built for them by default, and nothing about them is promised.
 
@@ -27,10 +27,10 @@ The list is short on purpose. Niobium is maintained by one person in spare time,
 |---|---|---|---|
 | `aarch64-macos` | 1 | macOS on Apple silicon | The minimum macOS version is not pinned yet |
 | `x86_64-windows` | 1 | Windows 11 (x64) | |
-| `x86_64-linux` | 1 | Ubuntu 24.04 LTS | Static musl binaries with no dynamic library dependencies; other distributions may work but are not covered |
+| `x86_64-linux` | 1 | Ubuntu 24.04 LTS | The measured Component GNU runtime requires glibc 2.36 and its declared loader; other distributions are not qualified |
 | `aarch64-linux` | 2 | Ubuntu 24.04 (ARM64) | Built and linted, used for VM smoke runs; not yet a shipping target, so the size budget does not apply |
 
-Results for each target are on [Status and platforms](/status/).
+Results for each target are on [Status and platforms](/status/). Native dependencies are qualified per OS and ABI under [ADR-0024](https://github.com/niobium-project/niobium/blob/main/docs/adr/0024-native-runtime-dependency-qualification.md); GNU and static musl are separate profiles. Published runtime and SDK CPU baselines follow [ADR-0025](https://github.com/niobium-project/niobium/blob/main/docs/adr/0025-baseline-cpu-runtime-publication.md). A baseline setting or successful cross-build does not qualify every CPU or older operating system.
 
 ## Roadmap
 
@@ -40,21 +40,21 @@ This section covers platforms only. Planned features are on the [Roadmap](/roadm
 
 Each Tier 1 platform still has a gap between its commitment and its test lanes:
 
-- **`x86_64-linux`:** there is no real-OS test lane yet. The existing VM lane runs Ubuntu 24.04 on ARM64, which exercises `aarch64-linux`, not the x64 build.
-- **`x86_64-windows`:** the only real-OS lane runs the x64 build under emulation on Windows 11 for ARM64. Native x64 hardware is not covered.
-- **All platforms:** the real-OS smoke run covers user-scope installs only; machine-wide installs are not exercised there.
-- **`aarch64-macos`:** the walkthrough of the graphical installer on a real Mac is a manual check that has not been run, and the minimum supported macOS version still has to be chosen.
+- **`x86_64-linux`:** native hosted Ubuntu 24.04 x64 CI is recorded for the current Component profile. Older distributions and generic physical-CPU portability remain outside that evidence.
+- **`x86_64-windows`:** native hosted CI runs on Windows Server 2025 x64. That runner context does not qualify the Windows 11 x64 reference OS or a native standard-user token. The Windows 11 ARM64/x64-emulated standard-user record keeps its separate scope.
+- **All platforms:** current qualification covers user scope; machine scope and the standard v2 UI remain separate work packages.
+- **`aarch64-macos`:** native hosted macOS 15.7.9 arm64 CI is recorded. The minimum supported macOS version remains unpinned; the retained v1 graphical walkthrough remains a historical `NOT_RUN` record.
 
 ### Candidates
 
 | Candidate | Tier | What it needs |
 |---|---|---|
 | `aarch64-windows` | 3 | A build target and binary-lint entry, and a real-OS lane on Windows 11 for ARM64 |
-| Kylin and UOS, x86_64 and aarch64 | 3 | A real-OS lane per distribution. The Linux binaries are static, so they are expected to run unchanged, but that is untested; the desktop integration (`.desktop` entries, MIME packages, systemd units, XDG directories) has to be checked on each distribution |
+| Kylin and UOS, x86_64 and aarch64 | 3 | A real-OS lane per distribution that checks the native ABI, loader, CPU prerequisites and desktop integrations (`.desktop` entries, MIME packages, systemd units, XDG directories); static musl evidence does not qualify a GNU runtime |
 
 ### Not planned
 
-- **A native Wayland backend.** On Wayland sessions the installer window runs through XWayland. The decision is recorded in [ADR-0010](https://github.com/niobium-project/niobium/blob/main/docs/adr/0010-x11-now-wayland-deferred.md).
+- **A native Wayland backend for the retained v1 window.** On Wayland sessions that window runs through XWayland ([ADR-0010](https://github.com/niobium-project/niobium/blob/main/docs/adr/0010-x11-now-wayland-deferred.md)). The current Component runtime is headless; the standard v2 UI has separate implementation and qualification work.
 
 ## Moving between tiers
 

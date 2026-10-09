@@ -39,13 +39,16 @@ logical file/directory/link structure; deployment access is an explicit separate
 policy. PE, ELF and Mach-O assembly preserves the template's executable code and
 binds its native prefix, product and payload identities.
 
-Local native and emulated target runs are recorded individually. They do not
-establish native Windows/Linux CI, machine scope, full native application metadata,
-publisher authentication or notarization. Final qualification remains in progress.
+Local native and emulated target runs are recorded individually. Native hosted CI
+qualifies user-scope operations in its recorded runner contexts. These records do
+not establish machine scope, full native application metadata, publisher
+authentication or notarization. Further qualification remains in progress.
 The 1 MiB section, ASCII resource names and WAMR profile belong to the retained v1
 PoC, not the current content/Component contracts.
 
-Start with [authoring v2](docs/development/authoring-v2.md), the
+Start with the [DSL tutorial](apps/user-docs/src/content/docs/tutorial/index.md)
+and its [runnable example](examples/dsl-tutorial/) to build your first Starlark product.
+For SDK details, use [authoring v2](docs/development/authoring-v2.md), the
 [Component SDK](docs/development/component-library-sdk.md), and
 [cross-host builds](docs/development/cross-host-builds.md).
 The [current contracts](docs/README.md) define the shared compiler and runtime
@@ -70,7 +73,7 @@ qualification. These are priorities, not blanket completion or support claims.
 | 🔜 | Online, offline-file and SFX product profiles |
 | 🗓️ | Publisher signing and notarization qualification |
 | 🗓️ | Standard UI, embedded maintenance and accessibility |
-| 🗓️ | Native-platform CI and machine-scope qualification |
+| 🗓️ | Additional native-platform and machine-scope qualification |
 
 The [user roadmap](apps/user-docs/src/content/docs/roadmap.md) explains these items.
 The [maintainer roadmap](docs/roadmap-v0.3.md),

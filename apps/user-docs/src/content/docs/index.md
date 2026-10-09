@@ -23,12 +23,14 @@ Native Zig, C and Starlark construct the same model. The compiler resolves compl
 input types and source diagnostics, fixes dependencies and assembles a precompiled
 runtime without product-specific linking.
 
-The CLI/user-scope foundation has local qualification slices. PE/ELF/Mach-O
-assembly and local native or emulated execution are recorded separately; they do
-not establish native Windows/Linux CI, machine scope or publisher authentication.
-Check [Status and platforms](/status/) for the current evidence boundary.
+The CLI/user-scope foundation has recorded native hosted CI and local qualification
+slices. PE/ELF/Mach-O assembly and target execution have separate records. Native CI
+qualifies its recorded runner contexts; machine scope and publisher authentication
+remain separate work. Check [Status and platforms](/status/) for the evidence boundary.
 
-Use the [authoring guide](https://github.com/niobium-project/niobium/blob/main/docs/development/authoring-v2.md),
+Start with the [DSL tutorial](/tutorial/) to build, install and update a small
+Starlark product, then learn how to write and compile its model.
+For SDK details, use the [authoring guide](https://github.com/niobium-project/niobium/blob/main/docs/development/authoring-v2.md),
 [Component SDK](https://github.com/niobium-project/niobium/blob/main/docs/development/component-library-sdk.md)
 and [cross-host build guide](https://github.com/niobium-project/niobium/blob/main/docs/development/cross-host-builds.md).
 The [roadmap](/roadmap/) and maintainer
@@ -36,9 +38,8 @@ The [roadmap](/roadmap/) and maintainer
 separate the foundation from product presets, complete language SDKs and further
 platform qualification.
 
-Existing [tutorials](/start/) and manifest/`nbpack` references describe the retained
-implementation. Its 1 MiB carrier, ASCII resource names and WAMR ABI are not the
-current Component/content contracts. Its acceptance results retain their original
-scope. The [glossary](/reference/glossary/) defines the shared domain terms.
+The sidebar groups legacy v1 documentation separately. The [retained v1 tutorial](/start/)
+and manifest/`nbpack` references describe their original interfaces and evidence.
+The [glossary](/reference/glossary/) defines the current domain terms.
 
 Project background and maintenance expectations are on [About the project](/about/).

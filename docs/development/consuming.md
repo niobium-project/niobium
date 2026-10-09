@@ -1,6 +1,6 @@
 # Using Niobium from another repository
 
-> Scope: legacy `build/sdk.zig` consumer API. New products use [compiler frontends](../spec/compiler-frontends-v1.md), fixed capability libraries and a precompiled runtime. This legacy API does not establish the AOT consumer boundary.
+> Scope: legacy `build/sdk.zig` consumer API. New products use [authoring v2](authoring-v2.md), [compiler frontends v2](../spec/compiler-frontends-v2.md), fixed capability libraries and a precompiled runtime. This legacy API does not establish the AOT consumer boundary.
 
 A product repository declares Niobium as a Zig package dependency and calls the functions of `@import("niobium")` in its own `build.zig` to produce component artifacts, a branded setup and an offline bundle. [`examples/hello`](../../examples/hello/build.zig) is built exactly this way: it is a standalone package that depends on this repository by path. `zig build example` builds it in a child process and puts the result in `zig-out/example/`.
 

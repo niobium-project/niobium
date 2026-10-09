@@ -15,6 +15,12 @@ import { baseLinks } from './src/markdown/base-links.mjs';
 import { docsBase } from './src/site-version.mjs';
 
 const repository = 'https://github.com/niobium-project/niobium';
+const legacyPages = [
+  'start',
+  'guides/**',
+  'concepts/{trust,channels,app-bootstrap}',
+  'reference/{manifest,setup-cli,nbpack-cli,exit-codes,events,c-abi,artifact-format,repository-layout}',
+];
 
 /** Sidebar label in both locales. @param {keyof typeof en & keyof typeof zh} key */
 const label = (key) => ({ label: en[key], translations: { 'zh-CN': zh[key] } });
@@ -35,6 +41,7 @@ export default defineConfig({
       title: 'Niobium',
       description:
         'An installation and distribution DSL with an AOT compiler and precompiled native runtime.',
+      customCss: ['./src/styles/custom.css'],
       defaultLocale: 'root',
       locales: {
         root: { label: en['niobium.locale.label'], lang: 'en' },
@@ -46,13 +53,43 @@ export default defineConfig({
         Banner: './src/components/Banner.astro',
         LanguageSelect: './src/components/LanguageSelect.astro',
       },
-      plugins: [starlightLinksValidator(), starlightLlmsTxt({ projectName: 'Niobium' })],
+      plugins: [
+        starlightLinksValidator(),
+        starlightLlmsTxt({
+          projectName: 'Niobium',
+          demote: legacyPages,
+          exclude: legacyPages,
+        }),
+      ],
       sidebar: [
         {
           ...label('niobium.sidebar.startHere'),
           items: [
             { ...label('niobium.sidebar.overview'), slug: 'index' },
-            { ...label('niobium.sidebar.tutorial'), slug: 'start' },
+            { ...label('niobium.sidebar.tutorial'), slug: 'tutorial' },
+          ],
+        },
+        {
+          ...label('niobium.sidebar.tutorial'),
+          items: [
+            {
+              ...label('niobium.sidebar.tutorialProduct'),
+              items: [
+                'tutorial/setup',
+                'tutorial/first-installer',
+                'tutorial/configure-update-remove',
+              ],
+            },
+            {
+              ...label('niobium.sidebar.tutorialModel'),
+              items: [
+                'tutorial/syntax',
+                'tutorial/values-bindings',
+                'tutorial/content-capabilities',
+                'tutorial/functions-modules',
+                'tutorial/compilation-diagnostics',
+              ],
+            },
           ],
         },
         {
@@ -62,20 +99,6 @@ export default defineConfig({
             'concepts/artifacts',
             'concepts/transactions',
             'concepts/privilege',
-            'concepts/trust',
-            'concepts/channels',
-            'concepts/app-bootstrap',
-          ],
-        },
-        {
-          ...label('niobium.sidebar.guides'),
-          items: [
-            'guides/package',
-            'guides/sign-and-keys',
-            'guides/publish-and-host',
-            'guides/app-bootstrap',
-            'guides/embed-c-abi',
-            'guides/silent-install',
           ],
         },
         'security',
@@ -86,16 +109,41 @@ export default defineConfig({
         'about',
         {
           ...label('niobium.sidebar.reference'),
+          items: ['reference/glossary'],
+        },
+        {
+          ...label('niobium.sidebar.legacy'),
+          collapsed: true,
           items: [
-            'reference/manifest',
-            'reference/setup-cli',
-            'reference/nbpack-cli',
-            'reference/exit-codes',
-            'reference/events',
-            'reference/c-abi',
-            'reference/artifact-format',
-            'reference/repository-layout',
-            'reference/glossary',
+            { ...label('niobium.sidebar.legacyTutorial'), slug: 'start' },
+            {
+              ...label('niobium.sidebar.concepts'),
+              items: ['concepts/trust', 'concepts/channels', 'concepts/app-bootstrap'],
+            },
+            {
+              ...label('niobium.sidebar.guides'),
+              items: [
+                'guides/package',
+                'guides/sign-and-keys',
+                'guides/publish-and-host',
+                'guides/app-bootstrap',
+                'guides/embed-c-abi',
+                'guides/silent-install',
+              ],
+            },
+            {
+              ...label('niobium.sidebar.reference'),
+              items: [
+                'reference/manifest',
+                'reference/setup-cli',
+                'reference/nbpack-cli',
+                'reference/exit-codes',
+                'reference/events',
+                'reference/c-abi',
+                'reference/artifact-format',
+                'reference/repository-layout',
+              ],
+            },
           ],
         },
       ],

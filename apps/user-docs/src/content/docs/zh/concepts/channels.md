@@ -1,15 +1,16 @@
 ---
-title: 通道与晋升
+title: 保留的通道与晋升
 description: 发布如何到达 stable、beta 和 nightly 用户，以及为什么晋升只改变元数据。
+pagefind: false
 ---
 
-> 适用范围：此页描述保留的 v1 实现。新的 DSL/AOT 产品构建与能力库契约见[项目概览](/zh/)，验收证据见[状态与平台](/zh/status/)。
+> 适用范围：此页描述保留的基于清单的 v1 实现。当前产品编写与安装流程见 [DSL 教程](/zh/tutorial/)。这些分发或应用引导机制不是 Component-v2 教程配置的 API；平台证据见[状态与平台](/zh/status/)。
 
 通道是一个已签名的指针，从通道名称指向某个产品的一次发布。把用户迁移到新的发布，意味着重新签名这个指针；制品永远不会被重新构建或重新打包。其背后的规则是：只构建一次，只签名一次，测试最终的字节，然后只通过元数据晋升。
 
 ## 三个通道
 
-Niobium 有三个固定的通道：`stable`、`beta` 和 `nightly`。每个通道都是一个被委托的 TUF 角色，其唯一内容是 `manifests/<product id>.json` 以及该发布的 `release_sequence` 和应用版本。
+保留的 v1 分发配置有三个固定的通道：`stable`、`beta` 和 `nightly`。每个通道都是一个被委托的 TUF 角色，其唯一内容是 `manifests/<product id>.json` 以及该发布的 `release_sequence` 和应用版本。
 
 带品牌的 `setup` 从 `nbpack config --channel` 写入的产品配置中获取通道（默认 `stable`）；命令行选项 `--channel` 可以覆盖它。每个安装都会记录它安装自哪个通道，`setup status` 会显示出来。
 

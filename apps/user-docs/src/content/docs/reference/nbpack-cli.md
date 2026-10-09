@@ -1,9 +1,10 @@
 ---
 title: nbpack command line
 description: Commands and options of nbpack, the publisher tool.
+pagefind: false
 ---
 
-> Scope: this page describes the retained v1 implementation. See the [project overview](/) for DSL/AOT authoring and capability contracts, and [Status and platforms](/status/) for evidence.
+> Scope: this page describes the retained v1 implementation. For current Starlark product authoring and compilation, start with the [DSL tutorial](/tutorial/). See [Status and platforms](/status/) for evidence.
 
 Canonical source: the parser and usage text in [`apps/nbpack/cli.zig`](https://github.com/niobium-project/niobium/blob/main/apps/nbpack/cli.zig); procedures in the [release signing runbook](https://github.com/niobium-project/niobium/blob/main/docs/runbooks/release-signing.md). `nbpack` is built by `zig build` in a Niobium checkout, or by `niobium.nbpack(b)` in your `build.zig`.
 

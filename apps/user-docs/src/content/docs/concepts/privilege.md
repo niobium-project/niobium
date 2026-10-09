@@ -1,37 +1,43 @@
 ---
-title: Privilege boundary
-description: How machine-wide installs get elevated rights without running arbitrary code as administrator.
+title: Authority and access boundaries
+description: How logical roots, explicit grants, and native access policies constrain Component-v2 installation effects.
 ---
 
-> Scope: this page describes the retained v1 implementation. See the [project overview](/) for DSL/AOT authoring and capability contracts, and [Status and platforms](/status/) for evidence.
+A capability library receives only the authority declared for its call. The current Component-v2 profile has no ambient filesystem, network, process, or elevation authority. It supports user-scope roots and rejects machine scope.
 
-A user-scope install needs no elevation: everything lives in the user's own directories. A machine-scope install writes to system locations, so it needs administrator rights, and Niobium grants them as a closed capability rather than as a general-purpose elevated process.
+The [DSL tutorial](/tutorial/content-capabilities/) shows a files library request bounded by a named grant. The [capability contract](https://github.com/niobium-project/niobium/blob/main/docs/spec/capability-library-v2.md) owns the library boundary; real execution records live on [Status and platforms](/status/).
 
-## The helper
+## Roots and grants
 
-For a machine-scope transaction, `setup` starts a second copy of itself with administrator rights (through the system authorization prompt, `runas`, `pkexec` or `sudo`, depending on the platform). This helper:
+A product declares logical roots and selects one as its state coordinator. At invocation, the host binds those roots to absolute native paths. It rejects duplicate, aliased, nested, or incompatibly owned roots before deployment.
 
-- exists only for the duration of one transaction;
-- accepts only a fixed list of typed operations: create a directory, write, append or copy a file, rename, remove a file or tree, set or remove the `current` pointer, prepare, activate, discard or remove an integration, and report free space;
-- has no operation that runs a program, loads a library or opens a network connection;
-- authenticates every message with the transaction id and a random nonce, and rejects replayed message ids.
+A grant names a root and versioned primitive, with path, entry, byte, and access ceilings. Calls receive only their declared grants. Possessing a content reference or declaring a primitive requirement does not grant deployment authority.
 
-The unelevated `setup` downloads and verifies the release and stages it in the user's cache; the helper copies the staged files into place.
+Libraries return resource proposals. The host checks each proposal against its grant and validates the complete inventory before freezing the transaction plan. Libraries cannot directly mutate deployment roots or select ambient host source paths.
 
-## Where the helper may write
+## Requested access
 
-The helper computes its own policy and does not take paths from the unelevated side:
+Every desired container supplies explicit file and directory access policies. A grant is an upper bound; its ceiling is not an implicit desired policy. The portable contract describes access for the installing owner and other users.
 
-- it writes only inside `<install base>/<product id>`, where the install base is `/Library/Application Support` on macOS, `%ProgramFiles%` on Windows and `/opt` on Linux;
-- integrations go only to the system integration directories it knows;
-- copy sources must be in the staging area or the install root, and are opened without following symbolic links; files with more than one hard link are refused.
+The host creates unpublished resources privately, verifies their contents, applies the requested native access, and reads it back. Unsupported filesystems, ACL conflicts, or policies outside the portable subset produce explicit errors.
 
-## What the boundary does not cover
+The contract does not provide arbitrary principals, deny rules, ownership transfer, or permission inheritance editing. Directory traversal and privileged bypass have separate OS semantics. The [access policy contract](https://github.com/niobium-project/niobium/blob/main/docs/spec/access-policy-v1.md) defines the supported subset and its limits.
 
-The helper restricts where it writes, not what it writes. The content was verified against the signed release by the unelevated process. If an attacker already controls the installing user's session, they can make the helper write arbitrary content into that product's machine install root and register services or shortcuts for it; they cannot use it to write into other products or arbitrary system locations. This residual risk is accepted.
+## Retained v1 elevation
 
-Embedding hosts that use the [C ABI](/guides/embed-c-abi/) never get an elevation prompt: machine scope works there only when the host process is already elevated.
+<details data-pagefind-ignore>
+<summary>Manifest-era helper protocol and residual risk</summary>
 
-## Status
+The manifest-era runtime has a separate machine-scope helper protocol. For one transaction, an unelevated installer starts a second copy with administrator rights through the platform authorization mechanism.
 
-Machine-scope installs on a real Windows or Linux system have not been verified yet; see N1-UJ-02 on [Status and platforms](/status/). The wire protocol is specified in [ipc-v1](https://github.com/niobium-project/niobium/blob/main/docs/spec/ipc-v1.md).
+That helper accepts only closed typed file and integration operations. It authenticates requests with a transaction ID and random nonce, rejects replayed message IDs, and confines writes to the selected product's machine root and known integration locations. It has no operation to execute a program, load a library, or open a network connection.
+
+This helper is not a Component-v2 elevation API. Its retained wire contract is [IPC v1](https://github.com/niobium-project/niobium/blob/main/docs/spec/ipc-v1.md); its evidence retains its original scope.
+
+### Retained helper risk { #what-the-boundary-does-not-cover }
+
+The v1 helper confines write locations. The unelevated installer verifies the release content. An attacker controlling that user's session can supply different content within the authorized product root and register its permitted integrations.
+
+The retained helper does not grant arbitrary writes outside those locations. This risk describes the v1 helper protocol; it does not extend the authority available to a Component-v2 library.
+
+</details>

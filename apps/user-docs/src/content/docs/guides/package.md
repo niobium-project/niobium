@@ -1,9 +1,10 @@
 ---
 title: Package your product
 description: Write component metadata and the product manifest, declare integrations, and build component artifacts.
+pagefind: false
 ---
 
-> Scope: this page describes the retained v1 implementation. See the [project overview](/) for DSL/AOT authoring and capability contracts, and [Status and platforms](/status/) for evidence.
+> Scope: this page describes the retained v1 implementation. For current Starlark product authoring and compilation, start with the [DSL tutorial](/tutorial/). See [Status and platforms](/status/) for evidence.
 
 This guide turns the files your build produces into Niobium component artifacts and a product manifest template. It assumes a product repository that depends on Niobium as in the [tutorial](/start/).
 

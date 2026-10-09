@@ -5,7 +5,9 @@ Niobium is an installation/distribution DSL and AOT toolchain under
 [ADR-0023](adr/0023-standard-content-and-component-contracts.md) for standard
 content, WIT Components and cross-host assembly. [AGENTS.md](../AGENTS.md) owns
 hard development constraints. Product-author documentation lives in
-[apps/user-docs](../apps/user-docs/README.md).
+[apps/user-docs](../apps/user-docs/README.md). The
+[DSL tutorial](../apps/user-docs/src/content/docs/tutorial/index.md) teaches
+Starlark product authoring through a runnable installation and update example.
 
 [ADR-0024](adr/0024-native-runtime-dependency-qualification.md) defines native
 runtime dependency qualification by OS and ABI, separately from retained binaries.

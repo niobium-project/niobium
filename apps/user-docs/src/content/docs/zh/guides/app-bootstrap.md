@@ -1,9 +1,10 @@
 ---
 title: 实现 App Bootstrap
 description: 在你的应用中处理安装程序的 activate 和 deactivate 请求。
+pagefind: false
 ---
 
-> 适用范围：此页描述保留的 v1 实现。新的 DSL/AOT 产品构建与能力库契约见[项目概览](/zh/)，验收证据见[状态与平台](/zh/status/)。
+> 适用范围：此页描述保留的 v1 实现。当前 Starlark 产品编写与编译请从 [DSL 入门教程](/zh/tutorial/)开始，验收证据见[状态与平台](/zh/status/)。
 
 本指南为你的应用加上 App Bootstrap，使它能在安装、更新或修复之后迁移自己的数据，并在卸载之前做清理。请先阅读[安装程序与 App Bootstrap](/zh/concepts/app-bootstrap/)，了解为什么这部分放在你的应用中。
 

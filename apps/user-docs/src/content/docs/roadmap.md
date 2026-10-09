@@ -21,7 +21,7 @@ from the evidence on [Status and platforms](/status/).
 | 🔜 | Online, offline-file and SFX product profiles |
 | 🗓️ | Publisher signing and notarization qualification |
 | 🗓️ | Standard UI, embedded maintenance and accessibility |
-| 🗓️ | Native-platform CI and machine-scope qualification |
+| 🗓️ | Additional native-platform and machine-scope qualification |
 
 Current work establishes shared typed authoring, compiler binding/cache/diagnostics,
 standard Component execution, content/access contracts and recoverable native

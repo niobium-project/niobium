@@ -1,15 +1,16 @@
 ---
-title: Channels and promotion
+title: Retained channels and promotion
 description: How releases reach stable, beta and nightly users, and why promotion changes only metadata.
+pagefind: false
 ---
 
-> Scope: this page describes the retained v1 implementation. See the [project overview](/) for DSL/AOT authoring and capability contracts, and [Status and platforms](/status/) for evidence.
+> Scope: this page describes the retained manifest-era v1 implementation. Use the [DSL tutorial](/tutorial/) for current product authoring and installation. These distribution or bootstrap mechanisms are not APIs of the Component-v2 tutorial profile; platform evidence is on [Status and platforms](/status/).
 
 A channel is a signed pointer from a channel name to one release of a product. Moving users to a new release means re-signing that pointer; the artifacts are never rebuilt or repacked. The rule behind this: build once, sign once, test the final bytes, then promote by metadata only.
 
 ## The three channels
 
-Niobium has three fixed channels: `stable`, `beta` and `nightly`. Each is a delegated TUF role whose only content is `manifests/<product id>.json` with that release's `release_sequence` and application version.
+The retained v1 distribution profile has three fixed channels: `stable`, `beta` and `nightly`. Each is a delegated TUF role whose only content is `manifests/<product id>.json` with that release's `release_sequence` and application version.
 
 A branded `setup` takes its channel from the product configuration that `nbpack config --channel` wrote (default `stable`); the command-line option `--channel` overrides it. Each installation records the channel it was installed from, and `setup status` shows it.
 
